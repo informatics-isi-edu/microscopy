@@ -8,8 +8,8 @@ Array.prototype.contains = function (elem) {
 var HOME;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
-var PRINT_JOB_HOME = '/ermrest/print/job';
-var PRINT_CONTROL_HOME = '/ermrest/print/control';
+var PRINT_JOB_HOME = '/ermrest/printer/';
+var PRINT_CONTROL_HOME = '/ermrest/printer/control';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
 var CIRM_START_INFO = '<p class="intro">Choose an entity from the left sidebar or use the search box to find relevant images.</p>';
@@ -26,6 +26,7 @@ var newExperimentId = null;
 var newSlideId = null;
 
 var boxColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator', 'comment'];
+var boxLabelColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator'];
 var boxEditColumns = ['comment'];
 var boxDisplayColumns = {'id': 'Box ID', 'section_date': 'Section Date', 'sample_name': 'Sample Name', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment'};
 var boxesDict = {};
@@ -2069,8 +2070,9 @@ function postSaveSlide(data, textStatus, jqXHR, param) {
 
 function submitPrintLabel() {
 	var entity = $('input:radio[name=entity]:checked').val();
-	var url = PRINT_JOB_HOME;
+	var url = PRINT_JOB_HOME + entity + '/job';
 	var arr = [];
+	var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).html()];
 	if (entity == 'slide') {
 		var labelsCount = parseInt($('#labelsCount').val());
 		var sequence_num = parseInt($('#slideSequenceNumber').val());
@@ -2096,11 +2098,18 @@ function submitPrintLabel() {
 				slideSequenceNumber = '0' + slideSequenceNumber;
 			}
 			var slideId = [id, slideSequenceNumber, slideRevision].join('-');
-			var obj = {'slideId': slideId};
+			var obj = {};
+			$.each(boxLabelColumns, function(i, col) {
+				obj[col] = box[col];
+			})
+			obj['id'] = slideId;
 			arr.push(obj);
 		}
 	} else if (entity == 'box') {
-		var obj = {'boxId': $($('.highlighted', $('#BoxDiv'))[0]).html()};
+		var obj = {};
+		$.each(boxLabelColumns, function(i, col) {
+			obj[col] = box[col];
+		})
 		arr.push(obj);
 	}
 alert(url+'\n'+JSON.stringify(arr));

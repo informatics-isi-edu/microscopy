@@ -303,11 +303,16 @@ function initCIRMMobile() {
 	}
 }
 
+function isMobileSearch() {
+	var userAgent = navigator.userAgent; 
+	cirm_mobile = (userAgent.indexOf('iPhone') != -1 || userAgent.indexOf('Mobile') != -1);
+	return cirm_mobile && 
+		((('' + window.location).indexOf('/cirm/slide') >= 0) || (('' + window.location).indexOf('/cirm/box') >= 0));
+}
+
 function initCIRM() {
 	// Mozilla/5.0 (iPhone; CPU iPhone OS 7_0_3 like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0 Mobile/11B511 Safari/9537.53
 	// Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20131029 Firefox/17.0
-	var userAgent = navigator.userAgent; 
-	cirm_mobile = (userAgent.indexOf('iPhone') != -1 || userAgent.indexOf('Mobile') != -1);
 	var params = window.location.search;
 	if (cirm_mobile && params != null && params.length > 0) {
 		params = params.substring(1);
@@ -380,7 +385,7 @@ function getBox(id) {
 
 function postGetBox(data, textStatus, jqXHR, param) {
 	mobileParams['box'] = data[0];
-	mobileRequest();
+	submitLogout();
 }
 
 function getBoxes(id) {
@@ -521,6 +526,10 @@ function renderLogin() {
 	WEBAUTHN_HOME = HOME + WEBAUTHN_HOME;
 	PRINT_JOB_HOME = HOME + PRINT_JOB_HOME;
 	PRINT_CONTROL_HOME = HOME + PRINT_CONTROL_HOME;
+	if (isMobileSearch()) {
+		submitMobileLogin();
+		return;
+	}
 	var uiDiv = $('#cirm');
 	uiDiv.html('');
 	var logoDiv = $('<div>');
@@ -583,7 +592,11 @@ function submitLogout() {
 }
 
 function postSubmitLogout(data, textStatus, jqXHR, param) {
-	window.location = window.location;
+	if (mobileParams == null) {
+		window.location = window.location;
+	} else {
+		mobileRequest();
+	}
 }
 
 function errorSubmitLogout(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
@@ -594,6 +607,13 @@ function checkSubmitLogin(event) {
 	if (event.which == 13) {
 		submitLogin();
 	}
+}
+
+function submitMobileLogin() {
+	var url = WEBAUTHN_HOME;
+	var obj = {'username': 'guest',
+			'password': 'just4demo'};
+	cirmAJAX.POST(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postSubmitLogin, null, null, 0);
 }
 
 function submitLogin() {
@@ -1076,7 +1096,7 @@ function getScans(id) {
 function postGetScans(data, textStatus, jqXHR, param) {
 	if (mobileParams != null) {
 		mobileParams['scans'] = data;
-		mobileRequest();
+		submitLogout();
 	} else {
 		scansList = data;
 		scansDict = {};

@@ -16,8 +16,8 @@
 
 class PrintJob:
     
-    def GET(self, printerID=None, jobID=None):
+    def GET(self, printerID, jobID):
         return "You want %s:%s\n" % (str(printerID), str(jobID))
     
-    def POST(self, printerID=None):
+    def POST(self, printerID):
         return "You tried to create a print job on %s\n" % printerID

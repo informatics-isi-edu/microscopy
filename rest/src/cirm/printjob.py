@@ -14,10 +14,49 @@
 # limitations under the License.
 #
 
+import cStringIO
+import web
+import json
+
 class PrintJob:
     
+    def __init__(self):
+        self.uri = 'http://purl.org/usc-cirm'
+        web.debug(('INIT PrintJob', self.uri))
+        
     def GET(self, printerID, jobID):
         return "You want %s:%s\n" % (str(printerID), str(jobID))
     
     def POST(self, printerID):
-        return "You tried to create a print job on %s\n" % printerID
+        response = []
+        web.debug(('POST', printerID))
+        input_data = cStringIO.StringIO(web.ctx.env['wsgi.input'].read())
+        json_data = json.load(input_data)
+        if printerID == 'box':
+            box = json_data[0]
+            id = box['id']
+            section_date = box['section_date']
+            sample_name = box['sample_name']
+            initials = box['initials']
+            disambiguator = box['disambiguator']
+            comment = box['comment']
+            web.debug((section_date, sample_name, initials, disambiguator, self.uri, id, comment))
+            val = {}
+            val['id'] = id
+            response.append(val)
+        elif printerID == 'slide':
+            for slide in json_data:
+                id = slide['id']
+                experiment_date = slide['experiment_date']
+                sample_name = slide['sample_name']
+                experiment_description = slide['experiment_description']
+                initials = slide['initials']
+                sequence_num = slide['sequence_num']
+                revision = slide['revision']
+                web.debug((experiment_date, sample_name, experiment_description, initials, sequence_num, revision, self.uri, id))
+                val = {}
+                val['id'] = id
+                response.append(val)
+                    
+        return json.dumps(response)
+    

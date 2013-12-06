@@ -26,7 +26,6 @@ var newExperimentId = null;
 var newSlideId = null;
 
 var boxColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator', 'comment'];
-var boxLabelColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator'];
 var boxEditColumns = ['comment'];
 var boxDisplayColumns = {'id': 'Box ID', 'section_date': 'Section Date', 'sample_name': 'Sample Name', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment'};
 var boxesDict = {};
@@ -1032,10 +1031,12 @@ function loadLeftPanel(panel, vals) {
 		var h4 = $('<h4>');
 		panel.append(h4);
 		h4.html(val['Display']);
-		var buttonImage = $('<button>').button({icons: {primary: 'ui-icon-circle-plus'}});
+		var buttonImage = $('<button>').button({icons: {primary: 'ui-icon-circle-plus'},
+			text: false});
 		buttonImage.addClass('newEntity');
 		buttonImage.click(function(event) {val['Create']();});
 		buttonImage.attr('title', 'New '+val['Name']);
+		buttonImage.css('width', 5);
 		h4.append(buttonImage);
 		var div = $('<div>');
 		div.attr('id', val['Name']+'Div');
@@ -1070,6 +1071,7 @@ function checkSlideSaveButton() {
 function checkSlidePrintButton() {
 	if ($('#slideRevision').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#slideSequenceNumber').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+		$('#slideExperimentSelect').val() != '' &&
 		$('#labelsCount').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#printButton').removeAttr('disabled');
 	} else {
@@ -1707,6 +1709,29 @@ function printLabel() {
 	var td = $('<td>');
 	tr.append(td);
 	td.addClass('tag');
+	td.html('Experiment:');
+	var td = $('<td>');
+	tr.append(td);
+	var select = $('<select>');
+	select.attr('id', 'slideExperimentSelect');
+	var option = $('<option>');
+	option.text('Select an Experiment');
+	option.attr('value', '');
+	select.append(option);
+	$.each(experimentsList, function(i, experiment) {
+		option = $('<option>');
+		option.text(experiment['id']);
+		option.attr('value', experiment['id']);
+		select.append(option);
+	});
+	td.append(select);
+	select.change(function(event) {checkSlidePrintButton();});
+
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
 	td.html('Sequence Number:');
 	var td = $('<td>');
 	tr.append(td);
@@ -2107,38 +2132,41 @@ function submitPrintLabel() {
 				alert('Invalid value for the Revision: "' + $('#slideRevision').val() + '".');
 				return;
 		}
-		var id = $($('.highlighted', $('#BoxDiv'))[0]).html();
+		var experiment = experimentsDict[$('#slideExperimentSelect').val()];
+		var boxId = $($('.highlighted', $('#BoxDiv'))[0]).html();
+		var slideRevision = '' + $('#slideRevision').val();
+		while (slideRevision.length < 3) {
+			slideRevision = '0' + slideRevision;
+		}
 		for (var i=0; i < labelsCount; i++) {
-			var slideRevision = '' + $('#slideRevision').val();
-			while (slideRevision.length < 3) {
-				slideRevision = '0' + slideRevision;
-			}
+			var obj = {};
+			obj['revision'] = revision;
+			obj['sequence_num'] = sequence_num;
+			obj['experiment_date'] = experiment['experiment_date'];
+			obj['sample_name'] = box['sample_name'];
+			obj['experiment_description'] = experiment['experiment_description'];
+			obj['initials'] = experiment['initials'];
 			var slideSequenceNumber = '' + sequence_num++;
 			while (slideSequenceNumber.length < 2) {
 				slideSequenceNumber = '0' + slideSequenceNumber;
 			}
-			var slideId = [id, slideSequenceNumber, slideRevision].join('-');
-			var obj = {};
-			$.each(boxLabelColumns, function(i, col) {
-				obj[col] = box[col];
-			})
-			obj['id'] = slideId;
+			var id = [boxId, slideSequenceNumber, slideRevision].join('-');
+			obj['id'] = id;
 			arr.push(obj);
 		}
 	} else if (entity == 'box') {
 		var obj = {};
-		$.each(boxLabelColumns, function(i, col) {
+		$.each(boxColumns, function(i, col) {
 			obj[col] = box[col];
 		})
 		arr.push(obj);
 	}
-alert(url+'\n'+JSON.stringify(arr));
-	//cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintLabel, null, null, 0);
-postSubmitPrintLabel();
+	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintLabel, null, null, 0);
 }
 
 function postSubmitPrintLabel(data, textStatus, jqXHR, param) {
-	//data = $.parseJSON(data);
+	alert(data);
+	data = $.parseJSON(data);
 	//newSlideId = data[0]['id'];
 	$($('.highlighted', $('#BoxDiv'))[0]).click();
 }

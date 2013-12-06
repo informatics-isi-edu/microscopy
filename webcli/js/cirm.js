@@ -1220,7 +1220,7 @@ function displayEntity(itemType, item) {
 function displayScan(img, image) {
 	$('button', $('#bottomPanel')).hide();
 	displayEntity('scan', image);
-	//$('#downloadButton').show();
+	$('#transferButton').show();
 	$('#enlargeButton').unbind('click');
 	$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
 	$('#enlargeButton').show();
@@ -1295,9 +1295,9 @@ function initBottomPanel(panel) {
 
 	button = $('<button>');
 	panel.append(button);
-	button.attr('id', 'downloadButton');
-	button.html('Download');
-	button.button().click(function(event) {downloadImage();});
+	button.attr('id', 'transferButton');
+	button.html('Transfer');
+	button.button().click(function(event) {transferImage();});
 
 	button = $('<button>');
 	panel.append(button);
@@ -1423,7 +1423,7 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	$('#clearButton').show();
 	$('#refreshButton').show();
 	if (item == 'scan') {
-		//$('#downloadButton').show();
+		$('#transferButton').show();
 		$('#enlargeButton').show();
 	}
 	initSearchData();
@@ -1466,7 +1466,7 @@ function cancel(item) {
 	}
 }
 
-function downloadImage() {
+function transferImage() {
 	alert('Not yet implemented.');
 }
 

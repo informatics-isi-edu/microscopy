@@ -20,7 +20,7 @@ setup(name="cirm-rest",
       description="cirm web application",
       version="0.1",
       package_dir={"": "src"},
-      packages=["cirmrest"],
+      packages=["cirm"],
       requires=["web.py", "psycopg2"],
       classifiers=[
         "Intended Audience :: Developers",

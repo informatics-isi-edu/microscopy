@@ -1,6 +1,5 @@
-
 # 
-# Copyright 2012 University of Southern California
+# Copyright 2012-2013 University of Southern California
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +14,7 @@
 # limitations under the License.
 #
 
-import printjob
-import printcontrol
-import zoomify
+class Zoomify:
+    
+    def GET(self, scanID):
+        return "You want %s\n" % (str(scanID))

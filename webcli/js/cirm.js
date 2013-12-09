@@ -10,6 +10,7 @@ var ERMREST_HOME = '/ermrest/catalog/1/entity';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
 var PRINT_JOB_HOME = '/ermrest/printer/';
 var PRINT_CONTROL_HOME = '/ermrest/printer/control';
+var ZOOMIFY_HOME = '/ermrest/zoomify/';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
 var CIRM_START_INFO = '<p class="intro">Choose an entity from the left sidebar or use the search box to find relevant images.</p>';
@@ -525,6 +526,7 @@ function renderLogin() {
 	WEBAUTHN_HOME = HOME + WEBAUTHN_HOME;
 	PRINT_JOB_HOME = HOME + PRINT_JOB_HOME;
 	PRINT_CONTROL_HOME = HOME + PRINT_CONTROL_HOME;
+	ZOOMIFY_HOME = HOME + ZOOMIFY_HOME;
 	if (isMobileSearch()) {
 		submitMobileLogin();
 		return;
@@ -1147,7 +1149,7 @@ function enlargeImage(img, image) {
 		mobileParams = {};
 		getSlide(label);
 	} else {
-		var tilesHTML = 'zoomify/' + image['tilesdir'].substr(0, image['tilesdir'].length-1) + '.htm';
+		var tilesHTML = ZOOMIFY_HOME + image['tilesdir'].substr(0, image['tilesdir'].length-1);
 		window.open(
 		  tilesHTML,
 		  '_blank' // <- This is what makes it open in a new window.

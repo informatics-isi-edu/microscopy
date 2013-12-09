@@ -1,15 +1,19 @@
 #!/usr/bin/env python
 
+##
+##  /svn-src/printer/src/cxi/utils.py
+##
+
 import sys
 import socket
 import re
 from time import sleep
 
 DEBUG = 1
-# initial XSTART (for shift left or right)
 XSTART = 10
 YSTART = 10
 SPACE = " "
+EOL = "\n"
 
 #####################################################################
 class cxiAccess():
@@ -38,7 +42,7 @@ class cxiAccess():
 
     def openLink(self, exit=1) :
        save_t=self.cxi.gettimeout()
-       self.cxi.settimeout(10.0)
+       self.cxi.settimeout(1)
        if DEBUG :
           print "ip is ", self.addr_ip
           print "addr is ", self.addr
@@ -61,7 +65,12 @@ class cxiAccess():
        self.isOpen=0
 
     def send(self, data):
-       sent = self.cxi.send(data)
+       sz=len(data)
+       try:
+          sent = self.cxi.send(data)
+       except socket.error, socket.timeout:
+          print "BAD, socket timeout on send"
+          return
        if DEBUG:
            print "send: done"
        if sent == 0:
@@ -72,8 +81,8 @@ class cxiAccess():
        while 1 :
            try:
                tmp = self.cxi.recv(1024)
-           except socket.error:
-               print "ERROR, socket got disconnected"
+           except socket.error, socket.timeout:
+               print "ERROR, socket got disconnected/timeout"
                break
            if tmp == 0:
                break
@@ -95,16 +104,25 @@ class cxiAccess():
        while 1 :
            try:
                tmp = self.cxi.recv(1024)
-           except socket.error:
+           except socket.error, socket.timeout:
                print "ERROR, socket got disconnected"
                break
+           if DEBUG:
+               print "recv got, ",tmp
            if tmp == 0:
                break
            if len(tmp) == 0:
                break
+           ## out of ribbon
+           if re.search("^o",tmp) != None:
+               return -1
+           ## out of paper
+               return -1
+           ## printing error
            if re.search("^ERROR", tmp) != None:
                return -1
            data += tmp
+           ## print is done
            if re.search("^R00000",tmp) != None:
                break
 
@@ -115,6 +133,31 @@ class cxiAccess():
 
        return printed
 
+    def status_recv(self):
+       try:
+           tmp = self.cxi.recv(1024)
+       except socket.error, socket.timeout:
+           print "ERROR, socket got disconnected"
+           return -1
+       if DEBUG:
+               print "recv got, ",tmp
+       if tmp == 0:
+           return -1
+       if len(tmp) == 0:
+           return -1
+       ## out of ribbon
+       if re.search("^o",tmp) != None:
+           return -1
+       ## out of paper
+           return -1
+       ## printing error
+       if re.search("^ERROR", tmp) != None:
+           return -1
+       ## print is done
+       if re.search("^R00000",tmp) != None:
+           return 1
+
+
 #####################################################################
 ## utility routines
 def yloc(delta):
@@ -124,6 +167,14 @@ def yloc(delta):
 def xloc(delta):
     global XSTART
     return str(XSTART+(delta))
+
+def pos(xdelta, ydelta):
+    ret=SPACE + xloc(xdelta) + SPACE + yloc(ydelta) + SPACE
+    return ret
+
+def apos(x, y):
+    ret=SPACE + str(x) + SPACE + str(y) + SPACE
+    return ret
 
 def chop(s, width):
     if DEBUG:
@@ -159,9 +210,9 @@ VARIABLE RESET
 END
 """
 def reset2Default_():
-    pclcmds = "! 0 0 0 0" + "\n" + \
-      "VARIABLE RESET " + "\n" + \
-      "END " + "\n"
+    pclcmds = "! 0 0 0 0" + EOL + \
+      "VARIABLE RESET" + EOL + \
+      "END " + EOL
     return pclcmds
 
 """
@@ -172,9 +223,9 @@ VARIABLE INDEX SETTING CALIBRATE
 END
 """
 def calibrateNow_():
-    pclcmds = "! 0 0 0 0" + "\n" + \
-      "VARIABLE INDEX SETTING CALIBRATE " + "\n" + \
-      "END " + "\n"
+    pclcmds = "! 0 0 0 0" + EOL + \
+      "VARIABLE INDEX SETTING CALIBRATE" + EOL + \
+      "END" + EOL
     return pclcmds
 
 """
@@ -188,19 +239,19 @@ VARIABLE ETHERNET RESET
 END
 """
 def resetConnectVars_(ip, netmask, gateway):
-    pclcmds = "! 0 0 0 0" + "\n" + \
-      "VARIABLE ETHERNET IP " + ip + "\n" + \
-      "VARIABLE NETMASK " + netmask + "\n" + \
-      "VARIABLE GATEWAY " + gateway + "\n" + \
-      "VARIABLE WRITE " + "\n" +  \
-      "VARIABLE ETHERNET RESET " + "\n" + \
-      "END" + "\n"
+    pclcmds = "! 0 0 0 0" + EOL + \
+      "VARIABLE ETHERNET IP" + SPACE + ip + EOL + \
+      "VARIABLE NETMASK" + SPACE + netmask + EOL + \
+      "VARIABLE GATEWAY" + SPACE + gateway + EOL + \
+      "VARIABLE WRITE" + EOL +  \
+      "VARIABLE ETHERNET RESET" + EOL + \
+      "END" + EOL
     return pclcmds
 
 def resetConnect_():
-    pclcmds = "! 0 0 0 0" + "\n" + \
-      "VARIABLE ETHERNET RESET " + "\n" + \
-      "END" + "\n"
+    pclcmds = "! 0 0 0 0" + EOL + \
+      "VARIABLE ETHERNET RESET" + EOL + \
+      "END" + EOL
     return pclcmds
 
 """
@@ -224,22 +275,28 @@ VARIABLE WRITE
 END
 """
 def checkConfig_():
-    pclcmds = "! 0 0 0 0" + "\n" + \
-      "VARIABLE DARKNESS ? " + "\n" +  \
-      "VARIABLE RECALIBRATE ? " + "\n" +  \
-      "VARIABLE PRINT_MODE ? " + "\n" +  \
-      "VARIABLE ERROR_LEVEL ? " + "\n" +  \
-      "VARIABLE FEED_TYPE ? " + "\n" +  \
-      "VARIABLE WIDTH ? " + "\n" +  \
-      "VARIABLE GAP_SIZE ? " + "\n" +  \
-      "VARIABLE RECALIBRATE ? " + "\n" +  \
-      "VARIABLE PRINT_MODE ? " + "\n" +  \
-      "VARIABLE USER_FEEDBACK ? " + "\n" +  \
-      "VARIABLE REPORT_LEVEL ? " + "\n" +  \
-      "VARIABLE REPORT_TYPE ?" + "\n" +  \
-      "VARIABLE ETHERNET IP ? " + "\n" + \
-      "VARIABLE WRITE " + "\n" +  \
-      "END" + "\n"
+    pclcmds = "! 0 0 0 0" + EOL + \
+      "VARIABLE DARKNESS ?" + EOL +  \
+      "VARIABLE RECALIBRATE ?" + EOL +  \
+      "VARIABLE PRINT_MODE ?" + EOL +  \
+      "VARIABLE ERROR_LEVEL ?" + EOL +  \
+      "VARIABLE FEED_TYPE ?" + EOL +  \
+      "VARIABLE WIDTH ?" + EOL +  \
+      "VARIABLE GAP_SIZE ?" + EOL +  \
+      "VARIABLE RECALIBRATE ?" + EOL +  \
+      "VARIABLE PRINT_MODE ?" + EOL +  \
+      "VARIABLE USER_FEEDBACK ?" + EOL +  \
+      "VARIABLE REPORT_LEVEL ?" + EOL +  \
+      "VARIABLE REPORT_TYPE ?" + EOL +  \
+      "VARIABLE ETHERNET IP ?" + EOL + \
+      "VARIABLE WRITE" + EOL +  \
+      "END" + EOL
+    return pclcmds
+
+"""
+"""
+def checkStatus_():
+    pclcmds = "!QS" + EOL
     return pclcmds
 
 """
@@ -258,10 +315,10 @@ VARIABLE WRITE
 END
 """
 def setPosition_(pos):
-    pclcmds = "! 0 0 0 0" + "\n" + \
-      "VARIABLE POSITION " + str(pos) + "\n" + \
-      "VARIABLE WRITE " + "\n" +  \
-      "END" + "\n"
+    pclcmds = "! 0 0 0 0" + EOL + \
+      "VARIABLE POSITION" + SPACE + str(pos) + EOL + \
+      "VARIABLE WRITE" + EOL +  \
+      "END" + EOL
     return pclcmds
 
 """
@@ -283,19 +340,19 @@ VARIABLE WRITE
 END
 """
 def configure4SSXT_() :
-    pclcmds = "! 0 0 0 0" + "\n" + \
-      "VARIABLE FEED_TYPE GAP " + "\n" +  \
-      "VARIABLE WIDTH 90 " + "\n" +  \
-      "VARIABLE GAP_SIZE 19 " + "\n" +  \
-      "VARIABLE DARKNESS 300 " + "\n" +  \
-      "VARIABLE RECALIBRATE ON " + "\n" +  \
-      "VARIABLE PRINT_MODE TT " + "\n" +  \
-      "VARIABLE SLEEP_AFTER 0" + "\n" +  \
-      "VARIABLE REPORT_LEVEL 1" + "\n" +  \
-      "VARIABLE REPORT_TYPE SERIAL" + "\n" +  \
-      "VARIABLE USER_FEEDBACK ON" + "\n" +  \
-      "VARIABLE WRITE" + "\n" +  \
-      "END" + "\n"
+    pclcmds = "! 0 0 0 0" + EOL + \
+      "VARIABLE FEED_TYPE GAP" + EOL +  \
+      "VARIABLE WIDTH 90" + EOL +  \
+      "VARIABLE GAP_SIZE 19" + EOL +  \
+      "VARIABLE DARKNESS 300" + EOL +  \
+      "VARIABLE RECALIBRATE ON" + EOL +  \
+      "VARIABLE PRINT_MODE TT" + EOL +  \
+      "VARIABLE SLEEP_AFTER 0" + EOL +  \
+      "VARIABLE REPORT_LEVEL 1" + EOL +  \
+      "VARIABLE REPORT_TYPE SERIAL" + EOL +  \
+      "VARIABLE USER_FEEDBACK ON" + EOL +  \
+      "VARIABLE WRITE" + EOL +  \
+      "END" + EOL
     return pclcmds
 
 """
@@ -318,46 +375,43 @@ def wakeUp_():
 a test label
 """
 def testLabel_():
-    global XSTART
     sample_idString="20131108-wnt1creZEG-RES-0-38-000"
     sample_pUrl="http://purl.org/usc-cirm"
     purl="%s/slide?id=%s" %(sample_pUrl,sample_idString)
-    pclcmds = "! 0 100 240 1" + "\n" + \
-      "DRAW_BOX "+ xloc(0) + SPACE + yloc(0) + " 240 240 4 " + "\n" +\
-      "TEXT 1 "+ xloc(10) + SPACE + yloc(5) + " ABACEFG " + "\n" +  \
-      "TEXT 1 "+ xloc(10) + SPACE + yloc(35) + " 12345 " + "\n" +  \
-      "TEXT 1 "+ xloc(10) + SPACE + yloc(65) + " abcefg " + "\n" +  \
-      "TEXT 1 "+ xloc(10) + SPACE + yloc(95) +" MNOPQ " + "\n" +  \
-      "BARCODE DATAMATRIX (,F,,,1,~) 140 140" + "\n" + "~%70s~"%(purl) + "\n" \
-      "END" + "\n"
+    pclcmds = "! 0 100 240 1" + EOL + \
+      "DRAW_BOX"+ pos(0,-5) +"240 240 4" + EOL +\
+      "TEXT 1"+ pos(10,5) + "ABACEFG" + EOL +  \
+      "TEXT 1"+ pos(10,35) + "12345" + EOL +  \
+      "TEXT 1"+ pos(10,65) + "abcefg" + EOL +  \
+      "TEXT 1"+ pos(10,95) +"MNOPQ" + EOL +  \
+      "BARCODE DATAMATRIX (,F,,,1,~)" + apos(140,140) + EOL + "~%70s~"%(purl) + EOL + \
+      "END" + EOL
     return pclcmds
 
 """
-"BARCODE DATAMATRIX (,F,,,1.2,~) 140 140" + "\n" + "~%40s~"%(purl) + "\n" \
-"STRING 8X8(1,1,1,2) 20 240 " + guid + "\n" \
-"STRING 8X8(1,1,1,2) 20 240 " + idString + "\n" \
+"BARCODE DATAMATRIX (,F,,,1.2,~) 140 140" + EOL + "~%40s~"%(purl) + EOL \
+"STRING 8X8(1,1,1,2) 20 240 " + guid + EOL \
+"STRING 8X8(1,1,1,2) 20 240 " + idString + EOL \
 """
 def makeSliceLabel_(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString):
-    global XSTART
     seq="% 4d" %(seqNum)
     rev="rev:%03d" %revNum
     purl="%s/slide?id=%s" %(pURL,idString)
-    pclcmds = "! 0 100 260 1" + "\n" + \
-      "TEXT 1 "+str(XSTART)+" 10 " + date + seq +"\n" +  \
-      "TEXT 1 "+str(XSTART)+" 40 " + genotype + "\n" + \
-      "TEXT 1 "+str(XSTART)+" 70 " + antibody + "\n" + \
-      "TEXT 1 "+str(XSTART)+" 100 " + experiment +"\n" +  \
-      "TEXT 1 "+str(XSTART)+" 145 " + rev + "\n" + \
-      "DRAW_BOX "+str(XSTART)+" 190 65 40 3 " + "\n" +\
-      "TEXT 0 " +str(XSTART+5)+ " 195 " + expertID + "\n" + \
-      "BARCODE DATAMATRIX (,F,,,1,~) 140 140" + "\n" + "~%70s~"%(purl) + "\n" + \
-      "END" + "\n"
+    pclcmds = "! 0 100 260 1" + EOL + \
+      "TEXT 1" + pos(0,0) + date + seq +EOL +  \
+      "TEXT 1" + pos(0,30) + genotype + EOL + \
+      "TEXT 1" + pos(0,60) + antibody + EOL + \
+      "TEXT 1" + pos(0,90) + experiment + EOL +  \
+      "TEXT 1" + pos(0,135) + rev + EOL + \
+      "DRAW_BOX" + pos(0,180) + "65 40 3" + EOL +\
+      "TEXT 0" + pos(5,185) + expertID + EOL + \
+      "BARCODE DATAMATRIX (,F,,,1,~)" +apos(140,140) + EOL + "~%70s~"%(purl) + EOL + \
+      "END" + EOL
     return pclcmds
 
 """
 """
 def makeBoxLabel_(date,genotype,expertID,disNum,pURL,idString,noteString):
-    global XSTART
     purl="%s/box?id=%s" %(pURL,idString)
     tmp=noteString
     ltmp=noteString.lower()
@@ -365,28 +419,27 @@ def makeBoxLabel_(date,genotype,expertID,disNum,pURL,idString,noteString):
         line1,tmp=chop(tmp,17)
     else:   
         line1,tmp=chop(tmp,14)
-    pclcmds = "! 0 100 260 1" + "\n" + \
-      "TEXT 1 "+str(XSTART)+" 10 " + date +"\n" +  \
-      "DRAW_BOX "+str(XSTART+185)+ " 5 30 30 3 " + "\n" +\
-      "STRING 18X23 "+str(XSTART+190)+ " 10 " + disNum +"\n" +  \
-      "TEXT 1 "+str(XSTART)+" 45 " + genotype + "\n"
+    pclcmds = "! 0 100 260 1" + EOL + \
+      "TEXT 1" + pos(0,0) + date + EOL +  \
+      "DRAW_BOX" + pos(185,-5) + "30 30 3" + EOL +\
+      "STRING 18X23" + pos(190,0) + disNum +EOL +  \
+      "TEXT 1" + pos(0,35) + genotype + EOL
     if line1 != 0:
-        pclcmds=pclcmds+ "TEXT 0 "+str(XSTART)+" 80 "+  line1 + "\n"
+        pclcmds=pclcmds+ "TEXT 0" + pos(0,70) + line1 + EOL
     pclcmds=pclcmds + \
-      "TEXT 1 "+str(XSTART)+" 145 ??? " + "\n" +\
-      "DRAW_BOX "+str(XSTART)+" 190 65 40 3 " + "\n" +\
-      "TEXT 0 "+str(XSTART+5)+" 195 " + expertID + "\n" + \
-      "BARCODE DATAMATRIX (,F,,,1,~) 140 140" + "\n" + "~%70s~"%(purl) + "\n" + \
-      "END" + "\n"
+      "TEXT 1" + pos(0,135) + "???" + EOL +\
+      "DRAW_BOX" + pos(0,180) + "65 40 3" + EOL +\
+      "TEXT 0" + pos(5,185) + expertID + EOL + \
+      "BARCODE DATAMATRIX (,F,,,1,~)" + apos(140,140) + EOL + "~%70s~"%(purl) + EOL + \
+      "END" + EOL
     return pclcmds
 
 """
-"STRING 8X8(1,1,1,2) 20 240 " + guid + "\n" \
-"STRING 18X23(2,1,1,1) 10 40 " + line1 + "\n" \
-"ULTRA_FONT A30(4,0,0) 10 40 " + line1 + "\n" \
+"STRING 8X8(1,1,1,2) 20 240 " + guid + EOL \
+"STRING 18X23(2,1,1,1) 10 40 " + line1 + EOL \
+"ULTRA_FONT A30(4,0,0) 10 40 " + line1 + EOL \
 """
 def makeNoteLabel_(date,expertID,seqNum,pURL,idString,noteString):
-    global XSTART
     seq="% 4d" %(seqNum)
     purl="%s/slide?id=%s" %(pURL,idString)
     tmp=noteString
@@ -404,22 +457,22 @@ def makeNoteLabel_(date,expertID,seqNum,pURL,idString,noteString):
         line4,tmp=chop(tmp,7)
         line5,tmp=chop(tmp,7)
 
-    pclcmds = "! 0 100 260 1" + "\n" + \
-      "TEXT 1 "+str(XSTART)+" 10 " + date + seq  + "\n" 
+    pclcmds = "! 0 100 260 1" + EOL + \
+      "TEXT 1" + pos(0,0) + date + seq  + EOL 
     if line1 != 0 :
-        pclcmds=pclcmds+ "TEXT 0 "+str(XSTART)+" 40 " + line1 + "\n"
+        pclcmds=pclcmds + "TEXT 0" + pos(0,30) + line1 + EOL
     if line2 != 0 :
-        pclcmds=pclcmds+"TEXT 0 "+str(XSTART)+" 70 " + line2 + "\n"
+        pclcmds=pclcmds + "TEXT 0" + pos(0,60) + line2 + EOL
     if line3 != 0 :
-        pclcmds=pclcmds+"TEXT 0 "+str(XSTART)+" 100 " + line3 + "\n"
+        pclcmds=pclcmds + "TEXT 0" + pos(0,90) + line3 + EOL
     if line4 != 0 :
-        pclcmds=pclcmds+"TEXT 0 "+str(XSTART)+" 130 " + line4 + "\n"
+        pclcmds=pclcmds + "TEXT 0"+ pos(0,120) + line4 + EOL
     if line5 != 0 :
-        pclcmds=pclcmds+"TEXT 0 "+str(XSTART)+" 160 " + line5 + "\n"
-    pclcmds=pclcmds+  "DRAW_BOX "+str(XSTART)+" 190 65 40 3 " + "\n" +\
-      "TEXT 0 "+str(XSTART+5)+ " 195 " + expertID + "\n" + \
-      "BARCODE DATAMATRIX (,F,,,1,~) 140 140" + "\n" + "~%70s~"%(purl) + "\n" + \
-      "END" + "\n"
+        pclcmds=pclcmds + "TEXT 0" + pos(0,150) + line5 + EOL
+    pclcmds=pclcmds + "DRAW_BOX" + pos(0,180) + "65 40 3" + EOL +\
+      "TEXT 0" + pos(5,185) + expertID + EOL + \
+      "BARCODE DATAMATRIX (,F,,,1,~)" + apos(140,140) + EOL + "~%70s~"%(purl) + EOL + \
+      "END" + EOL
     return pclcmds
 
 #################################################################################
@@ -444,14 +497,30 @@ def makeSliceLabel(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL
     cnt=0
     mycxi=cxiAccess()
     mycxi.openLink()
+
+    data = checkStatus_()
+    mycxi.send(data)
+    okay=mycxi.status_recv()
+    if okay != 1: 
+       print 'printer is not well..'
+       mycxi.closeLink()
+       return 0
+
+    mycxi.send(data)
+    okay=mycxi.status_recv()
+    if okay != 1: 
+       print 'printer is not well..'
+       mycxi.closeLink()
+       return 0
+
     if DEBUG:
        print 'calling-> makeSliceLabel_',(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString)
     data = makeSliceLabel_(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString)
     print 'sending->', data
     mycxi.send(data)
     ret=mycxi.label_recv()
-    if ret == 1:
-        cnt+=1
+    if ret != 1:
+        cnt+=ret
     else:
         print "ERROR, failed to print a slide label"
     mycxi.closeLink()
@@ -464,6 +533,15 @@ def makeBoxLabel(date,genotype,expertID,disNum,pURL,idString,noteString):
     cnt=0
     mycxi=cxiAccess()
     mycxi.openLink()
+
+    data = checkStatus_()
+    mycxi.send(data)
+    okay=mycxi.status_recv()
+    if okay != 1: 
+       print 'printer is not well..'
+       mycxi.closeLink()
+       return 0
+
     if DEBUG:
         print 'calling -> makeBoxLabel_',(date,genotype,expertID,disNum,pURL,idString,noteString)
     data = makeBoxLabel_(date,genotype,expertID,disNum,pURL,idString,noteString)
@@ -471,8 +549,8 @@ def makeBoxLabel(date,genotype,expertID,disNum,pURL,idString,noteString):
         print 'sending->', data
     mycxi.send(data)
     ret=mycxi.label_recv()
-    if ret == 1:
-       cnt+=1
+    if ret != 0:
+       cnt+=ret
     else:
        print "ERROR, failed to print a box label"
     mycxi.closeLink()
@@ -485,6 +563,15 @@ def makeNoteLabel(date,expertID,seqNum,pURL,idString,noteString):
     cnt=0
     mycxi=cxiAccess()
     mycxi.openLink()
+
+    data = checkStatus_()
+    mycxi.send(data)
+    okay=mycxi.status_recv()
+    if okay != 1: 
+       print 'printer is not well..'
+       mycxi.closeLink()
+       return 0
+
     if DEBUG:
         print 'calling -> makeNoteLabel_',(date,expertID,seqNum,pURL,idString,noteString)
     data = makeNoteLabel_(date,expertID,seqNum,pURL,idString,noteString)
@@ -492,8 +579,8 @@ def makeNoteLabel(date,expertID,seqNum,pURL,idString,noteString):
         print 'sending->', data
     mycxi.send(data)
     ret=mycxi.label_recv()
-    if ret == 1:
-       cnt+=1
+    if ret != 0:
+       cnt+=ret
     else:
        print "ERROR, failed to print a note label"
     mycxi.closeLink()
@@ -583,15 +670,27 @@ def cycleIt():
     mycxi.closeLink()
 
 """
-API: printSample
+API: printTestSample
 """
-def printSample():
+def printTestSample():
     mycxi=cxiAccess()
     mycxi.openLink()
+
+    data = checkStatus_()
+    mycxi.send(data)
+    okay=mycxi.status_recv()
+    if okay != 1: 
+       print 'printer is not well..'
+       mycxi.closeLink()
+       return 0 
+
     data = testLabel_()
     if DEBUG:
         print 'sending->', data
     mycxi.send(data)
+    ret=mycxi.label_recv()
+    if ret != 1:
+        print "ERROR, failed to print the sample label"
     mycxi.closeLink()
 
 """
@@ -609,26 +708,42 @@ def checkConfig():
     rc=mycxi.config_recv(expected)
     mycxi.closeLink()
 
+"""
+API: checkStatus
+"""
+def checkStatus():
+    mycxi=cxiAccess()
+    mycxi.openLink()
+    data = checkStatus_()
+    if DEBUG:
+        print 'sending->', data
+    mycxi.send(data)
+    rc=mycxi.status_recv()
+    mycxi.closeLink()
+    return rc
+
+
 #####################################################################
 def test():
+    usage=EOL + "Please select," + EOL \
+              + "0)check connection" + EOL \
+              + "1)get status" + EOL \
+              + "2)reset printer" + EOL \
+              + "3)just calibrate" + EOL \
+              + "4)force power cycle" + EOL \
+              + "5)shift up/down" + EOL \
+              + "6)shift left/right" + EOL \
+              + "7)make note label" + EOL \
+              + "8)make slice label" + EOL \
+              + "9)make box label" + EOL \
+              + "s)print sample" + EOL \
+              + "x)exit"
     while 1 :
-        print "\nPlease select,\n  \
-0)check connection\n  \
-1)get config\n  \
-2)reset printer\n  \
-3)just calibrate\n  \
-4)force power cycle\n  \
-5)shift up/down\n  \
-6)shift left/right\n  \
-7)make note label\n  \
-8)make slice label\n  \
-9)make box label\n\
-s)print sample\n\
-x)exit"
-
+        print usage
         tmp = sys.stdin.readline()
+        
         if tmp[0]=='s':
-            printSample()
+            printTestSample()
             continue
         try:
             data = int(tmp[0])
@@ -641,9 +756,10 @@ x)exit"
         if data == 0 :
            rc=checkConnection()
            if rc == 1 :
-               print "Connection okay!\n"
+               print "Connection okay!"
         elif data == 1 :
-           checkConfig()
+#           checkConfig()
+           checkStatus()
         elif data == 2 :
            resetCxi()
         elif data == 3 :
@@ -676,7 +792,7 @@ x)exit"
            printed=makeBoxLabel("2013-10-15", "wnt1creZEGG", "RES","0","http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0","box note goes here")
            print "# of box labels got printed is ",printed
         else:
-           print "bad place!!\n"
+           print "bad place!!"
 
 if __name__ == "__main__":
     test()

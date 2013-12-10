@@ -17,21 +17,21 @@
 import cStringIO
 import web
 import json
+import cxi
 
 class PrintJob:
     
     def __init__(self):
         self.uri = 'http://purl.org/usc-cirm'
-        web.debug(('INIT PrintJob', self.uri))
         
     def GET(self, printerID, jobID):
         return "You want %s:%s\n" % (str(printerID), str(jobID))
     
     def POST(self, printerID):
         response = []
-        web.debug(('POST', printerID))
         input_data = cStringIO.StringIO(web.ctx.env['wsgi.input'].read())
         json_data = json.load(input_data)
+        result = 'success'
         if printerID == 'box':
             box = json_data[0]
             id = box['id']
@@ -40,22 +40,27 @@ class PrintJob:
             initials = box['initials']
             disambiguator = box['disambiguator']
             comment = box['comment']
-            web.debug((section_date, sample_name, initials, disambiguator, self.uri, id, comment))
+            res = cxi.utils.makeBoxLabel(section_date, sample_name, initials, disambiguator, self.uri, id, comment)
+            if res == 0:
+                result = 'failure'
             val = {}
-            val['id'] = id
+            val['result'] = result
             response.append(val)
         elif printerID == 'slide':
             for slide in json_data:
                 id = slide['id']
+                experiment = slide['experiment']
                 experiment_date = slide['experiment_date']
                 sample_name = slide['sample_name']
                 experiment_description = slide['experiment_description']
                 initials = slide['initials']
                 sequence_num = slide['sequence_num']
                 revision = slide['revision']
-                web.debug((experiment_date, sample_name, experiment_description, initials, sequence_num, revision, self.uri, id))
+                id = cxi.utils.makeSliceLabel(experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
+                if res == 0:
+                    result = 'failure'
                 val = {}
-                val['id'] = id
+                val['result'] = result
                 response.append(val)
                     
         return json.dumps(response)

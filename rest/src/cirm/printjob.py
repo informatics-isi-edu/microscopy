@@ -40,7 +40,11 @@ class PrintJob:
             initials = box['initials']
             disambiguator = box['disambiguator']
             comment = box['comment']
-            res = cxi.utils.makeBoxLabel(section_date, sample_name, initials, disambiguator, self.uri, id, comment)
+            res = 0
+            try:
+                res = cxi.utils.makeBoxLabel(section_date, sample_name, initials, disambiguator, self.uri, id, comment)
+            except:
+                pass
             if res == 0:
                 result = 'failure'
             val = {}
@@ -56,7 +60,11 @@ class PrintJob:
                 initials = slide['initials']
                 sequence_num = slide['sequence_num']
                 revision = slide['revision']
-                id = cxi.utils.makeSliceLabel(experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
+                res = 0
+                try:
+                    res = cxi.utils.makeSliceLabel(experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
+                except:
+                    pass
                 if res == 0:
                     result = 'failure'
                 val = {}

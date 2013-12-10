@@ -1222,6 +1222,8 @@ function displayEntity(itemType, item) {
 function displayScan(img, image) {
 	$('button', $('#bottomPanel')).hide();
 	displayEntity('scan', image);
+	$('#transferButton').unbind('click');
+	$('#transferButton').click(function(event) {transferImage(image);});
 	$('#transferButton').show();
 	$('#enlargeButton').unbind('click');
 	$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
@@ -1298,8 +1300,8 @@ function initBottomPanel(panel) {
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'transferButton');
-	button.html('Transfer');
-	button.button().click(function(event) {transferImage();});
+	button.html('Download');
+	button.button();
 
 	button = $('<button>');
 	panel.append(button);
@@ -1468,8 +1470,13 @@ function cancel(item) {
 	}
 }
 
-function transferImage() {
-	alert('Not yet implemented.');
+function transferImage(image) {
+	var czi = 'http://lonestar.isi.edu/~schuler/Demo_19Jan2013--18-01--05-58-25--0024.czi';
+	//var czi = HOME + '/cirm/zoomify/' + image['filename'];
+	window.open(
+	  czi,
+	  '_blank' // <- This is what makes it open in a new window.
+	);
 }
 
 function clear() {
@@ -2144,6 +2151,7 @@ function submitPrintLabel() {
 			var obj = {};
 			obj['revision'] = revision;
 			obj['sequence_num'] = sequence_num;
+			obj['experiment'] = experiment['id'];
 			obj['experiment_date'] = experiment['experiment_date'];
 			obj['sample_name'] = box['sample_name'];
 			obj['experiment_description'] = experiment['experiment_description'];
@@ -2167,9 +2175,19 @@ function submitPrintLabel() {
 }
 
 function postSubmitPrintLabel(data, textStatus, jqXHR, param) {
-	alert(data);
+	var result = true;
 	data = $.parseJSON(data);
-	//newSlideId = data[0]['id'];
+	$.each(data, function(i, res) {
+		if (res['result'] != 'success') {
+			result = false;
+			return false;
+		}
+	});
+	if (result) {
+		alert('The request for printing the label(s) was submitted successfully.');
+	} else {
+		alert('An error was reported in sending the request for printing the label(s).');
+	}
 	$($('.highlighted', $('#BoxDiv'))[0]).click();
 }
 

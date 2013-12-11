@@ -370,7 +370,7 @@ C....C, 80 of them
 """
 def wakeUp_():
     pclcmds = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
-    return pclcmds
+    return pclcmd
 
 """
 a test label
@@ -483,7 +483,10 @@ API: checkConnection
 """
 def checkConnection():
     mycxi=cxiAccess()
-    rc=mycxi.openLink(0)
+    try:
+        rc=mycxi.openLink(0)
+    except:
+        return -1
     mycxi.closeLink()
     return rc
 
@@ -497,8 +500,10 @@ R00000
 def makeSliceLabel(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString):
     cnt=0
     mycxi=cxiAccess()
-    mycxi.openLink()
-
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = checkStatus_()
     mycxi.send(data)
     okay=mycxi.status_recv()
@@ -526,8 +531,10 @@ API: makeBoxLabel
 def makeBoxLabel(date,genotype,expertID,disNum,pURL,idString,noteString):
     cnt=0
     mycxi=cxiAccess()
-    mycxi.openLink()
-
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = checkStatus_()
     mycxi.send(data)
     okay=mycxi.status_recv()
@@ -556,8 +563,10 @@ API: makeNoteLabel
 def makeNoteLabel(date,expertID,seqNum,pURL,idString,noteString):
     cnt=0
     mycxi=cxiAccess()
-    mycxi.openLink()
-
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = checkStatus_()
     mycxi.send(data)
     okay=mycxi.status_recv()
@@ -585,7 +594,10 @@ API: resetCxi
 """
 def resetCxi():
     mycxi=cxiAccess()
-    mycxi.openLink()
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = reset2Default_() + configure4SSXT_() \
            + calibrateNow_()+ powerCycle_()
     if DEBUG:
@@ -598,7 +610,10 @@ API: moveUp
 """
 def moveUp():
     mycxi=cxiAccess()
-    mycxi.openLink()
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = setPosition_(-5) + powerCycle_()
     if DEBUG:
         print 'sending->', data
@@ -610,7 +625,10 @@ API: moveDown
 """
 def moveDown():
     mycxi=cxiAccess()
-    mycxi.openLink()
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = setPosition_(5) + powerCycle_()
     if DEBUG:
         print 'sending->', data
@@ -644,7 +662,10 @@ API: justCalibrate
 """
 def justCalibrate():
     mycxi=cxiAccess()
-    mycxi.openLink()
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = calibrateNow_() + powerCycle_()
     if DEBUG:
         print 'sending->', data
@@ -656,7 +677,10 @@ API: cycleIt
 """
 def cycleIt():
     mycxi=cxiAccess()
-    mycxi.openLink()
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = powerCycle_()
     if DEBUG:
         print 'sending->', data
@@ -668,7 +692,10 @@ API: printTestSample
 """
 def printTestSample():
     mycxi=cxiAccess()
-    mycxi.openLink()
+    try:
+        mycxi.openLink()
+    except:
+        return 0
 
     data = checkStatus_()
     mycxi.send(data)
@@ -692,7 +719,10 @@ API: checkConfig
 """
 def checkConfig():
     mycxi=cxiAccess()
-    mycxi.openLink()
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = checkConfig_()
     if DEBUG:
         print 'sending->', data
@@ -707,7 +737,10 @@ API: checkStatus
 """
 def checkStatus():
     mycxi=cxiAccess()
-    mycxi.openLink()
+    try:
+        mycxi.openLink()
+    except:
+        return 0
     data = checkStatus_()
     if DEBUG:
         print 'sending->', data
@@ -720,7 +753,7 @@ def checkStatus():
 #####################################################################
 def test():
     global DEBUG
-    DEBUG=1
+    DEBUG = 1
     usage=EOL + "Please select," + EOL \
               + "0)check connection" + EOL \
               + "1)get current status" + EOL \

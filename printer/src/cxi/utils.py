@@ -369,7 +369,7 @@ C....C, 80 of them
 """
 def wakeUp_():
     pclcmds = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
-    return pclcmd
+    return pclcmds
 
 """
 a test label

@@ -5,6 +5,9 @@ Array.prototype.contains = function (elem) {
 	return false;
 };
 
+var GUEST_USER = '********';
+var GUEST_PASSWORD = '********';
+var GLOBUS_AUTHN = true;
 var HOME;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
@@ -25,6 +28,9 @@ var mobileParams = null;
 var newBoxId = null;
 var newExperimentId = null;
 var newSlideId = null;
+
+var goauth_cookie = 'globusonline-goauth';
+var token = null;
 
 var boxColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator', 'comment'];
 var boxEditColumns = ['comment'];
@@ -68,11 +74,11 @@ var searchData = [];
 
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
-			document.body.style.cursor = "wait";
+			document.body.style.cursor = 'wait';
 			$.ajax({
 				url: url,
 				contentType: contentType,
-				headers: {'User-agent': 'CIRM/1.0'},
+				headers: make_headers(),
 				type: 'POST',
 				data: (processData ? obj : JSON.stringify(obj)),
 				dataType: 'text',
@@ -80,7 +86,7 @@ var cirmAJAX = {
 				async: async,
 				processData: processData,
 				success: function(data, textStatus, jqXHR) {
-					document.body.style.cursor = "default";
+					document.body.style.cursor = 'default';
 					successCallback(data, textStatus, jqXHR, param);
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
@@ -96,16 +102,16 @@ var cirmAJAX = {
 			cirmAJAX.fetch(url, contentType, true, null, async, successCallback, param, errorCallback, count);
 		},
 		fetch: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
-			document.body.style.cursor = "wait";
+			document.body.style.cursor = 'wait';
 			$.ajax({
 				url: url,
-				headers: {'User-agent': 'CIRM/1.0'},
+				headers: make_headers(),
 				timeout: AJAX_TIMEOUT,
 				async: async,
 				accepts: {text: 'application/json'},
 				dataType: 'json',
 				success: function(data, textStatus, jqXHR) {
-					document.body.style.cursor = "default";
+					document.body.style.cursor = 'default';
 					successCallback(data, textStatus, jqXHR, param);
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
@@ -121,16 +127,16 @@ var cirmAJAX = {
 			cirmAJAX.remove(url, null, true, null, async, successCallback, param, errorCallback, count);
 		},
 		remove: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
-			document.body.style.cursor = "wait";
+			document.body.style.cursor = 'wait';
 			$.ajax({
 				url: url,
-				headers: {'User-agent': 'CIRM/1.0'},
+				headers: make_headers(),
 				type: 'DELETE',
 				timeout: AJAX_TIMEOUT,
 				async: async,
 				dataType: 'text',
 				success: function(data, textStatus, jqXHR) {
-					document.body.style.cursor = "default";
+					document.body.style.cursor = 'default';
 					successCallback(data, textStatus, jqXHR, param);
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
@@ -143,11 +149,11 @@ var cirmAJAX = {
 			});
 		},
 		PUT: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
-			document.body.style.cursor = "wait";
+			document.body.style.cursor = 'wait';
 			$.ajax({
 				url: url,
 				contentType: contentType,
-				headers: {'User-agent': 'CIRM/1.0'},
+				headers: make_headers(),
 				type: 'PUT',
 				data: (processData ? obj : JSON.stringify(obj)),
 				dataType: 'json',
@@ -155,7 +161,7 @@ var cirmAJAX = {
 				processData: processData,
 				async: async,
 				success: function(data, textStatus, jqXHR) {
-					document.body.style.cursor = "default";
+					document.body.style.cursor = 'default';
 					successCallback(data, textStatus, jqXHR, param);
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
@@ -168,6 +174,15 @@ var cirmAJAX = {
 			});
 		}
 };
+
+function make_headers() {
+	var res = {'User-agent': 'CIRM/1.0'};
+	token = $.cookie('globusonline-goauth');
+	if (token != null) {
+		res['Authorization'] = 'Globus-Goauthtoken ' + token;
+	}
+	return res;
+}
 
 /**
  * Handle an error from the AJAX request
@@ -227,7 +242,7 @@ function handleError(jqXHR, textStatus, errorThrown, retryCallback, url, content
 			msg += 'ErrorThrown: ' + errorThrown + '\n';
 		}
 		msg += 'URL: ' + url + '\n';
-		document.body.style.cursor = "default";
+		document.body.style.cursor = 'default';
 		alert(msg);
 	} else {
 		var delay = Math.round(Math.ceil((0.75 + Math.random() * 0.5) * Math.pow(10, count) * 0.00001));
@@ -237,7 +252,7 @@ function handleError(jqXHR, textStatus, errorThrown, retryCallback, url, content
 
 function init() {
 	// necessary for window.location to be initialized
-	setTimeout("renderLogin()", 1);
+	setTimeout('renderLogin()', 1);
 }
 
 function initCIRMMobile() {
@@ -588,8 +603,16 @@ function renderLogin() {
 }
 
 function submitLogout() {
-	var url = WEBAUTHN_HOME;
-	cirmAJAX.DELETE(url, true, postSubmitLogout, null, errorSubmitLogout, 0);
+	if (GLOBUS_AUTHN) {
+		token = $.cookie('globusonline-goauth');
+		if (token != null) {
+			$.removeCookie('globusonline-goauth');
+		}
+		postSubmitLogout();
+	} else {
+		var url = WEBAUTHN_HOME;
+		cirmAJAX.DELETE(url, true, postSubmitLogout, null, errorSubmitLogout, 0);
+	}
 }
 
 function postSubmitLogout(data, textStatus, jqXHR, param) {
@@ -611,13 +634,64 @@ function checkSubmitLogin(event) {
 }
 
 function submitMobileLogin() {
+	if (GLOBUS_AUTHN) {
+		submitGlobusLogin(GUEST_USER, GUEST_PASSWORD);
+	} else {
+		submitMobileDatabaseLogin();
+	}
+}
+
+function submitMobileDatabaseLogin() {
 	var url = WEBAUTHN_HOME;
-	var obj = {'username': 'guest',
-			'password': 'just4demo'};
+	var obj = {'username': GUEST_USER,
+			'password': GUEST_PASSWORD};
 	cirmAJAX.POST(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postSubmitLogin, null, null, 0);
 }
 
 function submitLogin() {
+	if (GLOBUS_AUTHN) {
+		submitGlobusLogin($('#username').val(), $('#password').val());
+	} else {
+		submitDatabaseLogin();
+	}
+}
+
+function make_basic_auth(user, password) {
+    var tok = user + ':' + password;
+    var hash = btoa(tok);
+    return 'Basic ' + hash;
+}
+
+function submitGlobusLogin(username, password) {
+	token = $.cookie(goauth_cookie);
+	if (token == null) {
+		var url = '/service/nexus/goauth/token?grant_type=client_credentials';
+		var result = {};
+		$.ajax({
+			async: false,
+			type: 'GET',
+			dataType: 'json',
+			url: url,
+			headers: { Authorization: make_basic_auth(username, password) },
+			error: function(jqXHR, textStatus, errorThrown) {
+				handleError(jqXHR, textStatus, errorThrown, null, url, null, null, null, false, null, null, null, MAX_RETRIES);
+				result = null;
+			},
+			success: function(json) {
+				result = json;
+			}
+		});
+
+		if (result != null) {
+			token = result['access_token'];
+			//alert(token);
+			$.cookie(goauth_cookie, token, { expires: 7 });
+			postSubmitLogin();
+		}
+	}
+}
+
+function submitDatabaseLogin() {
 	var user = $('#username').val();
 	var password = $('#password').val();
 	var url = WEBAUTHN_HOME;
@@ -630,8 +704,8 @@ function submitLogin() {
 function postSubmitLogin(data, textStatus, jqXHR, param) {
 	// check if the login page was loaded under an i-frame
 	if (window.top.location != window.location) {
-		alert("An expected frame was detected. For security reasons, you are logged out.");
-		document.body.style.cursor = "default";
+		alert('An expected frame was detected. For security reasons, you are logged out.');
+		document.body.style.cursor = 'default';
 		return;
 	}
 	initCIRM();
@@ -749,7 +823,7 @@ function initPanels() {
 function getSlideIdValue(slide, td) {
 	var index = slide['box_of_origin_id'].length + 1;
 	var a = $('<a>');
-	a.addClass("link-style banner-text");
+	a.addClass('link-style banner-text');
 	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
 	a.html(slide['id'].substring(index));
 	td.append(a);

@@ -117,6 +117,7 @@ class cxiAccess():
            if re.search("^o",tmp) != None:
                return -1
            ## out of paper
+           if re.search("^O",tmp) != None:
                return -1
            ## printing error
            if re.search("^ERROR", tmp) != None:
@@ -149,6 +150,7 @@ class cxiAccess():
        if re.search("^o",tmp) != None:
            return -1
        ## out of paper
+       if re.search("^O",tmp) != None:
            return -1
        ## printing error
        if re.search("^ERROR", tmp) != None:
@@ -506,20 +508,13 @@ def makeSliceLabel(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL
        mycxi.closeLink()
        return 0
 
-    mycxi.send(data)
-    okay=mycxi.status_recv()
-    if okay != 1: 
-       print 'printer is not well..'
-       mycxi.closeLink()
-       return 0
-
     if DEBUG:
        print 'calling-> makeSliceLabel_',(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString)
     data = makeSliceLabel_(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString)
     print 'sending->', data
     mycxi.send(data)
     ret=mycxi.label_recv()
-    if ret != 1:
+    if ret >= 1:
         cnt+=ret
     else:
         print "ERROR, failed to print a slide label"
@@ -549,7 +544,7 @@ def makeBoxLabel(date,genotype,expertID,disNum,pURL,idString,noteString):
         print 'sending->', data
     mycxi.send(data)
     ret=mycxi.label_recv()
-    if ret != 0:
+    if ret >= 0:
        cnt+=ret
     else:
        print "ERROR, failed to print a box label"
@@ -579,7 +574,7 @@ def makeNoteLabel(date,expertID,seqNum,pURL,idString,noteString):
         print 'sending->', data
     mycxi.send(data)
     ret=mycxi.label_recv()
-    if ret != 0:
+    if ret >= 0:
        cnt+=ret
     else:
        print "ERROR, failed to print a note label"
@@ -727,24 +722,45 @@ def checkStatus():
 def test():
     usage=EOL + "Please select," + EOL \
               + "0)check connection" + EOL \
-              + "1)get status" + EOL \
-              + "2)reset printer" + EOL \
-              + "3)just calibrate" + EOL \
-              + "4)force power cycle" + EOL \
-              + "5)shift up/down" + EOL \
-              + "6)shift left/right" + EOL \
-              + "7)make note label" + EOL \
-              + "8)make slice label" + EOL \
-              + "9)make box label" + EOL \
-              + "s)print sample" + EOL \
+              + "1)get current status" + EOL \
+              + "2)get config setting" + EOL \
+              + "3)reset printer" + EOL \
+              + "4)just calibrate" + EOL \
+              + "5)force power cycle" + EOL \
+              + "6)shift up/down" + EOL \
+              + "7)shift left/right" + EOL \
+              + "n)make note label" + EOL \
+              + "s)make slice label" + EOL \
+              + "b)make box label" + EOL \
+              + "t)make test sample" + EOL \
               + "x)exit"
     while 1 :
         print usage
         tmp = sys.stdin.readline()
         
-        if tmp[0]=='s':
+        if tmp[0]=='t':
             printTestSample()
             continue
+
+        if tmp[0]=='n':
+            printed=makeNoteLabel("2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a note string that needs to be in there")
+            printed=printed+makeNoteLabel("2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a very very long note string that will go on and on and on and on")
+            printed=printed+makeNoteLabel("2013-10-15","RES",39,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000","xbbbbbbbbbbbbbbbbbx chubby")
+            print "# of note labels got printed is ",printed
+            continue
+
+        if tmp[0]=='s':
+            printed=makeSliceLabel("2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 38,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000")
+## another one
+            printed=printed+makeSliceLabel("2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 39,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000")
+            print "# of slice labels got printed is ",printed
+            continue
+
+        if tmp[0]=='b':
+            printed=makeBoxLabel("2013-10-15", "wnt1creZEGG", "RES","0","http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0","box note goes here")
+            print "# of box labels got printed is ",printed
+            continue
+
         try:
             data = int(tmp[0])
         except :
@@ -758,39 +774,27 @@ def test():
            if rc == 1 :
                print "Connection okay!"
         elif data == 1 :
-#           checkConfig()
            checkStatus()
         elif data == 2 :
-           resetCxi()
+           checkConfig()
         elif data == 3 :
-           justCalibrate()
+           resetCxi()
         elif data == 4 :
-           cycleIt()
+           justCalibrate()
         elif data == 5 :
+           cycleIt()
+        elif data == 6 :
            up=tmp.find("up")
            if up > 0:
                moveUp()
            else:
                moveDown()
-        elif data == 6 :
+        elif data == 7 :
            left=tmp.find("left")
            if left > 0:
                moveLeft()
            else:
                moveRight()
-        elif data == 7 :
-           printed=makeNoteLabel("2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a note string that needs to be in there")
-           printed=printed+makeNoteLabel("2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a very very long note string that will go on and on and on and on")
-           printed=printed+makeNoteLabel("2013-10-15","RES",39,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000","xbbbbbbbbbbbbbbbbbx chubby")
-           print "# of note labels got printed is ",printed
-        elif data == 8 :
-           printed=makeSliceLabel("2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 38,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000")
-## another one
-           printed=printed+makeSliceLabel("2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 39,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000")
-           print "# of slice labels got printed is ",printed
-        elif data == 9 :
-           printed=makeBoxLabel("2013-10-15", "wnt1creZEGG", "RES","0","http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0","box note goes here")
-           print "# of box labels got printed is ",printed
         else:
            print "bad place!!"
 

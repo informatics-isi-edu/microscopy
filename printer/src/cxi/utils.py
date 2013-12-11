@@ -9,7 +9,7 @@ import socket
 import re
 from time import sleep
 
-DEBUG = 1
+DEBUG = 0
 XSTART = 10
 YSTART = 10
 SPACE = " "
@@ -50,10 +50,9 @@ class cxiAccess():
            self.cxi.connect((self.addr_ip,self.port))
        except socket.error:
            print "Fail to connect to %s, power cycle the printer" % self.addr
-           if exit:
-               sys.exit()
-           else:
-               return 0
+           ## if exit==1, fail on assert
+           assert(exit == 0)
+           return 0
        else:
            self.isOpen=1
        self.cxi.settimeout(save_t)
@@ -720,6 +719,8 @@ def checkStatus():
 
 #####################################################################
 def test():
+    global DEBUG
+    DEBUG=1
     usage=EOL + "Please select," + EOL \
               + "0)check connection" + EOL \
               + "1)get current status" + EOL \

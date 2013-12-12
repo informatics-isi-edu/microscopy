@@ -370,7 +370,7 @@ C....C, 80 of them
 """
 def wakeUp_():
     pclcmds = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
-    return pclcmd
+    return pclcmds
 
 """
 a test label
@@ -729,8 +729,9 @@ def checkConfig():
     mycxi.send(data)
     cnt=re.findall("VARIABLE",data)
     expected=len(cnt)-1
-    rc=mycxi.config_recv(expected)
+    data=mycxi.config_recv(expected)
     mycxi.closeLink()
+    return data
 
 """
 API: checkStatus

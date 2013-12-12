@@ -505,14 +505,14 @@ P00002
 P00001
 R00000
 """
-def makeSliceLabel(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString):
+def makeSliceLabel(printer_id,printer_port,date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString):
     ret={}
-    mycxi=cxiAccess()
+    mycxi=cxiAccess(printer_id,printer_port)
     try:
         mycxi.openLink()
     except:
         ret[0]=0
-        ret[1]="Fail to open connection to printer"
+        ret[1]="Fail to open connection to printer (%s,%s)"%(printer_id,printer_port)
         return ret 
 
     data = checkStatus_()
@@ -522,7 +522,7 @@ def makeSliceLabel(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL
         print 'printer is not well..'
         mycxi.closeLink()
         ret[0]=0
-        ret[1]="Printer is not feeling well"
+        ret[1]="Printer is not feeling well (%s,%s)"%(printer_id,printer_port)
         return ret
 
     if DEBUG:
@@ -534,7 +534,7 @@ def makeSliceLabel(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL
     if ret[0] >= 1:
         ret[1]="Success"
     else:
-        print "ERROR, failed to print a slide label"
+        print "ERROR, failed to print a slide label at (%s,%s)"%(printer_id,printer_port)
         ret[0]=0
         ret[1]="Fail to print the slide label"
     mycxi.closeLink()
@@ -543,14 +543,14 @@ def makeSliceLabel(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL
 """
 API: makeBoxLabel
 """
-def makeBoxLabel(date,genotype,expertID,disNum,pURL,idString,noteString):
+def makeBoxLabel(printer_id,printer_port,date,genotype,expertID,disNum,pURL,idString,noteString):
     ret = {}
-    mycxi=cxiAccess()
+    mycxi=cxiAccess(printer_id,printer_port)
     try:
         mycxi.openLink()
     except:
         ret[0]=0
-        ret[1]="Fail to open connection to printer"
+        ret[1]="Fail to open connection to printer (%s,%s)"%(printer_id,printer_port)
         return ret
 
     data = checkStatus_()
@@ -560,7 +560,7 @@ def makeBoxLabel(date,genotype,expertID,disNum,pURL,idString,noteString):
         print 'printer is not well..'
         mycxi.closeLink()
         ret[0]=0
-        ret[1]="Printer is not feeling well"
+        ret[1]="Printer is not feeling well (%s,%s)"%(printer_id,printer_port)
         return ret
 
     if DEBUG:
@@ -573,7 +573,7 @@ def makeBoxLabel(date,genotype,expertID,disNum,pURL,idString,noteString):
     if ret[0] >= 1:
         ret[1]="Success"
     else:
-        print "ERROR, failed to print a box label"
+        print "ERROR, failed to print a box label at (%s,%s)"%(printer_id,printer_port)
         ret[0]=0
         ret[1]="Fail to print the box label"
     mycxi.closeLink()
@@ -582,14 +582,14 @@ def makeBoxLabel(date,genotype,expertID,disNum,pURL,idString,noteString):
 """
 API: makeNoteLabel
 """
-def makeNoteLabel(date,expertID,seqNum,pURL,idString,noteString):
+def makeNoteLabel(printer_id,printer_port,date,expertID,seqNum,pURL,idString,noteString):
     ret={}
-    mycxi=cxiAccess()
+    mycxi=cxiAccess(printer_id,printer_port)
     try:
         mycxi.openLink()
     except:
         ret[0]=0
-        ret[1]="Fail to open connection to printer"
+        ret[1]="Fail to open connection to printer (%s,%s)"%(printer_id,printer_port)
         return ret
     data = checkStatus_()
     mycxi.send(data)
@@ -598,7 +598,7 @@ def makeNoteLabel(date,expertID,seqNum,pURL,idString,noteString):
         print 'printer is not well..'
         mycxi.closeLink()
         ret[0]=0
-        ret[1]="Printer is not feeling well"
+        ret[1]="Printer is not feeling well (%s,%s)"%(printer_id,printer_port)
         return ret
 
     if DEBUG:
@@ -613,7 +613,7 @@ def makeNoteLabel(date,expertID,seqNum,pURL,idString,noteString):
     else:
         print "ERROR, failed to print a note label"
         ret[0]=0
-        ret[1]="Fail to print the note label"
+        ret[1]="Fail to print the note label at (%s,%s)" %(printer_id,printer_port)
     mycxi.closeLink()
     return cnt
 
@@ -812,29 +812,35 @@ def test():
 
         if tmp[0]=='n':
             cnt=0
-            printed=makeNoteLabel("2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a note string that needs to be in there")
+            printed=makeNoteLabel("mycxi.isi.edu",9100,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a note string that needs to be in there")
             cnt+=printed[0]
-            printed=makeNoteLabel("2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a very very long note string that will go on and on and on and on")
-            printed=makeNoteLabel("2013-10-15","RES",39,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000","xbbbbbbbbbbbbbbbbbx chubby")
+            printed=makeNoteLabel("mycxi.isi.edu",9100,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a very very long note string that will go on and on and on and on")
+            printed=makeNoteLabel("mycxi.isi.edu,9100","2013-10-15","RES",39,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000","xbbbbbbbbbbbbbbbbbx chubby")
             cnt+=printed[0]
             print "# of note labels got printed is ",cnt
+            if cnt == 0:
+                print printed[1]
             continue
 
         if tmp[0]=='s':
             cnt=0
-            printed=makeSliceLabel("2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 38,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000")
+            printed=makeSliceLabel("mycxi.isi.edu",9100,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 38,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000")
             cnt+=printed[0]
 ## another one
-            printed=makeSliceLabel("2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 39,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000")
+            printed=makeSliceLabel("mycxi.isi.edu",9100,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 39,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000")
             cnt+=printed[0]
             print "# of slice labels got printed is ",cnt
+            if cnt == 0:
+                print printed[1]
             continue
 
         if tmp[0]=='b':
             cnt=0
-            printed=makeBoxLabel("2013-10-15", "wnt1creZEGG", "RES","0","http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0","box note goes here")
+            printed=makeBoxLabel("mycxi.isi.edu",9100,"2013-10-15", "wnt1creZEGG", "RES","0","http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0","box note goes here")
             cnt+=printed[0]
             print "# of box labels got printed is ",cnt
+            if cnt == 0:
+                print printed[1]
             continue
 
         try:

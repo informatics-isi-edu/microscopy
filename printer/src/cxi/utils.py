@@ -358,10 +358,10 @@ def configure4SSXT_() :
 
 """
 force a power cycle after a lockup
-23 23 23 23 23 67 76 69 65 82 23 23 23 23 23
+23 23 23 23 23 67 76 69 65 82 23 23 23 23 23 13 10
 """
 def powerCycle_():
-    pclcmds= "%c%c%c%c%cclear%c%c%c%c%c" % (0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17)
+    pclcmds= "%c%c%c%c%cCLEAR%c%c%c%c%c\r\n" % (0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17)
     return pclcmds
 
 """
@@ -832,6 +832,20 @@ def test():
                moveRight()
         else:
            print "bad place!!"
+
+def test_sleep():
+    global DEBUG
+    DEBUG = 1
+    now_time = 0
+    print "start checking the sleepy cxi"
+    rc=checkConnection()
+    while rc==1 :
+        print "at %d" % now_time
+        print "  --Connection okay!\n"
+        now_time += 20
+        sleep(20)
+        data = checkStatus()
+        rc=checkConnection()
 
 if __name__ == "__main__":
     test()

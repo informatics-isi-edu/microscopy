@@ -77,6 +77,7 @@ class cxiAccess():
 
     def config_recv(self, expected):
        data="" 
+       pattern = "= .+\r\n"
        while 1 :
            try:
                tmp = self.cxi.recv(1024)
@@ -88,11 +89,12 @@ class cxiAccess():
            if len(tmp) == 0:
                break
            data += tmp
-           cnt=re.findall("\r\n",data)
-           if len(cnt) == expected:
-               break
+           
+           cnt=re.findall(pattern,data)
            if DEBUG:
                print "-> ",(len(tmp), tmp)
+           if len(cnt) == expected:
+               break
        if DEBUG:
            print "recv: ", data
        return data
@@ -290,6 +292,8 @@ def checkConfig_():
       "VARIABLE REPORT_LEVEL ?" + EOL +  \
       "VARIABLE REPORT_TYPE ?" + EOL +  \
       "VARIABLE ETHERNET IP ?" + EOL + \
+      "VARIABLE ETHERNET GARP ?" + EOL + \
+      "VARIABLE ETHERNET RTEL TIMEOUT ?" + EOL + \
       "VARIABLE WRITE" + EOL +  \
       "END" + EOL
     return pclcmds
@@ -336,9 +340,11 @@ VARIABLE PRINT_MODE TT
 VARIABLE SLEEP_AFTER 0
 VARIABLE REPORT_LEVEL 1
 VARIABLE REPORT_TYPE SERIAL
+VARIABLE ETHERNET GARP 5
 VARIABLE USER_FEEDBACK ON
 VARIABLE WRITE
 END
+"VARIABLE ETHERNET RTEL TIMOUT 30" + EOL + \
 """
 def configure4SSXT_() :
     pclcmds = "! 0 0 0 0" + EOL + \
@@ -352,6 +358,8 @@ def configure4SSXT_() :
       "VARIABLE REPORT_LEVEL 1" + EOL +  \
       "VARIABLE REPORT_TYPE SERIAL" + EOL +  \
       "VARIABLE USER_FEEDBACK ON" + EOL +  \
+      "VARIABLE ETHERNET GARP 5" + EOL +  \
+      "VARIABLE ETHERNET RTEL TIMEOUT 30" + EOL + \
       "VARIABLE WRITE" + EOL +  \
       "END" + EOL
     return pclcmds
@@ -773,6 +781,11 @@ def test():
         print usage
         tmp = sys.stdin.readline()
         
+        ## secret sleepy test
+        if tmp[0]=='X':
+            test_sleep()
+            break
+
         if tmp[0]=='t':
             printTestSample()
             continue

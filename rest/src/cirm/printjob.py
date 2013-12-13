@@ -32,26 +32,31 @@ class PrintJob:
         input_data = cStringIO.StringIO(web.ctx.env['wsgi.input'].read())
         json_data = json.load(input_data)
         result = 'success'
+        res = 0
         if printerID == 'box':
             box = json_data[0]
+            printer_id = box['printer_id']
+            printer_port = box['printer_port']
             id = box['id']
             section_date = box['section_date']
             sample_name = box['sample_name']
             initials = box['initials']
             disambiguator = box['disambiguator']
             comment = box['comment']
-            res = 0
             try:
-                res = cxi.utils.makeBoxLabel(section_date, sample_name, initials, disambiguator, self.uri, id, comment)
+                res = cxi.utils.makeBoxLabel(printer_id, printer_port, section_date, sample_name, initials, disambiguator, self.uri, id, comment)
             except:
                 pass
-            if res == 0:
+            if res[0] == 0:
                 result = 'failure'
             val = {}
             val['result'] = result
+            val['reason'] = res[1]
             response.append(val)
         elif printerID == 'slide':
             for slide in json_data:
+                printer_id = slide['printer_id']
+                printer_port = slide['printer_port']
                 id = slide['id']
                 experiment = slide['experiment']
                 experiment_date = slide['experiment_date']
@@ -60,16 +65,17 @@ class PrintJob:
                 initials = slide['initials']
                 sequence_num = slide['sequence_num']
                 revision = slide['revision']
-                res = 0
                 try:
-                    res = cxi.utils.makeSliceLabel(experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
+                    res = cxi.utils.makeSliceLabel(printer_id, printer_port, experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
                 except:
                     pass
-                if res == 0:
+                if res[0] == 0:
                     result = 'failure'
-                val = {}
-                val['result'] = result
-                response.append(val)
+                    break
+            val = {}
+            val['result'] = result
+            val['reason'] = res[1]
+            response.append(val)
                     
         return json.dumps(response)
     

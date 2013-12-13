@@ -49,7 +49,7 @@ var experimentsList = [];
 // {"id":"20131115-myantibody2-KC-0","experiment_date":"2013-11-15","experiment_description":"myantibody2","initials":"KC","disambiguator":"0","comment":"This is Karl's experiment"}
 
 var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'box_of_origin_id', 'experiment_id', 'comment'];
-var slideTableDisplayColumns = {'id': 'Slide ID', 'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
+var slideTableDisplayColumns = {'id': 'Slide #', 'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
 var slideDisplayValue = {'id': getSlideIdValue, 'thumbnail': getSlideThumbnail};
 
 var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment'];
@@ -822,16 +822,15 @@ function initPanels() {
 	initBottomPanel(bottomPanel);
 }
 
-function getSlideIdValue(slide, td) {
-	var index = slide['box_of_origin_id'].length + 1;
+function getSlideIdValue(slide, td, val) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
 	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
-	a.html(slide['id'].substring(index));
+	a.html(val);
 	td.append(a);
 }
 
-function getSlideThumbnail(slide, td) {
+function getSlideThumbnail(slide, td, val) {
 	var img = $('<img>');
 	$.each(scansList, function(i, scan) {
 		if (scan['id'].indexOf(slide['id']) == 0) {
@@ -950,7 +949,7 @@ function displayUnassignedSlides() {
 				var td = $('<td>');
 				tr.append(td);
 				if (slideDisplayValue[col] != null) {
-					slideDisplayValue[col](row, td);
+					slideDisplayValue[col](row, td, i+1);
 				} else {
 					td.html(row[col]);
 				}
@@ -1012,7 +1011,7 @@ function appendSlides(item) {
 				var td = $('<td>');
 				tr.append(td);
 				if (slideDisplayValue[col] != null) {
-					slideDisplayValue[col](row, td);
+					slideDisplayValue[col](row, td, i+1);
 				} else {
 					td.html(row[col]);
 				}

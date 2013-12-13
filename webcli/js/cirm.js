@@ -8,11 +8,13 @@ Array.prototype.contains = function (elem) {
 var GUEST_USER = '********';
 var GUEST_PASSWORD = '********';
 var GLOBUS_AUTHN = true;
+var PRINTER_ADDR = 'mycxi.isi.edu';
+var PRINTER_PORT = 9100;
 var HOME;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
 var PRINT_JOB_HOME = '/ermrest/printer/';
-var PRINT_CONTROL_HOME = '/ermrest/printer/control';
+var PRINT_CONTROL_HOME = '/ermrest/printer/';
 var ZOOMIFY_HOME = '/ermrest/zoomify/';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
@@ -46,8 +48,8 @@ var experimentsDict = {};
 var experimentsList = [];
 // {"id":"20131115-myantibody2-KC-0","experiment_date":"2013-11-15","experiment_description":"myantibody2","initials":"KC","disambiguator":"0","comment":"This is Karl's experiment"}
 
-var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'experiment_id', 'comment'];
-var slideTableDisplayColumns = {'id': 'Slide ID', 'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
+var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'box_of_origin_id', 'experiment_id', 'comment'];
+var slideTableDisplayColumns = {'id': 'Slide ID', 'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
 var slideDisplayValue = {'id': getSlideIdValue, 'thumbnail': getSlideThumbnail};
 
 var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment'];
@@ -878,28 +880,29 @@ function postAddSlides(data, textStatus, jqXHR, param) {
 	$(li).click();
 }
 
-function checkUncheckAll() {
-	var checked = $('#selectAllUnassignedSlidesTh').prop('checked');
+function checkUncheckAll(tableId, thId, buttonId) {
+	var checked = $('#' + thId).prop('checked');
 	if (checked) {
-		$('td', $('#unassignedSlidesTable')).find('input:not(:checked)').prop('checked', true);
-		$('#addButton').removeAttr('disabled');
+		$('td', $('#' + tableId)).find('input:not(:checked)').prop('checked', true);
+		$('td', $('#' + tableId)).find('input:disabled').prop('checked', false);
+		$('#'+ buttonId).removeAttr('disabled');
 	} else {
-		$('td', $('#unassignedSlidesTable')).find('input:checked').prop('checked', false);
-		$('#addButton').attr('disabled', 'disabled');
+		$('td', $('#' + tableId)).find('input:checked').prop('checked', false);
+		$('#'+ buttonId).attr('disabled', 'disabled');
 	}
 }
 
-function checkAvailableSlides() {
-	var count = $('td', $('#unassignedSlidesTable')).find('input:checked').length;
+function checkAvailableSlides(tableId, thId, buttonId) {
+	var count = $('td', $('#' + tableId)).find('input:checked').length;
 	if (count == 0) {
-		$('#selectAllUnassignedSlidesTh').prop('checked', false);
-		$('#addButton').attr('disabled', 'disabled');
+		$('#' + thId).prop('checked', false);
+		$('#'+ buttonId).attr('disabled', 'disabled');
 	} else {
-		$('#addButton').removeAttr('disabled');
-		if ($('td', $('#unassignedSlidesTable')).find('input:not(:checked)').length == 0) {
-			$('#selectAllUnassignedSlidesTh').prop('checked', true);
+		$('#'+ buttonId).removeAttr('disabled');
+		if ($('td', $('#' + tableId)).find('input:not(:checked)').length == $('td', $('#' + tableId)).find('input:disabled').length) {
+			$('#' + thId).prop('checked', true);
 		} else {
-			$('#selectAllUnassignedSlidesTh').prop('checked', false);
+			$('#' + thId).prop('checked', false);
 		}
 	}
 }
@@ -915,6 +918,7 @@ function displayUnassignedSlides() {
 		var table = $('<table>');
 		centerPanel.append(table);
 		table.attr('id', 'unassignedSlidesTable');
+		table.addClass('itemTable');
 		var tr = $('<tr>');
 		table.append(tr);
 		var th = $('<th>');
@@ -922,7 +926,7 @@ function displayUnassignedSlides() {
 		var input = $('<input>');
 		input.attr({'type': 'checkbox',
 			'id': 'selectAllUnassignedSlidesTh'});
-		input.click(function(event) {checkUncheckAll();});
+		input.click(function(event) {checkUncheckAll('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', 'addButton');});
 		th.append(input);
 		$.each(slideTableColumns, function(i, col) {
 			var th = $('<th>');
@@ -940,7 +944,7 @@ function displayUnassignedSlides() {
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',
 				'slideId': row['id']});
-			input.click(function(event) {checkAvailableSlides();});
+			input.click(function(event) {checkAvailableSlides('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', 'addButton');});
 			td.append(input);
 			$.each(slideTableColumns, function(j, col) {
 				var td = $('<td>');
@@ -973,8 +977,16 @@ function appendSlides(item) {
 		var table = $('<table>');
 		centerPanel.append(table);
 		table.attr('id', 'slidesTable');
+		table.addClass('itemTable');
 		var tr = $('<tr>');
 		table.append(tr);
+		var th = $('<th>');
+		tr.append(th);
+		var input = $('<input>');
+		input.attr({'type': 'checkbox',
+			'id': 'selectAllAssignedSlidesTh'});
+		input.click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', 'printSlideButton');});
+		th.append(input);
 		$.each(slideTableColumns, function(i, col) {
 			var th = $('<th>');
 			tr.append(th);
@@ -985,6 +997,16 @@ function appendSlides(item) {
 			table.append(tr);
 			if (i%2 == 1) {
 				tr.addClass('odd');
+			}
+			var td = $('<td>');
+			tr.append(td);
+			var input = $('<input>');
+			input.attr({'type': 'checkbox',
+				'slideId': row['id']});
+			input.click(function(event) {checkAvailableSlides('slidesTable', 'selectAllAssignedSlidesTh', 'printSlideButton');});
+			td.append(input);
+			if (row['experiment_id'] == null) {
+				input.attr('disabled', 'disabled');
 			}
 			$.each(slideTableColumns, function(j, col) {
 				var td = $('<td>');
@@ -998,12 +1020,16 @@ function appendSlides(item) {
 		});
 	}
 	centerPanel.show();
+	if (arr.length > 0) {
+		$('#printSlideButton').show();
+		$('#printSlideButton').attr('disabled', 'disabled');
+	}
 	$('#editButton').show();
 	$('#cancelButton').hide();
 	$('#saveButton').hide();
 	if (item == 'box') {
 		$('#createSlideButton').show();
-		$('#printLabelButton').show();
+		$('#printBoxButton').show();
 		if (newBoxId != null) {
 			$('#createSlideButton').click();
 			newBoxId = null;
@@ -1144,17 +1170,6 @@ function checkSlideSaveButton() {
 	}
 }
 
-function checkSlidePrintButton() {
-	if ($('#slideRevision').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#slideSequenceNumber').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#slideExperimentSelect').val() != '' &&
-		$('#labelsCount').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
-		$('#printButton').removeAttr('disabled');
-	} else {
-		$('#printButton').attr('disabled', 'disabled');
-	}
-}
-
 function checkExperimentSaveButton() {
 	if ($('#experimentDate').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
@@ -1213,6 +1228,7 @@ function appendImage(images) {
 	$('button', $('#bottomPanel')).hide();
 	$('#clearButton').show();
 	$('#refreshButton').show();
+	$('#printerButton').show();
 	$('#logoutButton').show();
 	$('#editButton').show();
 }
@@ -1261,6 +1277,7 @@ function displayEntity(itemType, item) {
 	$('#saveButton').click(function(event) {updateEntity(itemType);});
 	$('#saveButton').removeAttr('disabled');
 	$('button', $('#bottomPanel')).hide();
+	$('#printerButton').show();
 	$('#logoutButton').show();
 	$('#clearButton').show();
 	if (itemType == 'scan' || itemType == 'slide') {
@@ -1319,83 +1336,90 @@ function initBottomPanel(panel) {
 	panel.append(button);
 	button.attr('id', 'createSlideButton');
 	button.html('New Slide(s)');
-	button.button().click(function(event) {createSlide();});
+	button.button({icons: {primary: 'ui-icon-newwin'}}).click(function(event) {createSlide();});
 
 	button = $('<button>');
 	panel.append(button);
-	button.attr('id', 'printLabelButton');
-	button.html('Print Label(s)');
-	button.button().click(function(event) {printLabel();});
+	button.attr('id', 'printBoxButton');
+	button.html('Print Box');
+	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintBox();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'printSlideButton');
+	button.html('Print Slide(s)');
+	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintSlide();});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'enlargeButton');
 	button.html('Enlarge Image');
-	button.button();
+	button.button({icons: {primary: 'ui-icon-zoomin'}});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'addSlidesButton');
 	button.html('Add Slides');
 	button.button();
-	button.button().click(function(event) {getUnassignedSlides();});
+	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {getUnassignedSlides();});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'addButton');
 	button.html('Add');
 	button.button();
-	button.button().click(function(event) {addSlides();});
+	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {addSlides();});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'editButton');
 	button.html('Edit');
-	button.button();
+	button.button({icons: {primary: 'ui-icon-note'}});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'cancelButton');
 	button.html('Cancel');
-	button.button();
+	button.button({icons: {primary: 'ui-icon-cancel'}});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'saveButton');
 	button.html('Save');
-	button.button();
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'printButton');
-	button.html('Print');
-	button.button();
+	button.button({icons: {primary: 'ui-icon-document'}});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'transferButton');
 	button.html('Download');
-	button.button();
+	button.button({icons: {primary: 'ui-icon-arrowthick-1-s'}});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'refreshButton');
 	button.html('Refresh');
-	button.button().click(function(event) {refresh();});
+	button.button({icons: {primary: 'ui-icon-refresh'}}).click(function(event) {refresh();});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'clearButton');
 	button.html('Clear');
-	button.button().click(function(event) {clear();});
+	button.button({icons: {primary: 'ui-icon-arrowrefresh-1-n'}}).click(function(event) {clear();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'printerButton');
+	button.html('Printer');
+	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printerManaging();});
 
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'logoutButton');
 	button.html('Logout');
-	button.button().click(function(event) {submitLogout();});
+	button.button({icons: {primary: 'ui-icon-home'}}).click(function(event) {submitLogout();});
 
 	$('button', panel).hide();
+	$('#printerButton').show();
 	$('#logoutButton').show();
 }
 
@@ -1497,6 +1521,7 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	colList = temp;
 	$('button', $('#bottomPanel')).hide();
 	displayEntity(item, data);
+	$('#printerButton').show();
 	$('#logoutButton').show();
 	$('#clearButton').show();
 	$('#refreshButton').show();
@@ -1522,6 +1547,7 @@ function cancel(item) {
 		$('button', $('#bottomPanel')).hide();
 		$('#clearButton').show();
 		$('#refreshButton').show();
+		$('#printerButton').show();
 		$('#logoutButton').show();
 	} else if (item == 'createSlide' || item == 'printSlide') {
 		$($('.highlighted', $('#BoxDiv'))[0]).click();
@@ -1537,6 +1563,7 @@ function cancel(item) {
 		$('button', $('#bottomPanel')).hide();
 		$('#clearButton').show();
 		$('#refreshButton').show();
+		$('#printerButton').show();
 		$('#logoutButton').show();
 		$('#editButton').show();
 	} else if (item == 'updateScan') {
@@ -1558,6 +1585,7 @@ function clear() {
 	$('#rightPanel').html('');
 	$('#centerPanel').html(CIRM_START_INFO);
 	$('button', $('#bottomPanel')).hide();
+	$('#printerButton').show();
 	$('#logoutButton').show();
 	$('#search').val('');
 	$('#SlideDiv').remove();
@@ -1739,132 +1767,216 @@ function createSlide() {
 	$('#logoutButton').show();
 }
 
-function selectEntityLabel() {
-	var entity = $('input:radio[name=entity]:checked').val();
-	if (entity == 'slide') {
-		$('#slideLabelTable').show();
-		checkSlidePrintButton();
+function printerManaging() {
+	var centerPanel = $('#centerPanel');
+	centerPanel.html('<p class="intro">Printer Administration</p>');
+	var printTable = $('<table>');
+	centerPanel.append(printTable);
+	printTable.addClass('radio_entity itemTable');
+	printTable.attr({'align': 'center',
+		'id': 'printerAdminTable'});
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:printerSettings()');
+	a.html('Printer Setting');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:managePrinter("checkConnection")');
+	a.html('Check Connection');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:printerInfo("getStatus")');
+	a.html('Get Status');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:printerInfo("getConfiguration")');
+	a.html('Get Configuration');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:managePrinter("resetPrinter")');
+	a.html('Reset Printer');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:managePrinter("calibratePrinter")');
+	a.html('Calibrate Printer');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:managePrinter("forcePowerCycle")');
+	a.html('Force Power Cycle');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:managePrinter("shiftUp")');
+	a.html('Shift Up');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:managePrinter("shiftDown")');
+	a.html('Shift Down');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:managePrinter("shiftLeft")');
+	a.html('Shift Left');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:managePrinter("shiftRight")');
+	a.html('Shift Right');
+	td.append(a);
+	
+	var tr = $('<tr>');
+	printTable.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:managePrinter("testPrinter")');
+	a.html('Test Printer');
+	td.append(a);
+	$('button', $('#bottomPanel')).hide();
+	$('#logoutButton').show();
+}
+
+function printerSettings() {
+	var rightPanel = $('#rightPanel');
+	rightPanel.html('');
+	var dl = $('<dl>');
+	rightPanel.append(dl);
+	var dt = $('<dt>');
+	dl.append(dt);
+	dt.addClass('info');
+	dt.html('Address: ');
+	var span = $('<span>');
+	dl.append(span);
+	var input = $('<input>');
+	input.attr({'type': 'text',
+		'id': 'printerAddrInput',
+		'size': 30});
+	span.append(input);
+	input.val(PRINTER_ADDR);
+	
+	var dl = $('<dl>');
+	rightPanel.append(dl);
+	var dt = $('<dt>');
+	dl.append(dt);
+	dt.addClass('info');
+	dt.html('Port: ');
+	var span = $('<span>');
+	dl.append(span);
+	var input = $('<input>');
+	input.attr({'type': 'text',
+		'id': 'printerPortInput',
+		'size': 30});
+	span.append(input);
+	input.val(PRINTER_PORT);
+	
+	$('#cancelButton').unbind('click');
+	$('#cancelButton').click(function(event) {cancelPrinterSettings();});
+	$('#saveButton').unbind('click');
+	$('#saveButton').click(function(event) {updatePrinterSettings();});
+	$('#saveButton').removeAttr('disabled');
+	$('button', $('#bottomPanel')).hide();
+	$('#cancelButton').show();
+	$('#saveButton').show();
+	$('#logoutButton').show();
+}
+
+function updatePrinterSettings() {
+	PRINTER_ADDR = $('#printerAddrInput').val();
+	PRINTER_PORT = parseInt($('#printerPortInput').val());
+	cancelPrinterSettings();
+}
+
+function cancelPrinterSettings() {
+	var rightPanel = $('#rightPanel');
+	rightPanel.html('');
+	$('button', $('#bottomPanel')).hide();
+	$('#logoutButton').show();
+}
+
+function managePrinter(param) {
+	var url = PRINT_CONTROL_HOME + 'id/control/' + encodeSafeURIComponent(param) + '/';
+	cirmAJAX.PUT(url, 'application/json', false, [], true, postManagePrinter, null, null, 0);
+}
+
+function postManagePrinter(data, textStatus, jqXHR, param) {
+	var result = true;
+	$.each(data[0], function(i, res) {
+		if (res['result'] != 'success') {
+			result = false;
+			return false;
+		}
+	});
+	if (result) {
+		alert('The request was submitted successfully.');
 	} else {
-		$('#slideLabelTable').hide();
-		$('#printButton').removeAttr('disabled');
+		alert('An error was reported in sending the request.');
 	}
 }
 
-function printLabel() {
-	var centerPanel = $('#centerPanel');
-	centerPanel.html('<p class="intro">Print Label(s)</p>');
-	centerPanel.append('<p class="intro">Select Entity:</p>');
-	var entityTable = $('<table>');
-	centerPanel.append(entityTable);
-	entityTable.addClass('radio_entity');
-	entityTable.attr({'id': 'radioEntityTable',
-		'align': 'center'});
-	var tr = $('<tr>');
-	entityTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.append($('<input type="radio" name="entity" value="box">'));
-	td = $('<td>');
-	tr.append(td);
-	td.html('Box');
-	var tr = $('<tr>');
-	entityTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.append($('<input type="radio" name="entity" value="slide">'));
-	td = $('<td>');
-	tr.append(td);
-	td.html('Slide');
-
-	$($('input:radio[name=entity]'), $('#radioEntityTable')).change(function(event) {selectEntityLabel();});
-	centerPanel.show();
-	
-	var table = $('<table>');
-	centerPanel.append(table);
-	table.addClass('define_entity');
-	table.attr('id', 'slideLabelTable');
-
-	var tr = $('<tr>');
-	table.append(tr);
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Experiment:');
-	var td = $('<td>');
-	tr.append(td);
-	var select = $('<select>');
-	select.attr('id', 'slideExperimentSelect');
-	var option = $('<option>');
-	option.text('Select an Experiment');
-	option.attr('value', '');
-	select.append(option);
-	$.each(experimentsList, function(i, experiment) {
-		option = $('<option>');
-		option.text(experiment['id']);
-		option.attr('value', experiment['id']);
-		select.append(option);
-	});
-	td.append(select);
-	select.change(function(event) {checkSlidePrintButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Sequence Number:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'slideSequenceNumber',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkSlidePrintButton();});
-	input.val('1');
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Revision:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'slideRevision',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkSlidePrintButton();});
-	input.val('0');
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Number of Labels:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'labelsCount',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkSlidePrintButton();});
-	input.val(1);
-
-	$('button', $('#bottomPanel')).hide();
-	$('#printButton').unbind('click');
-	$('#printButton').click(function(event) {submitPrintLabel();});
-	$('#printButton').show();
-	$('#cancelButton').unbind('click');
-	$('#cancelButton').click(function(event) {cancel('printSlide');});
-	$('#cancelButton').show();
-	$('#logoutButton').show();
-	$('#slideLabelTable').hide();
-	$('#printButton').attr('disabled', 'disabled');
+function printerInfo(param) {
+	alert('Not yet implemented');
 }
 
 function createExperiment() {
@@ -1971,7 +2083,11 @@ function createExperiment() {
 
 function displaySlide(id) {
 	$('button', $('#bottomPanel')).hide();
-	displayEntity('slide', slidesDict[id]);
+	var item = slidesDict[id];
+	if (item == null) {
+		item = unassignedSlidesDict[id];
+	}
+	displayEntity('slide', item);
 	getScans(id);
 }
 
@@ -2196,72 +2312,62 @@ function postSaveSlide(data, textStatus, jqXHR, param) {
 	$($('.highlighted', $('#BoxDiv'))[0]).click();
 }
 
-function submitPrintLabel() {
-	var entity = $('input:radio[name=entity]:checked').val();
-	var url = PRINT_JOB_HOME + entity + '/job';
+function submitPrintSlide() {
+	var url = PRINT_JOB_HOME + 'slide/job';
 	var arr = [];
-	var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).html()];
-	if (entity == 'slide') {
-		var labelsCount = parseInt($('#labelsCount').val());
-		var sequence_num = parseInt($('#slideSequenceNumber').val());
-		var revision = parseInt($('#slideRevision').val());
-		if (isNaN(labelsCount) || labelsCount < 1) {
-			alert('Invalid value for the Number of Labels: "' + $('#labelsCount').val() + '".');
-			return;
-		} else if (isNaN(sequence_num)) {
-			alert('Invalid value for the Sequence Number: "' + $('#slideSequenceNumber').val() + '".');
-			return;
-		} else if (isNaN(revision)) {
-				alert('Invalid value for the Revision: "' + $('#slideRevision').val() + '".');
-				return;
-		}
-		var experiment = experimentsDict[$('#slideExperimentSelect').val()];
-		var boxId = $($('.highlighted', $('#BoxDiv'))[0]).html();
-		var slideRevision = '' + $('#slideRevision').val();
-		while (slideRevision.length < 3) {
-			slideRevision = '0' + slideRevision;
-		}
-		for (var i=0; i < labelsCount; i++) {
-			var obj = {};
-			obj['revision'] = revision;
-			obj['sequence_num'] = sequence_num;
-			obj['experiment'] = experiment['id'];
-			obj['experiment_date'] = experiment['experiment_date'];
-			obj['sample_name'] = box['sample_name'];
-			obj['experiment_description'] = experiment['experiment_description'];
-			obj['initials'] = experiment['initials'];
-			var slideSequenceNumber = '' + sequence_num++;
-			while (slideSequenceNumber.length < 2) {
-				slideSequenceNumber = '0' + slideSequenceNumber;
-			}
-			var id = [boxId, slideSequenceNumber, slideRevision].join('-');
-			obj['id'] = id;
-			arr.push(obj);
-		}
-	} else if (entity == 'box') {
-		var obj = {};
-		$.each(boxColumns, function(i, col) {
-			obj[col] = box[col];
-		})
+	$.each($('td', $('#slidesTable')).find('input:checked'), function(i, checkbox) {
+		var slide = slidesDict[$(checkbox).attr('slideId')];
+		var box = boxesDict[slide['box_of_origin_id']];
+		var experiment = experimentsDict[slide['experiment_id']];
+		var obj = new Object();
+		obj['revision'] = slide['revision'];
+		obj['sequence_num'] = slide['sequence_num'];
+		obj['experiment'] = slide['experiment_id'];
+		obj['experiment_date'] = experiment['experiment_date'];
+		obj['sample_name'] = box['sample_name'];
+		obj['experiment_description'] = experiment['experiment_description'];
+		obj['initials'] = experiment['initials'];
+		obj['id'] = slide['id'];
+		obj['printer_id'] = PRINTER_ADDR;
+		obj['printer_port'] = PRINTER_PORT;
 		arr.push(obj);
-	}
-	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintLabel, null, null, 0);
+	});
+	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintSlide, null, null, 0);
 }
 
-function postSubmitPrintLabel(data, textStatus, jqXHR, param) {
-	var result = true;
-	data = $.parseJSON(data);
-	$.each(data, function(i, res) {
-		if (res['result'] != 'success') {
-			result = false;
-			return false;
-		}
-	});
+function postSubmitPrintSlide(data, textStatus, jqXHR, param) {
+	data = $.parseJSON(data)[0];
+	var result = (data['result'] == 'success');
+	var reason = (result ? null : data['reason']);
 	if (result) {
-		alert('The request for printing the label(s) was submitted successfully.');
+		alert('The request for printing the slide label(s) was submitted successfully.');
 	} else {
-		alert('An error was reported in sending the request for printing the label(s).');
+		alert('An error was reported in sending the request for printing the slide label(s).\nReason: '+reason);
 	}
-	$($('.highlighted', $('#BoxDiv'))[0]).click();
+}
+
+function submitPrintBox() {
+	var url = PRINT_JOB_HOME + 'box/job';
+	var arr = [];
+	var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).html()];
+	var obj = {};
+	$.each(boxColumns, function(i, col) {
+		obj[col] = box[col];
+	});
+	obj['printer_id'] = PRINTER_ADDR;
+	obj['printer_port'] = PRINTER_PORT;
+	arr.push(obj);
+	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintBox, null, null, 0);
+}
+
+function postSubmitPrintBox(data, textStatus, jqXHR, param) {
+	data = $.parseJSON(data)[0];
+	var result = (data['result'] == 'success');
+	var reason = (result ? null : data['reason']);
+	if (result) {
+		alert('The request for printing the box label was submitted successfully.');
+	} else {
+		alert('An error was reported in sending the request for printing the box label.\nReason: '+reason);
+	}
 }
 

@@ -276,7 +276,7 @@ margin-right: 5px;
 #slidesTable th, #unassignedSlidesTable th 
 {
 	font-size:1.1em;
-	text-align:left;
+	text-align:center;
 	padding-top:5px;
 	padding-bottom:4px;
 	background-color:#A7C942;
@@ -288,22 +288,22 @@ margin-right: 5px;
 	background-color:#EAF2D3;
 }
 
-#slidesTable a.link-style:link, #unassignedSlidesTable a.link-style:link {
+.itemTable a.link-style:link {
 	text-decoration:none;
 	color: #024A68;
 }
 
-#slidesTable a.link-style:visited, #unassignedSlidesTable a.link-style:visited {
+.itemTable a.link-style:visited {
 	text-decoration:none;
 	color: #800000;
 }
 
-#slidesTable a.link-style:hover, #unassignedSlidesTable a.link-style:hover {
+.itemTable a.link-style:hover {
 	/*text-decoration:underline;*/
 	color: #800000;
 }
 
-#slidesTable a.banner-text, #unassignedSlidesTable a.banner-text {
+.itemTable a.banner-text {
 	font-size: 0.88em !important;
 	font-weight: bold;
 	font-family: georgia, trebichet ms, serif;

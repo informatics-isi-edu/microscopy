@@ -15,6 +15,9 @@ YSTART = 10
 SPACE = " "
 EOL = "\n"
 
+CXI_RET=0
+CXI_MSG=1
+
 #####################################################################
 class cxiAccess():
     """ socket link up with a cxi printer """
@@ -82,7 +85,7 @@ class cxiAccess():
            try:
                tmp = self.cxi.recv(1024)
            except socket.error, socket.timeout:
-               print "ERROR, socket got disconnected/timeout"
+               print "ERROR:socket got disconnected/timeout"
                break
            if tmp == 0:
                break
@@ -106,7 +109,7 @@ class cxiAccess():
            try:
                tmp = self.cxi.recv(1024)
            except socket.error, socket.timeout:
-               print "ERROR, socket got disconnected"
+               print "ERROR:socket got disconnected"
                break
            if DEBUG:
                print "recv got, ",tmp
@@ -139,7 +142,7 @@ class cxiAccess():
        try:
            tmp = self.cxi.recv(1024)
        except socket.error, socket.timeout:
-           print "ERROR, socket got disconnected"
+           print "ERROR:socket got disconnected"
            return -1
        if DEBUG:
                print "recv got, ",tmp
@@ -511,18 +514,19 @@ def makeSliceLabel(printer_id,printer_port,date,genotype,antibody,experiment,exp
     try:
         mycxi.openLink()
     except:
-        ret[0]=0
-        ret[1]="Fail to open connection to printer (%s,%s)"%(printer_id,printer_port)
+        ret={ CXI_RET : 0,
+              CXI_MSG : "Fail to open connection to printer (%s,%s)"%(printer_id,printer_port) }
         return ret 
 
     data = checkStatus_()
     mycxi.send(data)
     okay=mycxi.status_recv()
     if okay != 1: 
-        print 'printer is not well..'
+        if DEBUG:
+            print 'printer is not well..'
         mycxi.closeLink()
-        ret[0]=0
-        ret[1]="Printer is not feeling well (%s,%s)"%(printer_id,printer_port)
+        ret={ CXI_RET : 0,
+              CXI_MSG : "Printer is not feeling well (%s,%s)"%(printer_id,printer_port) }
         return ret
 
     if DEBUG:
@@ -530,13 +534,15 @@ def makeSliceLabel(printer_id,printer_port,date,genotype,antibody,experiment,exp
     data = makeSliceLabel_(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString)
     print 'sending->', data
     mycxi.send(data)
-    ret[0]=mycxi.label_recv()
-    if ret[0] >= 1:
-        ret[1]="Success"
+    rcount=mycxi.label_recv()
+    if rcount >= 1:
+        ret={ CXI_RET : rcount,
+              CXI_MSG : "Success" }
     else:
-        print "ERROR, failed to print a slide label at (%s,%s)"%(printer_id,printer_port)
-        ret[0]=0
-        ret[1]="Fail to print the slide label"
+        if DEBUG:
+             print "failed to print a slide label at (%s,%s)"%(printer_id,printer_port)
+        ret={ CXI_RET : 0,
+              CXI_MSG : "Fail to print the slide label" }
     mycxi.closeLink()
     return ret
 
@@ -549,8 +555,8 @@ def makeBoxLabel(printer_id,printer_port,date,genotype,expertID,disNum,pURL,idSt
     try:
         mycxi.openLink()
     except:
-        ret[0]=0
-        ret[1]="Fail to open connection to printer (%s,%s)"%(printer_id,printer_port)
+        ret={ CXI_RET : 0,
+              CXI_MSG : "Fail to open connection to printer (%s,%s)"%(printer_id,printer_port) }
         return ret
 
     data = checkStatus_()
@@ -559,8 +565,8 @@ def makeBoxLabel(printer_id,printer_port,date,genotype,expertID,disNum,pURL,idSt
     if okay != 1: 
         print 'printer is not well..'
         mycxi.closeLink()
-        ret[0]=0
-        ret[1]="Printer is not feeling well (%s,%s)"%(printer_id,printer_port)
+        ret={ CXI_RET : 0,
+              CXI_MSG : "Printer is not feeling well (%s,%s)"%(printer_id,printer_port) }
         return ret
 
     if DEBUG:
@@ -569,13 +575,15 @@ def makeBoxLabel(printer_id,printer_port,date,genotype,expertID,disNum,pURL,idSt
     if DEBUG:
         print 'sending->', data
     mycxi.send(data)
-    ret[0]=mycxi.label_recv()
-    if ret[0] >= 1:
-        ret[1]="Success"
+    rcount=mycxi.label_recv()
+    if rcount >= 1:
+        ret={ CXI_RET : rcount,
+              CXI_MSG : "Success" }
     else:
-        print "ERROR, failed to print a box label at (%s,%s)"%(printer_id,printer_port)
-        ret[0]=0
-        ret[1]="Fail to print the box label"
+        if DEBUG:
+            print "failed to print a box label at (%s,%s)"%(printer_id,printer_port)
+        ret={ CXI_RET : 0,
+              CXI_MSG : "Fail to print the box label at (%s,%s)"%(printer_id,printer_port) }
     mycxi.closeLink()
     return ret
 
@@ -588,17 +596,18 @@ def makeNoteLabel(printer_id,printer_port,date,expertID,seqNum,pURL,idString,not
     try:
         mycxi.openLink()
     except:
-        ret[0]=0
-        ret[1]="Fail to open connection to printer (%s,%s)"%(printer_id,printer_port)
+        ret={ CXI_RET : 0,
+              CXI_MSG : "Fail to open connection to printer (%s,%s)"%(printer_id,printer_port) }
         return ret
     data = checkStatus_()
     mycxi.send(data)
     okay=mycxi.status_recv()
     if okay != 1: 
-        print 'printer is not well..'
+        if DEBUG:
+            print 'printer is not well..'
         mycxi.closeLink()
-        ret[0]=0
-        ret[1]="Printer is not feeling well (%s,%s)"%(printer_id,printer_port)
+        ret={ CXI_RET : 0,
+              CXI_MSG : "Printer is not feeling well (%s,%s)"%(printer_id,printer_port) }
         return ret
 
     if DEBUG:
@@ -607,13 +616,15 @@ def makeNoteLabel(printer_id,printer_port,date,expertID,seqNum,pURL,idString,not
     if DEBUG:
         print 'sending->', data
     mycxi.send(data)
-    ret[0]=mycxi.label_recv()
-    if ret[0] >= 1:
-        ret[1]="Success"
+    rcount=mycxi.label_recv()
+    if rcount >= 1:
+        ret={ CXI_RET : rcount,
+              CXI_MSG : "Success" }
     else:
-        print "ERROR, failed to print a note label"
-        ret[0]=0
-        ret[1]="Fail to print the note label at (%s,%s)" %(printer_id,printer_port)
+        if DEBUG:
+            print "failed to print a note label"
+        ret={ CXI_RET : 0,
+              CXI_MSG : "Fail to print the note label at (%s,%s)" %(printer_id,printer_port) }
     mycxi.closeLink()
     return cnt
 
@@ -718,29 +729,42 @@ def cycleIt():
 """
 API: printTestSample
 """
-def printTestSample():
-    mycxi=cxiAccess()
+def printTestSample(printer_addr,printer_port):
+    ret = {}
+    mycxi=cxiAccess(printer_addr,printer_port)
     try:
         mycxi.openLink()
     except:
-        return 0
+        ret={ CXI_RET : 0,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
 
     data = checkStatus_()
     mycxi.send(data)
     okay=mycxi.status_recv()
     if okay != 1: 
-       print 'printer is not well..'
-       mycxi.closeLink()
-       return 0 
+        if DEBUG:
+            print 'printer is not well..'
+        mycxi.closeLink()
+        ret={ CXI_RET : 0,
+              CXI_MSG : "printer is not well (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
 
     data = testLabel_()
     if DEBUG:
         print 'sending->', data
     mycxi.send(data)
-    ret=mycxi.label_recv()
-    if ret != 1:
-        print "ERROR, failed to print the sample label"
+    rcount=mycxi.label_recv()
+    if rcount != 1:
+        if DEBUG:
+            print "failed to print the sample label"
+        ret={ CXI_RET : 0,
+              CXI_MSG : "failed to print the sample label at (%s,%s)"%(printer_addr,printer_port) }
+    else:
+        ret={ "rc" : 1,
+              "msg" : "Success" }
     mycxi.closeLink()
+    return ret 
 
 """
 API: checkConfig
@@ -807,40 +831,40 @@ def test():
             break
 
         if tmp[0]=='t':
-            printTestSample()
+            printTestSample("mycxi.isi.edu",9100)
             continue
 
         if tmp[0]=='n':
             cnt=0
             printed=makeNoteLabel("mycxi.isi.edu",9100,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a note string that needs to be in there")
-            cnt+=printed[0]
+            cnt+=printed[CXI_RET]
             printed=makeNoteLabel("mycxi.isi.edu",9100,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a very very long note string that will go on and on and on and on")
-            printed=makeNoteLabel("mycxi.isi.edu,9100","2013-10-15","RES",39,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000","xbbbbbbbbbbbbbbbbbx chubby")
-            cnt+=printed[0]
+            printed=makeNoteLabel("mycxi.isi.edu",9100,"2013-10-15","RES",39,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000","xbbbbbbbbbbbbbbbbbx chubby")
+            cnt+=printed[CXI_RET]
             print "# of note labels got printed is ",cnt
             if cnt == 0:
-                print printed[1]
+                print printed[CXI_MSG]
             continue
 
         if tmp[0]=='s':
             cnt=0
             printed=makeSliceLabel("mycxi.isi.edu",9100,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 38,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000")
-            cnt+=printed[0]
+            cnt+=printed[CXI_RET]
 ## another one
             printed=makeSliceLabel("mycxi.isi.edu",9100,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 39,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000")
-            cnt+=printed[0]
+            cnt+=printed[CXI_RET]
             print "# of slice labels got printed is ",cnt
             if cnt == 0:
-                print printed[1]
+                print printed[CXI_MSG]
             continue
 
         if tmp[0]=='b':
             cnt=0
             printed=makeBoxLabel("mycxi.isi.edu",9100,"2013-10-15", "wnt1creZEGG", "RES","0","http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0","box note goes here")
-            cnt+=printed[0]
+            cnt+=printed[CXI_RET]
             print "# of box labels got printed is ",cnt
             if cnt == 0:
-                print printed[1]
+                print printed[CXI_MSG]
             continue
 
         try:

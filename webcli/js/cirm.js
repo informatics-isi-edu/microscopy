@@ -5,6 +5,8 @@ Array.prototype.contains = function (elem) {
 	return false;
 };
 
+var CXI_RET=0;
+var CXI_MSG=1;
 var GUEST_USER = '********';
 var GUEST_PASSWORD = '********';
 var GLOBUS_AUTHN = true;
@@ -101,16 +103,19 @@ var cirmAJAX = {
 			});
 		},
 		GET: function(url, contentType, async, successCallback, param, errorCallback, count) {
-			cirmAJAX.fetch(url, contentType, true, null, async, successCallback, param, errorCallback, count);
+			cirmAJAX.fetch(url, contentType, true, [], async, successCallback, param, errorCallback, count);
 		},
 		fetch: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 			document.body.style.cursor = 'wait';
 			$.ajax({
 				url: url,
+				contentType: contentType,
 				headers: make_headers(),
 				timeout: AJAX_TIMEOUT,
 				async: async,
 				accepts: {text: 'application/json'},
+				processData: processData,
+				data: (processData ? obj : JSON.stringify(obj)),
 				dataType: 'json',
 				success: function(data, textStatus, jqXHR) {
 					document.body.style.cursor = 'default';
@@ -1800,7 +1805,7 @@ function printerManaging() {
 	tr.append(td);
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:printerInfo("getStatus")');
+	a.attr('href', 'javascript:managePrinter("getStatus")');
 	a.html('Get Status');
 	td.append(a);
 	
@@ -1810,7 +1815,7 @@ function printerManaging() {
 	tr.append(td);
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:printerInfo("getConfiguration")');
+	a.attr('href', 'javascript:managePrinter("getConfiguration")');
 	a.html('Get Configuration');
 	td.append(a);
 	
@@ -1956,26 +1961,25 @@ function cancelPrinterSettings() {
 
 function managePrinter(param) {
 	var url = PRINT_CONTROL_HOME + 'id/control/' + encodeSafeURIComponent(param) + '/';
-	cirmAJAX.PUT(url, 'application/json', false, [], true, postManagePrinter, null, null, 0);
-}
-
-function postManagePrinter(data, textStatus, jqXHR, param) {
-	var result = true;
-	$.each(data[0], function(i, res) {
-		if (res['result'] != 'success') {
-			result = false;
-			return false;
-		}
-	});
-	if (result) {
-		alert('The request was submitted successfully.');
+	var arr = [];
+	var obj = new Object();
+	obj['printer_id'] = PRINTER_ADDR;
+	obj['printer_port'] = PRINTER_PORT;
+	arr.push(obj);
+	if (param == 'getStatus' || param == 'getConfiguration') {
+		cirmAJAX.fetch(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postManagePrinter, {'param': param}, null, 0);
 	} else {
-		alert('An error was reported in sending the request.');
+		cirmAJAX.PUT(url, 'application/json', false, arr, true, postManagePrinter, {'param': param}, null, 0);
 	}
 }
 
-function printerInfo(param) {
-	alert('Not yet implemented');
+function postManagePrinter(data, textStatus, jqXHR, param) {
+	data = data[0];
+	if (data[CXI_RET] == 0) {
+		alert('An error was reported in sending the request for "' + param['param'] + '".\nReason: '+data[CXI_MSG]);
+	} else {
+		alert('The request for "' + param['param'] + '" was send successfully.\nResult: '+data[CXI_MSG]);
+	}
 }
 
 function createExperiment() {
@@ -2336,12 +2340,10 @@ function submitPrintSlide() {
 
 function postSubmitPrintSlide(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data)[0];
-	var result = (data['result'] == 'success');
-	var reason = (result ? null : data['reason']);
-	if (result) {
-		alert('The request for printing the slide label(s) was submitted successfully.');
+	if (data[CXI_RET] == 0) {
+		alert('An error was reported in sending the request for printing the slide label(s).\nReason: '+data[CXI_MSG]);
 	} else {
-		alert('An error was reported in sending the request for printing the slide label(s).\nReason: '+reason);
+		alert('The request for printing the slide label(s) was submitted successfully.');
 	}
 }
 
@@ -2361,12 +2363,10 @@ function submitPrintBox() {
 
 function postSubmitPrintBox(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data)[0];
-	var result = (data['result'] == 'success');
-	var reason = (result ? null : data['reason']);
-	if (result) {
-		alert('The request for printing the box label was submitted successfully.');
+	if (data[CXI_RET] == 0) {
+		alert('An error was reported in sending the request for printing the box label.\nReason: '+data[CXI_MSG]);
 	} else {
-		alert('An error was reported in sending the request for printing the box label.\nReason: '+reason);
+		alert('The request for printing the box label was submitted successfully.');
 	}
 }
 

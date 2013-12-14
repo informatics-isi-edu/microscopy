@@ -52,7 +52,7 @@ var experimentsList = [];
 
 var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'box_of_origin_id', 'experiment_id', 'comment'];
 var slideTableDisplayColumns = {'id': 'Slide #', 'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
-var slideDisplayValue = {'id': getSlideIdValue, 'thumbnail': getSlideThumbnail};
+var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideColumnValue, 'experiment_id': getSlideColumnValue, 'comment': getSlideColumnValue, 'thumbnail': getSlideThumbnail};
 
 var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment'];
 var slideDisplayColumns = {'id': 'Slide ID', 'box_of_origin_id': 'Box ID', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
@@ -827,7 +827,15 @@ function initPanels() {
 	initBottomPanel(bottomPanel);
 }
 
-function getSlideIdValue(slide, td, val) {
+function getSlideIdValue(slide, td, val, index) {
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
+	a.html(index);
+	td.append(a);
+}
+
+function getSlideColumnValue(slide, td, val, index) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
 	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
@@ -954,7 +962,7 @@ function displayUnassignedSlides() {
 				var td = $('<td>');
 				tr.append(td);
 				if (slideDisplayValue[col] != null) {
-					slideDisplayValue[col](row, td, i+1);
+					slideDisplayValue[col](row, td, row[col], i+1);
 				} else {
 					td.html(row[col]);
 				}
@@ -1016,7 +1024,7 @@ function appendSlides(item) {
 				var td = $('<td>');
 				tr.append(td);
 				if (slideDisplayValue[col] != null) {
-					slideDisplayValue[col](row, td, i+1);
+					slideDisplayValue[col](row, td, row[col], i+1);
 				} else {
 					td.html(row[col]);
 				}
@@ -1576,8 +1584,7 @@ function cancel(item) {
 }
 
 function transferImage(image) {
-	var czi = 'http://lonestar.isi.edu/~schuler/Demo_19Jan2013--18-01--05-58-25--0024.czi';
-	//var czi = HOME + '/cirm/zoomify/' + image['filename'];
+	var czi = 'http://lonestar.isi.edu/~schuler/' + image['filename'];
 	window.open(
 	  czi,
 	  '_blank' // <- This is what makes it open in a new window.

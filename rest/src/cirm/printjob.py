@@ -23,17 +23,17 @@ class PrintJob:
     
     def __init__(self):
         self.uri = 'http://purl.org/usc-cirm'
+        self.CXI_RET=0
+        self.CXI_MSG=1
         
-    def GET(self, printerID, jobID):
-        return "You want %s:%s\n" % (str(printerID), str(jobID))
+    def GET(self, entity, jobID):
+        return "You want %s:%s\n" % (str(entity), str(jobID))
     
-    def POST(self, printerID):
+    def POST(self, entity):
         response = []
         input_data = cStringIO.StringIO(web.ctx.env['wsgi.input'].read())
         json_data = json.load(input_data)
-        result = 'success'
-        res = 0
-        if printerID == 'box':
+        if entity == 'box':
             box = json_data[0]
             printer_id = box['printer_id']
             printer_port = box['printer_port']
@@ -46,14 +46,11 @@ class PrintJob:
             try:
                 res = cxi.utils.makeBoxLabel(printer_id, printer_port, section_date, sample_name, initials, disambiguator, self.uri, id, comment)
             except:
-                pass
-            if res[0] == 0:
-                result = 'failure'
-            val = {}
-            val['result'] = result
-            val['reason'] = res[1]
-            response.append(val)
-        elif printerID == 'slide':
+                res = {}
+                res[self.CXI_RET] = 0
+                res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
+            response.append(res)
+        elif entity == 'slide':
             for slide in json_data:
                 printer_id = slide['printer_id']
                 printer_port = slide['printer_port']
@@ -68,14 +65,12 @@ class PrintJob:
                 try:
                     res = cxi.utils.makeSliceLabel(printer_id, printer_port, experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
                 except:
-                    pass
-                if res[0] == 0:
-                    result = 'failure'
+                    res = {}
+                    res[self.CXI_RET] = 0
+                    res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
+                if res[self.CXI_RET] == 0:
                     break
-            val = {}
-            val['result'] = result
-            val['reason'] = res[1]
-            response.append(val)
+            response.append(res)
                     
         return json.dumps(response)
     

@@ -186,7 +186,7 @@ var cirmAJAX = {
 
 function make_headers() {
 	var res = {'User-agent': 'CIRM/1.0'};
-	token = $.cookie('globusonline-goauth');
+	token = $.cookie(goauth_cookie);
 	if (token != null) {
 		res['Authorization'] = 'Globus-Goauthtoken ' + token;
 	}
@@ -613,9 +613,9 @@ function renderLogin() {
 
 function submitLogout() {
 	if (GLOBUS_AUTHN) {
-		token = $.cookie('globusonline-goauth');
+		token = $.cookie(goauth_cookie);
 		if (token != null) {
-			$.removeCookie('globusonline-goauth');
+			$.removeCookie(goauth_cookie);
 		}
 		postSubmitLogout();
 	} else {
@@ -673,6 +673,10 @@ function make_basic_auth(user, password) {
 
 function submitGlobusLogin(username, password) {
 	token = $.cookie(goauth_cookie);
+	if (token != null) {
+		$.removeCookie(goauth_cookie);
+		token = null;
+	}
 	if (token == null) {
 		var url = '/service/nexus/goauth/token?grant_type=client_credentials';
 		var result = {};

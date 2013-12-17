@@ -33,7 +33,7 @@ CXI_SETTING = {
 "FEED_TYPE":"GAP",
 "WIDTH":"90",
 "GAP_SIZE":"19",
-"DARKNESS":"100",
+"DARKNESS":"250",
 "RECALIBRATE":"ON",
 "PRINT_MODE":"TT",
 "REPORT_LEVEL":"1",
@@ -220,7 +220,7 @@ class cxiAccess():
        ## print is done
        if re.search("^R00000",tmp) != None:
            return 1, "Success"
-
+       return -1,tmp
 
 #####################################################################
 ## utility routines
@@ -333,6 +333,10 @@ def checkConfig_():
 """
 def checkStatus_():
     pclcmds = "!QS" + EOL
+    return pclcmds
+
+def checkFirmware_():
+    pclcmds = "!QR" + EOL
     return pclcmds
 
 """
@@ -914,6 +918,10 @@ def test(printer_addr,printer_port):
             test_sleep(printer_addr,printer_port)
             break
 
+        if tmp[0]=='S':
+            test_special(printer_addr,printer_port)
+            break
+
         if tmp[0]=='t':
             printTestSample(printer_addr,printer_port)
             continue
@@ -998,6 +1006,27 @@ def test_sleep(printer_addr,printer_port):
         sleep(20)
         checkStatus(printer_addr,printer_port)
         ret=checkConnection(printer_addr,printer_port)
+
+def test_special(printer_addr,printer_port):
+    global DEBUG
+    DEBUG = 1
+    mycxi=cxiAccess(printer_addr, printer_port)
+    try:
+        mycxi.openLink()
+    except:
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
+    data = checkFirmware_()
+    if DEBUG:
+        print 'sending->\n', data
+    mycxi.send(data)
+    rc,msg=mycxi.status_recv()
+    mycxi.closeLink()
+    ret={ CXI_RET : rc,
+          CXI_MSG : msg }
+    print 'firmware info:%s'%msg
+    return ret 
 
 if __name__ == "__main__":
     if MEI:

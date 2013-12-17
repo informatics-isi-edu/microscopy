@@ -46,7 +46,7 @@ CXI_SETTING = {
 ##"SLEEP_AFTER":"0",
 ##"ETHERNET RTEL TIMEOUT":"30"
 
-CXI_CONFIG = {
+CXI_CONFIG = [
 "FEED_TYPE",
 "WIDTH",
 "GAP_SIZE",
@@ -63,12 +63,11 @@ CXI_CONFIG = {
 "ETHERNET NETMASK",
 "ETHERNET GATEWAY",
 "ETHERNET RTEL"
-}
+]
 
 #####################################################################
 class cxiAccess():
     """ socket link up with a cxi printer """
-#    def __init__(self, addr='192.168.1.115', port=9100):
     def __init__(self, addr='mycxi.isi.edu', port=9100):
        self.port=port
        self.addr=addr
@@ -497,12 +496,17 @@ def makeNoteLabel_(date,expertID,seqNum,pURL,idString,noteString):
 API: checkConnection
 """
 def checkConnection(printer_addr,printer_port):
+    ret = {}
     mycxi=cxiAccess(printer_addr,printer_port)
     try:
         rc=mycxi.openLink(0)
     except:
-        return -1
+        ret={ CXI_RET : -1,
+              CXI_MSG : "Fail to open connection to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
     mycxi.closeLink()
+    ret={ CXI_RET : rc,
+          CXI_MSG : "Success" }
     return rc
 
 """
@@ -554,7 +558,6 @@ def makeSliceLabel(printer_addr,printer_port,date,genotype,antibody,experiment,e
 API: makeBoxLabel
 """
 def makeBoxLabel(printer_addr,printer_port,date,genotype,expertID,disNum,pURL,idString,noteString):
-    ret = {}
     mycxi=cxiAccess(printer_addr,printer_port)
     try:
         mycxi.openLink()
@@ -595,7 +598,6 @@ def makeBoxLabel(printer_addr,printer_port,date,genotype,expertID,disNum,pURL,id
 API: makeNoteLabel
 """
 def makeNoteLabel(printer_addr,printer_port,date,expertID,seqNum,pURL,idString,noteString):
-    ret={}
     mycxi=cxiAccess(printer_addr,printer_port)
     try:
         mycxi.openLink()
@@ -640,7 +642,9 @@ def resetCxi(printer_addr,printer_port):
     try:
         mycxi.openLink()
     except:
-        return 0
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
 
     data = reset2Default_() + configure4SSXT_() + \
            calibrateNow_()+ powerCycle_()
@@ -648,16 +652,19 @@ def resetCxi(printer_addr,printer_port):
         print 'sending->\n', data
     mycxi.send(data)
     mycxi.closeLink()
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success" }
+    return ret 
 
 """
 xAPI: resetNetwork
 if LAB:
-    resetNetwork("mycxi.isi.edu",9100,"10.102.237.47","255.255.255.0","10.102.237.254")
+    resetNetwork(printer_addr,printer_port,"10.102.237.47","255.255.255.0","10.102.237.254")
 if ISI:
-    resetNetwork("mycxi.isi.edu",9100,"128.9.129.113","255.255.240.0","128.9.128.7")
+    resetNetwork(printer_addr,printer_port,"128.9.129.113","255.255.240.0","128.9.128.7")
 ##mei home
 if MEI:
-    resetNetwork("mycxi.isi.edu",9100,"192.168.1.115","255.255.250.0","192.168.1.1")
+    resetNetwork(printer_addr,printer_port,"192.168.1.108","255.255.250.0","192.168.1.1")
 """
 def resetNetwork(printer_addr,printer_port,ip,netmask,gateway):
     mycxi=cxiAccess(printer_addr,printer_port)
@@ -676,12 +683,17 @@ def moveUp(printer_addr,printer_port):
     try:
         mycxi.openLink()
     except:
-        return 0
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
     data = setPosition_(-5) + powerCycle_()
     if DEBUG:
         print 'sending->\n', data
     mycxi.send(data)
     mycxi.closeLink()
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success" }
+    return ret 
 
 """
 API: moveDown
@@ -691,12 +703,17 @@ def moveDown(printer_addr,printer_port):
     try:
         mycxi.openLink()
     except:
-        return 0
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
     data = setPosition_(5) + powerCycle_()
     if DEBUG:
         print 'sending->\n', data
     mycxi.send(data)
     mycxi.closeLink()
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success" }
+    return ret 
 
 """
 API: moveLeft
@@ -708,6 +725,9 @@ def moveLeft():
     if DEBUG:
         print "XSTART is ",XSTART
         print "YSTART is ",YSTART
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success, XSTART %s, YSTART %s"%(XSTART,YSTART) }
+    return ret 
 
 """
 API: moveRight
@@ -719,6 +739,9 @@ def moveRight():
     if DEBUG:
         print "XSTART is ",XSTART
         print "YSTART is ",YSTART
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success, XSTART %s, YSTART %s"%(XSTART,YSTART) }
+    return ret 
 
 """
 xAPI: justCalibrate
@@ -798,7 +821,9 @@ def checkConfig(printer_addr,printer_port):
     try:
         mycxi.openLink()
     except:
-        return 0
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
     data = checkConfig_()
     if DEBUG:
         print 'sending->\n', data
@@ -807,28 +832,35 @@ def checkConfig(printer_addr,printer_port):
     expected=len(cnt)-1
     data=mycxi.config_recv(expected)
     mycxi.closeLink()
-    return data
+    ret={ CXI_RET : expected,
+          CXI_MSG : data }
+    return ret 
 
 """
 API: checkStatus
 """
 def checkStatus(printer_addr, printer_port):
+    ret = {}
     mycxi=cxiAccess(printer_addr, printer_port)
     try:
         mycxi.openLink()
     except:
-        return 0
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
     data = checkStatus_()
     if DEBUG:
         print 'sending->\n', data
     mycxi.send(data)
     rc,msg=mycxi.status_recv()
     mycxi.closeLink()
-    return rc
+    ret={ CXI_RET : rc,
+          CXI_MSG : msg }
+    return ret 
 
 
 #####################################################################
-def test():
+def test(printer_addr,printer_port):
     global DEBUG
     DEBUG = 1
     usage=EOL + "Please select," + EOL \
@@ -849,19 +881,19 @@ def test():
         
         ## secret sleepy test
         if tmp[0]=='X':
-            test_sleep()
+            test_sleep(printer_addr,printer_port)
             break
 
         if tmp[0]=='t':
-            printTestSample("mycxi.isi.edu",9100)
+            printTestSample(printer_addr,printer_port)
             continue
 
         if tmp[0]=='n':
             cnt=0
-            printed=makeNoteLabel("mycxi.isi.edu",9100,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a note string that needs to be in there")
+            printed=makeNoteLabel(printer_addr,printer_port,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a note string that needs to be in there")
             cnt+=printed[CXI_RET]
-            printed=makeNoteLabel("mycxi.isi.edu",9100,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a very very long note string that will go on and on and on and on")
-            printed=makeNoteLabel("mycxi.isi.edu",9100,"2013-10-15","RES",39,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000","xbbbbbbbbbbbbbbbbbx chubby")
+            printed=makeNoteLabel(printer_addr,printer_port,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a very very long note string that will go on and on and on and on")
+            printed=makeNoteLabel(printer_addr,printer_port,"2013-10-15","RES",39,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000","xbbbbbbbbbbbbbbbbbx chubby")
             cnt+=printed[CXI_RET]
             print "# of note labels got printed is ",cnt
             if cnt == 0:
@@ -870,10 +902,10 @@ def test():
 
         if tmp[0]=='s':
             cnt=0
-            printed=makeSliceLabel("mycxi.isi.edu",9100,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 38,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000")
+            printed=makeSliceLabel(printer_addr,printer_port,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 38,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000")
             cnt+=printed[CXI_RET]
 ## another one
-            printed=makeSliceLabel("mycxi.isi.edu",9100,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 39,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000")
+            printed=makeSliceLabel(printer_addr,printer_port,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 39,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000")
             cnt+=printed[CXI_RET]
             print "# of slice labels got printed is ",cnt
             if cnt == 0:
@@ -882,7 +914,7 @@ def test():
 
         if tmp[0]=='b':
             cnt=0
-            printed=makeBoxLabel("mycxi.isi.edu",9100,"2013-10-15", "wnt1creZEGG", "RES","0","http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0","box note goes here")
+            printed=makeBoxLabel(printer_addr,printer_port,"2013-10-15", "wnt1creZEGG", "RES","0","http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0","box note goes here")
             cnt+=printed[CXI_RET]
             print "# of box labels got printed is ",cnt
             if cnt == 0:
@@ -898,21 +930,21 @@ def test():
            break
 
         if data == 0 :
-           rc=checkConnection("mycxi.isi.edu",9100)
+           rc=checkConnection(printer_addr,printer_port)
            if rc == 1 :
                print "Connection okay!"
         elif data == 1 :
-           checkStatus("mycxi.isi.edu",9100)
+           checkStatus(printer_addr,printer_port)
         elif data == 2 :
-           checkConfig("mycxi.isi.edu",9100)
+           checkConfig(printer_addr,printer_port)
         elif data == 3 :
-           resetCxi("mycxi.isi.edu",9100)
+           resetCxi(printer_addr,printer_port)
         elif data == 4 :
            up=tmp.find("up")
            if up > 0:
-               moveUp("mycxi.isi.edu",9100)
+               moveUp(printer_addr,printer_port)
            else:
-               moveDown("mycxi.isi.edu",9100)
+               moveDown(printer_addr,printer_port)
         elif data == 5 :
            left=tmp.find("left")
            if left > 0:
@@ -922,21 +954,26 @@ def test():
         else:
            print "bad place!!"
 
-def test_sleep():
+def test_sleep(printer_addr,printer_port):
     global DEBUG
     DEBUG = 1
     now_time = 0
     print "start checking the sleepy cxi"
-    rc=checkConnection("mycxi.isi.edu",9100)
+    rc=checkConnection(printer_addr,printer_port)
     while rc==1 :
         print "at %d" % now_time
         print "  --Connection okay!\n"
         now_time += 20
         sleep(20)
-        data = checkStatus("mycxi.isi.edu",9100)
-        rc=checkConnection("mycxi.isi.edu",9100)
+        data = checkStatus(printer_addr,printer_port)
+        rc=checkConnection(printer_addr,printer_port)
 
 if __name__ == "__main__":
-    test()
+    if MEI:
+        test("192.168.1.108",9100)
+    if ISI:
+        test("mycxi.isi.edu",9100)
+    if LAB:
+        test("labelprnter01.mgmt.usc.edu",9100)
 
 

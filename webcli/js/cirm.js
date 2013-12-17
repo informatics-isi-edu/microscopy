@@ -562,13 +562,17 @@ function renderLogin() {
 	var img = $('<img>');
 	logoDiv.append(img);
 	img.attr({'alt': 'USC logo',
-		'src': '/cirm/images/usc-primaryshieldwordmark.png'
+		'src': '/cirm/images/usc-primaryshieldwordmark.png',
+		'width': 300,
+		'height': 100
 		});
-	var h1 = $('<h1>');
-	uiDiv.append(h1);
-	h1.html('CIRM Log In');
+	img.addClass('center');
+	var fieldsetDiv = $('<div>');
+	uiDiv.append(fieldsetDiv);
+	fieldsetDiv.addClass('center_fieldset');
+	fieldsetDiv.append('<br/><br/>');
 	var fieldset = $('<fieldset>');
-	uiDiv.append(fieldset);
+	fieldsetDiv.append(fieldset);
 	var legend = $('<legend>');
 	fieldset.append(legend);
 	legend.html('Login');
@@ -579,6 +583,7 @@ function renderLogin() {
 	var td = $('<td>');
 	tr.append(td);
 	td.html('Username: ');
+	td.addClass('tag');
 	var input = $('<input>');
 	input.attr({'type': 'text',
 		'id': 'username',
@@ -591,6 +596,7 @@ function renderLogin() {
 	td = $('<td>');
 	tr.append(td);
 	td.html('Password: ');
+	td.addClass('tag');
 	var input = $('<input>');
 	input.attr({'type': 'password',
 		'id': 'password',

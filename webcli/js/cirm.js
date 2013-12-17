@@ -408,6 +408,11 @@ function getBox(id) {
 }
 
 function postGetBox(data, textStatus, jqXHR, param) {
+	if (data.length == 0) {
+		alert('Box not found.');
+		submitLogout();
+		return;
+	}
 	mobileParams['box'] = data[0];
 	submitLogout();
 }
@@ -476,6 +481,11 @@ function getSlide(id) {
 }
 
 function postGetSlide(data, textStatus, jqXHR, param) {
+	if (data.length == 0) {
+		alert('Slide not found.');
+		submitLogout();
+		return;
+	}
 	mobileParams['slide'] = data[0];
 	getBoxes(data[0]['box_of_origin_id']);
 }

@@ -50,8 +50,10 @@ var experimentsDict = {};
 var experimentsList = [];
 // {"id":"20131115-myantibody2-KC-0","experiment_date":"2013-11-15","experiment_description":"myantibody2","initials":"KC","disambiguator":"0","comment":"This is Karl's experiment"}
 
+var slideNoDisplayColumns = ['id'];
+var slideClassColumns = {'box_of_origin_id': 'box', 'experiment_id': 'experiment'};
 var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'box_of_origin_id', 'experiment_id', 'comment'];
-var slideTableDisplayColumns = {'id': 'Slide #', 'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
+var slideTableDisplayColumns = {'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
 var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideColumnValue, 'experiment_id': getSlideColumnValue, 'comment': getSlideColumnValue, 'thumbnail': getSlideThumbnail};
 
 var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment'];
@@ -732,10 +734,27 @@ function drawPanels() {
 	container.append(div);
 	div.attr('id', 'centerPanel');
 	div.addClass('pane ui-layout-center');
+	var subdiv = $('<div>');
+	subdiv.attr('id', 'centerPanelTop');
+	div.append(subdiv);
+	subdiv = $('<div>');
+	subdiv.attr('id', 'centerPanelMiddle');
+	div.append(subdiv);
+	subdiv = $('<div>');
+	subdiv.attr('id', 'centerPanelBottom');
+	div.append(subdiv);
+	initCenterPanelButtons();
 	div = $('<div>');
 	container.append(div);
 	div.attr('id', 'rightPanel');
 	div.addClass('pane ui-layout-east');
+	var subdiv = $('<div>');
+	subdiv.attr('id', 'rightPanelTop');
+	div.append(subdiv);
+	var subdiv = $('<div>');
+	subdiv.attr('id', 'rightPanelBottom');
+	div.append(subdiv);
+	initRightPanelButtons();
 	div = $('<div>');
 	container.append(div);
 	div.attr('id', 'topPanel');
@@ -820,9 +839,9 @@ function initPanels() {
 	leftPanel.accordion({ 'header': 'h4',
 		'heightStyle': 'content',
 		'active': active});
-	var rightPanel = $('#rightPanel');
+	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
-	$('#centerPanel').html(CIRM_START_INFO);
+	$('#centerPanelTop').html(CIRM_START_INFO);
 	var bottomPanel = $('#bottomPanel');
 	initBottomPanel(bottomPanel);
 }
@@ -844,6 +863,9 @@ function getSlideColumnValue(slide, td, val, index) {
 }
 
 function getSlideThumbnail(slide, td, val) {
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
 	var img = $('<img>');
 	$.each(scansList, function(i, scan) {
 		if (scan['id'].indexOf(slide['id']) == 0) {
@@ -864,7 +886,8 @@ function getSlideThumbnail(slide, td, val) {
 			'height': 10
 			});
 	}
-	td.append(img);
+	a.append(img);
+	td.append(a);
 }
 
 function addSlides() {
@@ -888,8 +911,11 @@ function addSlides() {
 }
 
 function postAddSlides(data, textStatus, jqXHR, param) {
-	var li = $('.highlighted', $('#leftPanel'))[0];
-	$(li).click();
+	$.each(data, function(i, item) {
+		slidesList.push(item);
+		slidesDict[item['id']] = item;
+	});
+	appendSlides('experiment');
 }
 
 function checkUncheckAll(tableId, thId, buttonId) {
@@ -920,7 +946,8 @@ function checkAvailableSlides(tableId, thId, buttonId) {
 }
 
 function displayUnassignedSlides() {
-	var centerPanel = $('#centerPanel');
+	var centerPanel = $('#centerPanelMiddle');
+	centerPanel.html('');
 	var arr = [].concat(unassignedSlidesList);
 	arr.sort(compareIds);
 	if (arr.length == 0) {
@@ -941,9 +968,14 @@ function displayUnassignedSlides() {
 		input.click(function(event) {checkUncheckAll('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', 'addButton');});
 		th.append(input);
 		$.each(slideTableColumns, function(i, col) {
-			var th = $('<th>');
-			tr.append(th);
-			th.html(slideTableDisplayColumns[col]);
+			if (!slideNoDisplayColumns.contains(col)) {
+				var th = $('<th>');
+				tr.append(th);
+				th.html(slideTableDisplayColumns[col]);
+				if (slideClassColumns[col] != null) {
+					th.addClass(slideClassColumns[col]);
+				}
+			}
 		});
 		$.each(arr, function(i, row) {
 			var tr = $('<tr>');
@@ -959,27 +991,37 @@ function displayUnassignedSlides() {
 			input.click(function(event) {checkAvailableSlides('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', 'addButton');});
 			td.append(input);
 			$.each(slideTableColumns, function(j, col) {
-				var td = $('<td>');
-				tr.append(td);
-				if (slideDisplayValue[col] != null) {
-					slideDisplayValue[col](row, td, row[col], i+1);
-				} else {
-					td.html(row[col]);
+				if (!slideNoDisplayColumns.contains(col)) {
+					var td = $('<td>');
+					tr.append(td);
+					if (slideDisplayValue[col] != null) {
+						slideDisplayValue[col](row, td, row[col], i+1);
+					} else {
+						td.html(row[col]);
+					}
+					if (slideClassColumns[col] != null) {
+						td.addClass(slideClassColumns[col]);
+					}
 				}
 			});
 		});
+		$('.experiment', table).hide();
 	}
 	centerPanel.show();
-	$('#cancelButton').unbind('click');
-	$('#cancelButton').click(function(event) {cancel('addSlides');});
-	$('#cancelButton').show();
+	$('#backButton').unbind('click');
+	$('#backButton').click(function(event) {appendSlides('experiment');});
+	$('#backButton').show();
 	$('#addButton').show();
 	$('#addButton').attr('disabled', 'disabled');
 	$('#addSlidesButton').hide();
+	$('#printSlideButton').hide();
+	$('#refreshButton').show();
+	$('#centerPanelMiddle').show();
+	$('#centerPanelTop').hide();
 }
 
 function appendSlides(item) {
-	var centerPanel = $('#centerPanel');
+	var centerPanel = $('#centerPanelTop');
 	var arr = [].concat(slidesList);
 	arr.sort(compareIds);
 	if (arr.length == 0) {
@@ -1000,9 +1042,14 @@ function appendSlides(item) {
 		input.click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', 'printSlideButton');});
 		th.append(input);
 		$.each(slideTableColumns, function(i, col) {
-			var th = $('<th>');
-			tr.append(th);
-			th.html(slideTableDisplayColumns[col]);
+			if (!slideNoDisplayColumns.contains(col)) {
+				var th = $('<th>');
+				tr.append(th);
+				th.html(slideTableDisplayColumns[col]);
+				if (slideClassColumns[col] != null) {
+					th.addClass(slideClassColumns[col]);
+				}
+			}
 		});
 		$.each(arr, function(i, row) {
 			var tr = $('<tr>');
@@ -1021,24 +1068,33 @@ function appendSlides(item) {
 				input.attr('disabled', 'disabled');
 			}
 			$.each(slideTableColumns, function(j, col) {
-				var td = $('<td>');
-				tr.append(td);
-				if (slideDisplayValue[col] != null) {
-					slideDisplayValue[col](row, td, row[col], i+1);
-				} else {
-					td.html(row[col]);
+				if (!slideNoDisplayColumns.contains(col)) {
+					var td = $('<td>');
+					tr.append(td);
+					if (slideDisplayValue[col] != null) {
+						slideDisplayValue[col](row, td, row[col], i+1);
+					} else {
+						td.html(row[col]);
+					}
+					if (slideClassColumns[col] != null) {
+						td.addClass(slideClassColumns[col]);
+					}
 				}
 			});
 		});
+		$('.'+item, table).hide();
 	}
-	centerPanel.show();
-	if (arr.length > 0) {
+	$('#centerPanelMiddle').hide();
+	$('#centerPanelTop').show();
+	if (arr.length > 0 && item == 'experiment') {
 		$('#printSlideButton').show();
 		$('#printSlideButton').attr('disabled', 'disabled');
 	}
 	$('#editButton').show();
 	$('#cancelButton').hide();
 	$('#saveButton').hide();
+	$('#refreshButton').show();
+	$('button', $('#centerPanelBottom')).hide();
 	if (item == 'box') {
 		$('#createSlideButton').show();
 		$('#printBoxButton').show();
@@ -1048,7 +1104,12 @@ function appendSlides(item) {
 		}
 	}
 	if (item == 'experiment') {
+		$('#printBoxButton').hide();
+		$('#createSlideButton').hide();
 		$('#addSlidesButton').show();
+		if (arr.length > 0) {
+			$('#printSlideButton').show();
+		}
 	}
 }
 
@@ -1176,9 +1237,9 @@ function checkSlideSaveButton() {
 	if ($('#slideRevision').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#slideSequenceNumber').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#slidesCount').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
-		$('#saveButton').removeAttr('disabled');
+		$('#createButton').removeAttr('disabled');
 	} else {
-		$('#saveButton').attr('disabled', 'disabled');
+		$('#createButton').attr('disabled', 'disabled');
 	}
 }
 
@@ -1187,9 +1248,9 @@ function checkExperimentSaveButton() {
 		$('#experimentRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentDescription').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
-		$('#saveButton').removeAttr('disabled');
+		$('#createButton').removeAttr('disabled');
 	} else {
-		$('#saveButton').attr('disabled', 'disabled');
+		$('#createButton').attr('disabled', 'disabled');
 	}
 }
 
@@ -1217,13 +1278,12 @@ function postGetScans(data, textStatus, jqXHR, param) {
 }
 
 function appendImage(images) {
-	var centerPanel = $('#centerPanel');
+	var centerPanel = $('#centerPanelTop');
 	if (images.length == 0) {
 		centerPanel.html(CIRM_NO_SCANS_INFO);
 	} else {
 		centerPanel.html('');
 	}
-	centerPanel.show();
 	$.each(images, function(i, image) {
 		var img = $('<img>');
 		img.attr({'alt': 'Undefined',
@@ -1237,12 +1297,15 @@ function appendImage(images) {
 		img.click(function(event) {displayScan($(this), image);});
 		img.dblclick(function(event) {enlargeImage($(this), image);});
 	});
-	$('button', $('#bottomPanel')).hide();
-	$('#clearButton').show();
+	$('#backButton').unbind('click');
+	$('#backButton').click(function(event) {appendSlides('box');});
+	$('#backButton').show();
+	$('#createSlideButton').hide();
+	$('#printBoxButton').hide();
 	$('#refreshButton').show();
-	$('#printerButton').show();
-	$('#logoutButton').show();
 	$('#editButton').show();
+	$('#centerPanelMiddle').hide();
+	$('#centerPanelTop').show();
 }
 
 function enlargeImage(img, image) {
@@ -1288,16 +1351,15 @@ function displayEntity(itemType, item) {
 	$('#saveButton').unbind('click');
 	$('#saveButton').click(function(event) {updateEntity(itemType);});
 	$('#saveButton').removeAttr('disabled');
-	$('button', $('#bottomPanel')).hide();
 	$('#printerButton').show();
-	$('#logoutButton').show();
-	$('#clearButton').show();
 	if (itemType == 'scan' || itemType == 'slide') {
 		$('#refreshButton').show();
 	}
 	$('#editButton').show();
+	$('#cancelButton').hide();
+	$('#saveButton').hide();
 
-	var rightPanel = $('#rightPanel');
+	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
 
 	$.each(cols, function(i, col) {
@@ -1323,8 +1385,10 @@ function displayEntity(itemType, item) {
 }
 
 function displayScan(img, image) {
-	$('button', $('#bottomPanel')).hide();
 	displayEntity('scan', image);
+	$('#backButton').unbind('click');
+	$('#backButton').click(function(event) {appendSlides('box');});
+	$('#backButton').show();
 	$('#transferButton').unbind('click');
 	$('#transferButton').click(function(event) {transferImage(image);});
 	$('#transferButton').show();
@@ -1332,57 +1396,14 @@ function displayScan(img, image) {
 	$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
 	$('#enlargeButton').show();
 
-	$('img', $('#centerPanel')).removeClass('highlighted');
+	$('img', $('#centerPanelTop')).removeClass('highlighted');
 	img.addClass('highlighted');
 }
 
-function initBottomPanel(panel) {
-	panel.html('');
-
-	div = $('<div>');
-	panel.append(div);
-	div.attr('id', 'viterbi');
-	div.html('<a href="http://viterbi.usc.edu" target="_newtab2">USC Viterbi School of Engineering</a>');
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'createSlideButton');
-	button.html('New Slide(s)');
-	button.button({icons: {primary: 'ui-icon-newwin'}}).click(function(event) {createSlide();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'printBoxButton');
-	button.html('Print Box');
-	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintBox();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'printSlideButton');
-	button.html('Print Slide(s)');
-	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintSlide();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'enlargeButton');
-	button.html('Enlarge Image');
-	button.button({icons: {primary: 'ui-icon-zoomin'}});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'addSlidesButton');
-	button.html('Add Slides');
-	button.button();
-	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {getUnassignedSlides();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'addButton');
-	button.html('Add');
-	button.button();
-	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {addSlides();});
-
-	button = $('<button>');
+function initRightPanelButtons() {
+	var panel = $('#rightPanelBottom');
+	
+	var button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'editButton');
 	button.html('Edit');
@@ -1400,11 +1421,79 @@ function initBottomPanel(panel) {
 	button.html('Save');
 	button.button({icons: {primary: 'ui-icon-document'}});
 
+	$('button', panel).hide();
+}
+
+function initCenterPanelButtons() {
+	var panel = $('#centerPanelBottom');
+	panel.append('<br>');
+		
+	var button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'addSlidesButton');
+	button.html('Add Slides');
+	button.button();
+	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {getUnassignedSlides();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'createSlideButton');
+	button.html('New Slide(s)');
+	button.button({icons: {primary: 'ui-icon-newwin'}}).click(function(event) {createSlide();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'printSlideButton');
+	button.html('Print Slide(s)');
+	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintSlide();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'backButton');
+	button.html('Back');
+	button.button({icons: {primary: 'ui-icon-arrowthick-1-w'}});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'createButton');
+	button.html('Create');
+	button.button({icons: {primary: 'ui-icon-document'}});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'addButton');
+	button.html('Add');
+	button.button();
+	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {addSlides();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'enlargeButton');
+	button.html('Enlarge Image');
+	button.button({icons: {primary: 'ui-icon-zoomin'}});
+
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'transferButton');
 	button.html('Download');
 	button.button({icons: {primary: 'ui-icon-arrowthick-1-s'}});
+
+	$('button', panel).hide();
+}
+
+function initBottomPanel(panel) {
+	panel.html('');
+
+	div = $('<div>');
+	panel.append(div);
+	div.attr('id', 'viterbi');
+	div.html('<a href="http://viterbi.usc.edu" target="_newtab2">USC Viterbi School of Engineering</a>');
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'printBoxButton');
+	button.html('Print Box');
+	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintBox();});
 
 	button = $('<button>');
 	panel.append(button);
@@ -1430,9 +1519,8 @@ function initBottomPanel(panel) {
 	button.html('Logout');
 	button.button({icons: {primary: 'ui-icon-home'}}).click(function(event) {submitLogout();});
 
-	$('button', panel).hide();
-	$('#printerButton').show();
-	$('#logoutButton').show();
+	$('#printBoxButton').hide();
+	$('#refreshButton').hide();
 }
 
 function editEntity(item) {
@@ -1452,10 +1540,11 @@ function editEntity(item) {
 		$('#' + col + 'Label').hide();
 	});
 
-	$('button', $('#bottomPanel')).hide();
+	$('#printBoxButton').hide();
+	$('#refreshButton').show();
 	$('#cancelButton').show();
 	$('#saveButton').show();
-	$('#logoutButton').show();
+	$('#editButton').hide();
 }
 
 function updateEntity(item) {
@@ -1531,15 +1620,14 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 		}
 	});
 	colList = temp;
-	$('button', $('#bottomPanel')).hide();
 	displayEntity(item, data);
-	$('#printerButton').show();
-	$('#logoutButton').show();
-	$('#clearButton').show();
+	$('#printBoxButton').hide();
 	$('#refreshButton').show();
 	if (item == 'scan') {
 		$('#transferButton').show();
 		$('#enlargeButton').show();
+	} else if (item == 'box') {
+		$('#printBoxButton').show();
 	}
 	initSearchData();
 	$('#search').catcomplete('option', {'source': searchData});
@@ -1554,32 +1642,20 @@ function refresh() {
 
 function cancel(item) {
 	if (item == 'createBox' || item == 'createExperiment') {
-		$('#centerPanel').html(CIRM_START_INFO);
+		$('#centerPanelTop').html(CIRM_START_INFO);
 		$('li', $('#leftPanel')).removeClass('highlighted');
-		$('button', $('#bottomPanel')).hide();
-		$('#clearButton').show();
-		$('#refreshButton').show();
-		$('#printerButton').show();
-		$('#logoutButton').show();
+		$('#centerPanelMiddle').hide();
+		$('#centerPanelTop').show();
 	} else if (item == 'createSlide' || item == 'printSlide') {
 		$($('.highlighted', $('#BoxDiv'))[0]).click();
-	} else if (item == 'updateBox') {
-		$($('.highlighted', $('#BoxDiv'))[0]).click();
-	} else if (item == 'updateExperiment' || item == 'addSlides') {
+	} else if (item == 'addSlides') {
 		$($('.highlighted', $('#ExperimentDiv'))[0]).click();
-	} else if (item == 'updateSlide') {
-		$.each(slideColumns, function(i, col) {
-			$('#' + col + 'Input').hide();
-			$('#' + col + 'Label').show();
-		});
-		$('button', $('#bottomPanel')).hide();
-		$('#clearButton').show();
-		$('#refreshButton').show();
-		$('#printerButton').show();
-		$('#logoutButton').show();
+	} else if (item == 'updateBox' || item == 'updateExperiment' || item == 'updateSlide' || item == 'updateScan') {
+		$('input', $('#rightPanelTop')).hide();
+		$('dd', $('#rightPanelTop')).show();
 		$('#editButton').show();
-	} else if (item == 'updateScan') {
-		$($('img.highlighted', $('#centerPanel'))[0]).click();
+		$('#cancelButton').hide();
+		$('#saveButton').hide();
 	}
 }
 
@@ -1593,13 +1669,16 @@ function transferImage(image) {
 
 function clear() {
 	$('li', $('#leftPanel')).removeClass('highlighted');
-	$('#rightPanel').html('');
-	$('#centerPanel').html(CIRM_START_INFO);
-	$('button', $('#bottomPanel')).hide();
-	$('#printerButton').show();
-	$('#logoutButton').show();
+	$('#rightPanelTop').html('');
+	$('#centerPanelTop').html(CIRM_START_INFO);
+	$('#printBoxButton').hide();
+	$('#refreshButton').hide();
+	$('button', $('#centerPanelBottom')).hide();
+	$('button', $('#rightPanelBottom')).hide();
 	$('#search').val('');
 	$('#SlideDiv').remove();
+	$('#centerPanelMiddle').hide();
+	$('#centerPanelTop').show();
 }
 
 function compareIgnoreCase(str1, str2) {
@@ -1699,8 +1778,7 @@ function encodeSafeURIComponent(value) {
 }
 
 function createSlide() {
-	$('#rightPanel').html('');
-	var centerPanel = $('#centerPanel');
+	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('<p class="intro">New Slide(s)</p>');
 	centerPanel.show();
 	var table = $('<table>');
@@ -1768,18 +1846,19 @@ function createSlide() {
 	input.keyup(function(event) {checkSlideSaveButton();});
 	input.val(1);
 
-	$('button', $('#bottomPanel')).hide();
-	$('#saveButton').unbind('click');
-	$('#saveButton').click(function(event) {saveSlide();});
-	$('#saveButton').show();
-	$('#cancelButton').unbind('click');
-	$('#cancelButton').click(function(event) {cancel('createSlide');});
-	$('#cancelButton').show();
-	$('#logoutButton').show();
+	$('#createSlideButton').hide();
+	$('#createButton').unbind('click');
+	$('#createButton').click(function(event) {saveSlide();});
+	$('#createButton').show();
+	$('#backButton').unbind('click');
+	$('#backButton').click(function(event) {appendSlides('box');});
+	$('#backButton').show();
+	$('#centerPanelMiddle').hide();
+	$('#centerPanelTop').show();
 }
 
 function printerManaging() {
-	var centerPanel = $('#centerPanel');
+	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('<p class="intro">Printer Administration</p>');
 	var printTable = $('<table>');
 	centerPanel.append(printTable);
@@ -1816,6 +1895,7 @@ function printerManaging() {
 	a.html('Get Status');
 	td.append(a);
 	
+	/*
 	var tr = $('<tr>');
 	printTable.append(tr);
 	var td = $('<td>');
@@ -1905,12 +1985,17 @@ function printerManaging() {
 	a.attr('href', 'javascript:managePrinter("testPrinter")');
 	a.html('Test Printer');
 	td.append(a);
-	$('button', $('#bottomPanel')).hide();
-	$('#logoutButton').show();
+	*/
+	
+	$('button', $('#centerPanelBottom')).hide();
+	$('#printBoxButton').hide();
+	$('#refreshButton').hide();
+	$('#centerPanelMiddle').hide();
+	$('#centerPanelTop').show();
 }
 
 function printerSettings() {
-	var rightPanel = $('#rightPanel');
+	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
 	var dl = $('<dl>');
 	rightPanel.append(dl);
@@ -1947,10 +2032,11 @@ function printerSettings() {
 	$('#saveButton').unbind('click');
 	$('#saveButton').click(function(event) {updatePrinterSettings();});
 	$('#saveButton').removeAttr('disabled');
-	$('button', $('#bottomPanel')).hide();
 	$('#cancelButton').show();
 	$('#saveButton').show();
-	$('#logoutButton').show();
+	$('#editButton').hide();
+	$('#printBoxButton').hide();
+	$('#refreshButton').hide();
 }
 
 function updatePrinterSettings() {
@@ -1960,10 +2046,11 @@ function updatePrinterSettings() {
 }
 
 function cancelPrinterSettings() {
-	var rightPanel = $('#rightPanel');
+	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
-	$('button', $('#bottomPanel')).hide();
-	$('#logoutButton').show();
+	$('button', $('#rightPanelBottom')).hide();
+	$('#printBoxButton').hide();
+	$('#refreshButton').hide();
 }
 
 function managePrinter(param) {
@@ -1990,8 +2077,9 @@ function postManagePrinter(data, textStatus, jqXHR, param) {
 }
 
 function createExperiment() {
-	$('#rightPanel').html('');
-	var centerPanel = $('#centerPanel');
+	$('#rightPanelTop').html('');
+	$('button', $('#rightPanelBottom')).hide();
+	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('');
 	centerPanel.append(CIRM_NEW_EXPERIMENT);
 	centerPanel.show();
@@ -2080,19 +2168,21 @@ function createExperiment() {
 		'type': 'text'});
 	td.append(input);
 
-	$('button', $('#bottomPanel')).hide();
-	$('#saveButton').unbind('click');
-	$('#saveButton').click(function(event) {saveExperiment();});
-	$('#saveButton').show();
-	$('#saveButton').attr('disabled', 'disabled');
-	$('#cancelButton').unbind('click');
-	$('#cancelButton').click(function(event) {cancel('createExperiment');});
-	$('#cancelButton').show();
-	$('#logoutButton').show();
+	$('button', $('#centerPanelBottom')).hide();
+	$('#createButton').unbind('click');
+	$('#createButton').click(function(event) {saveExperiment();});
+	$('#createButton').show();
+	$('#createButton').attr('disabled', 'disabled');
+	$('#backButton').unbind('click');
+	$('#backButton').click(function(event) {clear();});
+	$('#backButton').show();
+	$('#printBoxButton').hide();
+	$('#refreshButton').hide();
+	$('#centerPanelMiddle').hide();
+	$('#centerPanelTop').show();
 }
 
 function displaySlide(id) {
-	$('button', $('#bottomPanel')).hide();
 	var item = slidesDict[id];
 	if (item == null) {
 		item = unassignedSlidesDict[id];
@@ -2105,7 +2195,6 @@ function displayBox(ul, li) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	li.addClass('highlighted');
 	$('#clearButton').show();
-	$('button', $('#bottomPanel')).hide();
 	displayEntity('box', boxesDict[li.html()]);
 	getSlides(li.html());
 }
@@ -2114,7 +2203,6 @@ function displayExperiment(ul, li) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	li.addClass('highlighted');
 	$('#clearButton').show();
-	$('button', $('#bottomPanel')).hide();
 	displayEntity('experiment', experimentsDict[li.html()]);
 	getExperimentSlides(li.html());
 }
@@ -2124,16 +2212,17 @@ function checkBoxSaveButton() {
 		$('#boxGenotype').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#boxRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#boxDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
-		$('#saveButton').removeAttr('disabled');
+		$('#createButton').removeAttr('disabled');
 	} else {
-		$('#saveButton').attr('disabled', 'disabled');
+		$('#createButton').attr('disabled', 'disabled');
 	}
 }
 
 function createBox() {
 	$('li', $('#leftPanel')).removeClass('highlighted');
-	$('#rightPanel').html('');
-	var centerPanel = $('#centerPanel');
+	$('#rightPanelTop').html('');
+	$('button', $('#rightPanelBottom')).hide();
+	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('');
 	centerPanel.append(CIRM_NEW_BOX);
 	centerPanel.show();
@@ -2222,15 +2311,18 @@ function createBox() {
 		'type': 'text'});
 	td.append(input);
 
-	$('button', $('#bottomPanel')).hide();
-	$('#cancelButton').unbind('click');
-	$('#cancelButton').click(function(event) {cancel('createBox');});
-	$('#cancelButton').show();
-	$('#saveButton').unbind('click');
-	$('#saveButton').click(function(event) {saveBox();});
-	$('#saveButton').show();
-	$('#saveButton').attr('disabled', 'disabled');
-	$('#logoutButton').show();
+	$('button', $('#centerPanelBottom')).hide();
+	$('#backButton').unbind('click');
+	$('#backButton').click(function(event) {clear();});
+	$('#backButton').show();
+	$('#createButton').unbind('click');
+	$('#createButton').click(function(event) {saveBox();});
+	$('#createButton').show();
+	$('#createButton').attr('disabled', 'disabled');
+	$('#printBoxButton').hide();
+	$('#refreshButton').hide();
+	$('#centerPanelMiddle').hide();
+	$('#centerPanelTop').show();
 }
 
 function saveBox() {
@@ -2318,8 +2410,11 @@ function saveSlide() {
 
 function postSaveSlide(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data);
-	newSlideId = data[0]['id'];
-	$($('.highlighted', $('#BoxDiv'))[0]).click();
+	$.each(data, function(i, item) {
+		slidesList.push(item);
+		slidesDict[item['id']] = item;
+	});
+	appendSlides('box');
 }
 
 function submitPrintSlide() {

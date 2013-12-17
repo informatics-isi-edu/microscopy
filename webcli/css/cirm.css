@@ -251,7 +251,12 @@ margin-right: 5px;
 	padding-top: 6px;
 }
 
-#bottomPanel button {
+#rightPanelBottom, #centerPanelBottom {
+	margin-right: 5px;
+	float: right;
+}
+
+#bottomPanel button, #rightPanelBottom button, #centerPanelBottom button {
 	margin-right: 10px;
 }
 

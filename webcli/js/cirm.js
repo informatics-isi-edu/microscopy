@@ -876,8 +876,8 @@ function getSlideThumbnail(slide, td, val) {
 			img.attr({'alt': 'Undefined',
 				'title': 'Thumbnail',
 				'src': 'images/'+scan['thumbnail'],
-				'width': 10,
-				'height': 10
+				'width': 30,
+				'height': 30
 				});
 			return false;
 		}
@@ -886,8 +886,8 @@ function getSlideThumbnail(slide, td, val) {
 		img.attr({'alt': 'Undefined',
 			'title': 'Thumbnail',
 			'src': 'images/blank.jpeg',
-			'width': 10,
-			'height': 10
+			'width': 30,
+			'height': 30
 			});
 	}
 	a.append(img);

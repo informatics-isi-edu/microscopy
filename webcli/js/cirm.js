@@ -5,8 +5,8 @@ Array.prototype.contains = function (elem) {
 	return false;
 };
 
-var CXI_RET=0;
-var CXI_MSG=1;
+var CXI_RET='Return value';
+var CXI_MSG='Return Message';
 var GUEST_USER = '********';
 var GUEST_PASSWORD = '********';
 var GLOBUS_AUTHN = true;
@@ -2064,7 +2064,7 @@ function managePrinter(param) {
 
 function postManagePrinter(data, textStatus, jqXHR, param) {
 	data = data[0];
-	if (data[CXI_RET] == 0) {
+	if (data[CXI_RET] <= 0) {
 		alert('An error was reported in sending the request for "' + param['param'] + '".\nReason: '+data[CXI_MSG]);
 	} else {
 		alert('The request for "' + param['param'] + '" was send successfully.\nResult: '+data[CXI_MSG]);
@@ -2437,7 +2437,7 @@ function submitPrintSlide() {
 
 function postSubmitPrintSlide(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data)[0];
-	if (data[CXI_RET] == 0) {
+	if (data[CXI_RET] <= 0) {
 		alert('An error was reported in sending the request for printing the slide label(s).\nReason: '+data[CXI_MSG]);
 	} else {
 		alert('The request for printing the slide label(s) was submitted successfully.');
@@ -2460,7 +2460,7 @@ function submitPrintBox() {
 
 function postSubmitPrintBox(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data)[0];
-	if (data[CXI_RET] == 0) {
+	if (data[CXI_RET] <= 0) {
 		alert('An error was reported in sending the request for printing the box label.\nReason: '+data[CXI_MSG]);
 	} else {
 		alert('The request for printing the box label was submitted successfully.');

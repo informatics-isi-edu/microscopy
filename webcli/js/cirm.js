@@ -1264,20 +1264,15 @@ function postGetScans(data, textStatus, jqXHR, param) {
 		mobileParams['scans'] = data;
 		submitLogout();
 	} else {
-		scansList = data;
-		scansDict = {};
-		$.each(data, function(i, item) {
-			scansDict[item['id']] = item;
-		});
-		if (cirm_mobile) {
-			appendMobileImage(scansList);
-		} else {
-			appendImage(scansList);
-		}
+		appendImage(data);
 	}
 }
 
 function appendImage(images) {
+	var item = 'box';
+	if ($('.highlighted', $('#ExperimentDiv')).length > 0) {
+		item = 'experiment';
+	}
 	var centerPanel = $('#centerPanelTop');
 	if (images.length == 0) {
 		centerPanel.html(CIRM_NO_SCANS_INFO);
@@ -1297,10 +1292,10 @@ function appendImage(images) {
 		img.click(function(event) {displayScan($(this), image);});
 		img.dblclick(function(event) {enlargeImage($(this), image);});
 	});
+	$('button', $('#centerPanelBottom')).hide();
 	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides('box');});
+	$('#backButton').click(function(event) {appendSlides(item);});
 	$('#backButton').show();
-	$('#createSlideButton').hide();
 	$('#printBoxButton').hide();
 	$('#refreshButton').show();
 	$('#editButton').show();

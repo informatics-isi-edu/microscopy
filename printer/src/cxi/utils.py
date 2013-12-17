@@ -40,30 +40,31 @@ CXI_SETTING = {
 "REPORT_TYPE":"SERIAL",
 "ETHERNET GARP":"5",
 "USER_FEEDBACK":"ON",
-"ETHERNET RTEL TIMEOUT":"0"
+"ETHERNET RTEL":"ON",
+"ETHERNET RTEL TIMEOUT":"10"
 }
 
 ##"SLEEP_AFTER":"0",
 ##"ETHERNET RTEL TIMEOUT":"30"
 
-CXI_CONFIG = [
-"FEED_TYPE",
-"WIDTH",
-"GAP_SIZE",
-"DARKNESS",
-"RECALIBRATE",
-"PRINT_MODE",
-"REPORT_LEVEL",
-"REPORT_TYPE",
-"ETHERNET GARP",
-"SLEEP_AFTER",
-"USER_FEEDBACK",
-"ETHERNET RTEL TIMEOUT",
-"ETHERNET IP",
-"ETHERNET NETMASK",
-"ETHERNET GATEWAY",
-"ETHERNET RTEL"
-]
+CXI_CONFIG = {
+"FEED_TYPE":"NONE",
+"WIDTH":"NONE",
+"GAP_SIZE":"NONE",
+"DARKNESS":"NONE",
+"RECALIBRATE":"NONE",
+"PRINT_MODE":"NONE",
+"REPORT_LEVEL":"NONE",
+"REPORT_TYPE":"NONE",
+"ETHERNET GARP":"NONE",
+"SLEEP_AFTER":"NONE",
+"USER_FEEDBACK":"NONE",
+"ETHERNET RTEL TIMEOUT":"NONE",
+"ETHERNET IP":"NONE",
+"ETHERNET NETMASK":"NONE",
+"ETHERNET GATEWAY":"NONE",
+"ETHERNET RTEL":"NONE"
+}
 
 #####################################################################
 class cxiAccess():
@@ -507,7 +508,7 @@ def checkConnection(printer_addr,printer_port):
     mycxi.closeLink()
     ret={ CXI_RET : rc,
           CXI_MSG : "Success" }
-    return rc
+    return ret
 
 """
 API: makeSliceLabel
@@ -598,6 +599,8 @@ def makeBoxLabel(printer_addr,printer_port,date,genotype,expertID,disNum,pURL,id
 API: makeNoteLabel
 """
 def makeNoteLabel(printer_addr,printer_port,date,expertID,seqNum,pURL,idString,noteString):
+    data = checkStatus_()
+    print data
     mycxi=cxiAccess(printer_addr,printer_port)
     try:
         mycxi.openLink()
@@ -808,8 +811,8 @@ def printTestSample(printer_addr,printer_port):
         ret={ CXI_RET : 0,
               CXI_MSG : "%s,%s:note label, %s" %(printer_addr,printer_port,msg) }
     else:
-        ret={ "rc" : 1,
-              "msg" : "Success" }
+        ret={ CXI_RET : 1,
+              CXI_MSG : "Success" }
     mycxi.closeLink()
     return ret 
 
@@ -830,11 +833,38 @@ def checkConfig(printer_addr,printer_port):
     mycxi.send(data)
     cnt=re.findall("VARIABLE",data)
     expected=len(cnt)-1
-    data=mycxi.config_recv(expected)
+    result=mycxi.config_recv(expected)
     mycxi.closeLink()
+    rdata=extract_configs(result)
     ret={ CXI_RET : expected,
-          CXI_MSG : data }
+          CXI_MSG : rdata }
     return ret 
+
+def extract_configs(data):
+    global CXI_CONFIG
+    dlist = data.splitlines()
+    for i in dlist:
+        a=i.split("=")
+        key=a[0].strip()
+        val=a[1].strip()
+        if CXI_CONFIG.has_key(key):
+            CXI_CONFIG[str(key)]=val
+        else:
+            if key=="ETHERNET RTEL TIMOUT":
+                CXI_CONFIG["ETHERNET RTEL TIMEOUT"]=val
+                continue
+            if key=="GAP SIZE":
+                CXI_CONFIG["GAP_SIZE"]=val
+                continue
+            if key=="ETHERNET IP ADDRESS":
+                CXI_CONFIG["ETHERNET IP"]=val
+                continue
+            if key=="ETHERNET GARP TIME":
+                CXI_CONFIG["ETHERNET GARP"]=val
+                continue
+            print 'Did not have this entry..',key
+
+    return CXI_CONFIG
 
 """
 API: checkStatus
@@ -930,13 +960,14 @@ def test(printer_addr,printer_port):
            break
 
         if data == 0 :
-           rc=checkConnection(printer_addr,printer_port)
-           if rc == 1 :
+           ret=checkConnection(printer_addr,printer_port)
+           if ret[CXI_RET] == 1 :
                print "Connection okay!"
         elif data == 1 :
            checkStatus(printer_addr,printer_port)
         elif data == 2 :
-           checkConfig(printer_addr,printer_port)
+           ret=checkConfig(printer_addr,printer_port)
+           print ret[CXI_MSG]
         elif data == 3 :
            resetCxi(printer_addr,printer_port)
         elif data == 4 :
@@ -959,14 +990,14 @@ def test_sleep(printer_addr,printer_port):
     DEBUG = 1
     now_time = 0
     print "start checking the sleepy cxi"
-    rc=checkConnection(printer_addr,printer_port)
-    while rc==1 :
+    ret=checkConnection(printer_addr,printer_port)
+    while ret[CXI_RET]==1 :
         print "at %d" % now_time
         print "  --Connection okay!\n"
         now_time += 20
         sleep(20)
-        data = checkStatus(printer_addr,printer_port)
-        rc=checkConnection(printer_addr,printer_port)
+        checkStatus(printer_addr,printer_port)
+        ret=checkConnection(printer_addr,printer_port)
 
 if __name__ == "__main__":
     if MEI:

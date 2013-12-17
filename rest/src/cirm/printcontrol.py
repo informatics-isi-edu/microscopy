@@ -23,8 +23,8 @@ class PrintControl:
     
     def __init__(self):
         self.uri = 'http://purl.org/usc-cirm'
-        self.CXI_RET=0
-        self.CXI_MSG=1
+        self.CXI_RET='Return value'
+        self.CXI_MSG='Return Message'
         
     def GET(self, printerID, param):
         printer = web.input()
@@ -33,7 +33,7 @@ class PrintControl:
         response = []
         try:
             if param == 'getStatus':
-                res = cxi.utils.checkStatus()
+                res = cxi.utils.checkStatus(printer_id, printer_port)
             elif param == 'getConfiguration':
                 res = cxi.utils.checkConfig()
         except:
@@ -41,19 +41,6 @@ class PrintControl:
             res[self.CXI_RET] = 0
             res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
                     
-        if res == 0:
-            res = {}
-            res[self.CXI_RET] = 0
-            res[self.CXI_MSG] = 'The request execution encountered a runtime error.'
-        elif res == 1:
-            res = {}
-            res[self.CXI_RET] = 1
-            res[self.CXI_MSG] = 'Success.'
-        elif res == None:
-            res = {}
-            res[self.CXI_RET] = 0
-            res[self.CXI_MSG] = 'Unknown.'
-
         response.append(res)
         return json.dumps(response)
     
@@ -66,17 +53,17 @@ class PrintControl:
         response = []
         try:
             if param == 'checkConnection':
-                res = cxi.utils.checkConnection()
+                res = cxi.utils.checkConnection(printer_id, printer_port)
             elif param == 'resetPrinter':
-                res = cxi.utils.resetCxi()
+                res = cxi.utils.resetCxi(printer_id, printer_port)
             elif param == 'calibratePrinter':
                 res = cxi.utils.justCalibrate()
             elif param == 'forcePowerCycle':
                 res = cxi.utils.cycleIt()
             elif param == 'shiftUp':
-                res = cxi.utils.moveUp()
+                res = cxi.utils.moveUp(printer_id, printer_port)
             elif param == 'shiftDown':
-                res = cxi.utils.moveDown()
+                res = cxi.utils.moveDown(printer_id, printer_port)
             elif param == 'shiftLeft':
                 res = cxi.utils.moveLeft()
             elif param == 'shiftRight':
@@ -92,18 +79,6 @@ class PrintControl:
             res[self.CXI_RET] = 0
             res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
                     
-        if res == 0:
-            res = {}
-            res[self.CXI_RET] = 0
-            res[self.CXI_MSG] = 'The request execution encountered a runtime error.'
-        elif res == 1:
-            res = {}
-            res[self.CXI_RET] = 1
-            res[self.CXI_MSG] = 'Success.'
-        elif res == None:
-            res = {}
-            res[self.CXI_RET] = 0
-            res[self.CXI_MSG] = 'Unknown.'
         response.append(res)
         return json.dumps(response)
     

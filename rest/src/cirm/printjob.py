@@ -23,8 +23,8 @@ class PrintJob:
     
     def __init__(self):
         self.uri = 'http://purl.org/usc-cirm'
-        self.CXI_RET=0
-        self.CXI_MSG=1
+        self.CXI_RET='Return value'
+        self.CXI_MSG='Return Message'
         
     def GET(self, entity, jobID):
         return "You want %s:%s\n" % (str(entity), str(jobID))
@@ -68,7 +68,7 @@ class PrintJob:
                     res = {}
                     res[self.CXI_RET] = 0
                     res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
-                if res[self.CXI_RET] == 0:
+                if res[self.CXI_RET] <= 0:
                     break
             response.append(res)
                     

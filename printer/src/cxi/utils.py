@@ -33,7 +33,7 @@ CXI_SETTING = {
 "FEED_TYPE":"GAP",
 "WIDTH":"90",
 "GAP_SIZE":"19",
-"DARKNESS":"250",
+"DARKNESS":"100",
 "RECALIBRATE":"ON",
 "PRINT_MODE":"TT",
 "REPORT_LEVEL":"1",
@@ -93,7 +93,8 @@ class cxiAccess():
     def extendtimeout(self, newtime):
        self.cxi.settimeout(newtime)
 
-    def openLink(self, exit=1) :
+    def openLink(self) :
+       """ cxiAccess.openLink, 1 okay, 0 failed """
        save_t=self.cxi.gettimeout()
        self.cxi.settimeout(1)
        if DEBUG :
@@ -103,9 +104,8 @@ class cxiAccess():
            self.cxi.connect((self.addr_ip,self.port))
        except socket.error:
            print "Fail to connect to %s, power cycle the printer" % self.addr
-           ## if exit==1, fail on assert
-           assert(exit == 0)
-           return 0
+           ## force fail on assert
+           assert(0)
        else:
            self.isOpen=1
        self.cxi.settimeout(save_t)
@@ -117,19 +117,23 @@ class cxiAccess():
        self.isOpen=0
 
     def send(self, data):
+       """ cxiAccess.send, 1 okay, 0 failed """
        sz=len(data)
        sent=0
        try:
           sent = self.cxi.send(data)
        except socket.error:
           print "BAD, socket error on send"
-          return
+          return 0
        if DEBUG:
            print "send: done"
        if sent == 0:
           print "BAD, socket connect closed"
+          return 0
+       return 1
 
     def config_recv(self, expected):
+       """ cxiAccess.config_recv, a string of configuration setting """
        data="" 
        pattern = "= .+\r\n"
        while 1 :
@@ -156,6 +160,8 @@ class cxiAccess():
        return data
 
     def label_recv(self):
+       """ cxiAccess.label_recv, number of label printed or 0 for failed, and
+           reason if failed """
        printed = 0
        data = ""
        while 1 :
@@ -504,14 +510,15 @@ def checkConnection(printer_addr,printer_port):
     ret = {}
     mycxi=cxiAccess(printer_addr,printer_port)
     try:
-        rc=mycxi.openLink(0)
+        rc=mycxi.openLink()
     except:
         ret={ CXI_RET : -1,
               CXI_MSG : "Fail to open connection to printer (%s,%s)"%(printer_addr,printer_port) }
         return ret 
-    mycxi.closeLink()
+
     ret={ CXI_RET : rc,
           CXI_MSG : "Success" }
+    mycxi.closeLink()
     return ret
 
 """
@@ -603,8 +610,6 @@ def makeBoxLabel(printer_addr,printer_port,date,genotype,expertID,disNum,pURL,id
 API: makeNoteLabel
 """
 def makeNoteLabel(printer_addr,printer_port,date,expertID,seqNum,pURL,idString,noteString):
-    data = checkStatus_()
-    print data
     mycxi=cxiAccess(printer_addr,printer_port)
     try:
         mycxi.openLink()
@@ -975,7 +980,6 @@ def test(printer_addr,printer_port):
            checkStatus(printer_addr,printer_port)
         elif data == 2 :
            ret=checkConfig(printer_addr,printer_port)
-           print ret[CXI_MSG]
         elif data == 3 :
            resetCxi(printer_addr,printer_port)
         elif data == 4 :

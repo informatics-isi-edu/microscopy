@@ -332,3 +332,7 @@ img.center {
     max-width:300px;
 }
 
+td.center 
+{
+	text-align:center;
+}

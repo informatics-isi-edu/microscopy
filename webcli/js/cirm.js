@@ -1004,6 +1004,7 @@ function displayUnassignedSlides() {
 				tr.addClass('odd');
 			}
 			var td = $('<td>');
+			td.addClass('center');
 			tr.append(td);
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',
@@ -1078,6 +1079,7 @@ function appendSlides(item) {
 				tr.addClass('odd');
 			}
 			var td = $('<td>');
+			td.addClass('center');
 			tr.append(td);
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',

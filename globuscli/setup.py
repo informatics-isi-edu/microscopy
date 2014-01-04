@@ -20,7 +20,7 @@ setup(name="cirm-globus",
       description="cirm globus application",
       version="0.1",
       package_dir={"": "src"},
-      packages=["cirm"],
+      packages=["globuscli"],
       requires=["globusonline"],
       classifiers=[
         "Intended Audience :: Developers",

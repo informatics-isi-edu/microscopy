@@ -36,6 +36,8 @@ var newSlideId = null;
 var goauth_cookie = 'globusonline-goauth';
 var token = null;
 
+var URL_ESCAPE = new String("~!()'");
+
 var boxColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator', 'comment'];
 var boxEditColumns = ['comment'];
 var boxDisplayColumns = {'id': 'Box ID', 'section_date': 'Section Date', 'sample_name': 'Sample Name', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment'};
@@ -1787,8 +1789,7 @@ function escapeDoubleQuotes(text) {
 
 function encodeSafeURIComponent(value) {
 	var ret = encodeURIComponent(value);
-	return ret;
-	$.each("~!()'", function(i, c) {
+	$.each(URL_ESCAPE, function(i, c) {
 		ret = ret.replace(new RegExp('\\' + c, 'g'), escape(c));
 	});
 	return ret;

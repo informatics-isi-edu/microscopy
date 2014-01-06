@@ -15,5 +15,4 @@
 # limitations under the License.
 #
 
-import transfer
 

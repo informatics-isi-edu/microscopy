@@ -18,3 +18,4 @@
 import printjob
 import printcontrol
 import zoomify
+import transfer

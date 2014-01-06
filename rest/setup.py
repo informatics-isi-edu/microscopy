@@ -21,7 +21,7 @@ setup(name="cirm-rest",
       version="0.1",
       package_dir={"": "src"},
       packages=["cirm"],
-      requires=["web.py", "psycopg2"],
+      requires=["web.py", "psycopg2", "globusonline"],
       classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",

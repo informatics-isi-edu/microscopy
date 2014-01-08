@@ -7,11 +7,6 @@
 import sys
 import socket
 import re
-from time import sleep
-
-LAB=0
-ISI=1
-MEI=0
 
 DEBUG = 0
 XSTART = 10
@@ -33,7 +28,7 @@ CXI_SETTING = {
 "FEED_TYPE":"GAP",
 "WIDTH":"90",
 "GAP_SIZE":"19",
-"DARKNESS":"100",
+"DARKNESS":"250",
 "RECALIBRATE":"ON",
 "PRINT_MODE":"TT",
 "REPORT_LEVEL":"1",
@@ -44,8 +39,20 @@ CXI_SETTING = {
 "ETHERNET RTEL TIMEOUT":"10"
 }
 
-##"SLEEP_AFTER":"0",
-##"ETHERNET RTEL TIMEOUT":"30"
+CXI_BOX_SETTING = {
+"FEED_TYPE":"GAP",
+"WIDTH":"200",
+"GAP_SIZE":"19",
+"DARKNESS":"0",
+"RECALIBRATE":"ON",
+"PRINT_MODE":"DT",
+"REPORT_LEVEL":"1",
+"REPORT_TYPE":"SERIAL",
+"ETHERNET GARP":"5",
+"USER_FEEDBACK":"ON",
+"ETHERNET RTEL":"ON",
+"ETHERNET RTEL TIMEOUT":"10"
+}
 
 CXI_CONFIG = {
 "FEED_TYPE":"NONE",
@@ -230,6 +237,10 @@ class cxiAccess():
 
 #####################################################################
 ## utility routines
+def setdebug():
+    global DEBUG
+    DEBUG=1
+
 def yloc(delta):
     global YSTART
     return str(YSTART+(delta))
@@ -335,6 +346,31 @@ def checkConfig_():
     pclcmds = pclcmds + VAR + SPACE + WRITE + EOL + END + EOL
     return pclcmds
 
+def extract_configs_(data):
+    global CXI_CONFIG
+    dlist = data.splitlines()
+    for i in dlist:
+        a=i.split("=")
+        key=a[0].strip()
+        val=a[1].strip()
+        if CXI_CONFIG.has_key(key):
+            CXI_CONFIG[str(key)]=val
+        else:
+            if key=="ETHERNET RTEL TIMOUT":
+                CXI_CONFIG["ETHERNET RTEL TIMEOUT"]=val
+                continue
+            if key=="GAP SIZE":
+                CXI_CONFIG["GAP_SIZE"]=val
+                continue
+            if key=="ETHERNET IP ADDRESS":
+                CXI_CONFIG["ETHERNET IP"]=val
+                continue
+            if key=="ETHERNET GARP TIME":
+                CXI_CONFIG["ETHERNET GARP"]=val
+                continue
+            print 'Did not have this entry..',key
+    return CXI_CONFIG
+
 """
 """
 def checkStatus_():
@@ -382,6 +418,20 @@ def configure4SSXT_() :
     return pclcmds
 
 """
+setup for Data General's AAA label
+2 x 1, 1/8 gap, on 1"x1" backing, Direct Thermal mode
+"""
+def configure4BOX_() :
+    c=len(CXI_BOX_SETTING)
+    pclcmds = "! 0 0 0 0" + EOL
+    k=CXI_SETTING.keys()
+    for i in k:
+       pclcmds = pclcmds + VAR + SPACE + i + SPACE + CXI_BOX_SETTING[i] + EOL
+
+    pclcmds = pclcmds + VAR + SPACE + WRITE + EOL + END + EOL
+    return pclcmds
+
+"""
 force a power cycle after a lockup
 23 23 23 23 23 67 76 69 65 82 23 23 23 23 23 13 10
 """
@@ -396,6 +446,7 @@ C....C, 80 of them
 def wakeUp_():
     pclcmds = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
     return pclcmds
+
 
 """
 a test label
@@ -415,9 +466,23 @@ def testLabel_():
     return pclcmds
 
 """
-"BARCODE DATAMATRIX (,F,,,1.2,~) 140 140" + EOL + "~%40s~"%(purl) + EOL \
-"STRING 8X8(1,1,1,2) 20 240 " + guid + EOL \
-"STRING 8X8(1,1,1,2) 20 240 " + idString + EOL \
+a test box label
+"""
+def testBoxLabel_():
+    sample_idString="20131108-wnt1creZEG-RES-0-38-000"
+    sample_pUrl="http://purl.org/usc-cirm"
+    purl="%s/slide?id=%s" %(sample_pUrl,sample_idString)
+    pclcmds = "! 0 100 300 1" + EOL + \
+      "DRAW_BOX"+ pos(0,-5) +"580 280 4" + EOL +\
+      "TEXT 1"+ pos(10,5) + "ABACEFG" + EOL +  \
+      "TEXT 1"+ pos(10,35) + "12345" + EOL +  \
+      "TEXT 1"+ pos(10,65) + "abcefg" + EOL +  \
+      "TEXT 1"+ pos(10,95) +"MNOPQ" + EOL +  \
+      "BARCODE DATAMATRIX (,F,,,1.5,~)" + apos(400,100) + EOL + "~%70s~"%(purl) + EOL + \
+      "END" + EOL
+    return pclcmds
+
+"""
 """
 def makeSliceLabel_(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString):
     seq="% 4d" %(seqNum)
@@ -442,21 +507,32 @@ def makeBoxLabel_(date,genotype,expertID,disNum,pURL,idString,noteString):
     tmp=noteString
     ltmp=noteString.lower()
     if tmp == ltmp:
-        line1,tmp=chop(tmp,17)
+        line1,tmp=chop(tmp,22)
+        line2,tmp=chop(tmp,22)
+        line3,tmp=chop(tmp,22)
+        line4,tmp=chop(tmp,22)
     else:   
-        line1,tmp=chop(tmp,14)
-    pclcmds = "! 0 100 260 1" + EOL + \
+        line1,tmp=chop(tmp,19)
+        line2,tmp=chop(tmp,19)
+        line3,tmp=chop(tmp,19)
+        line4,tmp=chop(tmp,19)
+    pclcmds = "! 0 100 300 1" + EOL + \
       "TEXT 1" + pos(0,0) + date + EOL +  \
       "DRAW_BOX" + pos(185,-5) + "30 30 3" + EOL +\
       "STRING 18X23" + pos(190,0) + disNum +EOL +  \
       "TEXT 1" + pos(0,35) + genotype + EOL
     if line1 != 0:
-        pclcmds=pclcmds+ "TEXT 0" + pos(0,70) + line1 + EOL
+        pclcmds=pclcmds+ "TEXT 1" + pos(0,70) + line1 + EOL
+    if line2 != 0:
+        pclcmds=pclcmds+ "TEXT 1" + pos(0,110) + line2 + EOL
+    if line3 != 0:
+        pclcmds=pclcmds+ "TEXT 1" + pos(0,150) + line3 + EOL
+    if line4 != 0:
+        pclcmds=pclcmds+ "TEXT 1" + pos(0,190) + line4 + EOL
     pclcmds=pclcmds + \
-      "TEXT 1" + pos(0,135) + "???" + EOL +\
-      "DRAW_BOX" + pos(0,180) + "65 40 3" + EOL +\
-      "TEXT 0" + pos(5,185) + expertID + EOL + \
-      "BARCODE DATAMATRIX (,F,,,1,~)" + apos(140,140) + EOL + "~%70s~"%(purl) + EOL + \
+      "DRAW_BOX" + pos(0,230) + "65 40 3" + EOL +\
+      "TEXT 0" + pos(5,235) + expertID + EOL + \
+      "BARCODE DATAMATRIX (,F,,,1.5,~)" + apos(400,100) + EOL + "~%70s~"%(purl) + EOL + \
       "END" + EOL
     return pclcmds
 
@@ -520,6 +596,164 @@ def checkConnection(printer_addr,printer_port):
           CXI_MSG : "Success" }
     mycxi.closeLink()
     return ret
+
+"""
+API: checkConfig
+"""
+def checkConfig(printer_addr,printer_port):
+    mycxi=cxiAccess(printer_addr,printer_port)
+    try:
+        mycxi.openLink()
+    except:
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
+    data = checkConfig_()
+    if DEBUG:
+        print 'sending->\n', data
+    mycxi.send(data)
+    cnt=re.findall("VARIABLE",data)
+    expected=len(cnt)-1
+    result=mycxi.config_recv(expected)
+    mycxi.closeLink()
+    rdata=extract_configs_(result)
+    ret={ CXI_RET : expected,
+          CXI_MSG : rdata }
+    return ret 
+
+"""
+API: checkStatus
+"""
+def checkStatus(printer_addr, printer_port):
+    ret = {}
+    mycxi=cxiAccess(printer_addr, printer_port)
+    try:
+        mycxi.openLink()
+    except:
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
+    data = checkStatus_()
+    if DEBUG:
+        print 'sending->\n', data
+    mycxi.send(data)
+    rc,msg=mycxi.status_recv()
+    mycxi.closeLink()
+    ret={ CXI_RET : rc,
+          CXI_MSG : msg }
+    return ret 
+
+"""
+API: resetCxi
+"""
+def resetCxi(printer_addr,printer_port):
+    mycxi=cxiAccess(printer_addr,printer_port)
+    try:
+        mycxi.openLink()
+    except:
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
+
+    data = reset2Default_() + configure4SSXT_() + \
+           calibrateNow_()+ powerCycle_()
+    if DEBUG:
+        print 'sending->\n', data
+    mycxi.send(data)
+    mycxi.closeLink()
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success" }
+    return ret 
+
+"""
+API: resetBoxCxi
+"""
+def resetBoxCxi(printer_addr,printer_port):
+    mycxi=cxiAccess(printer_addr,printer_port)
+    try:
+        mycxi.openLink()
+    except:
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret
+
+    data = reset2Default_() + configure4BOX_() + \
+           calibrateNow_()+ powerCycle_()
+    if DEBUG:
+        print 'sending->\n', data
+    mycxi.send(data)
+    mycxi.closeLink()
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success" }
+    return ret
+
+"""
+API: moveUp
+"""
+def moveUp(printer_addr,printer_port):
+    mycxi=cxiAccess(printer_addr,printer_port)
+    try:
+        mycxi.openLink()
+    except:
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
+    data = setPosition_(-5) + powerCycle_()
+    if DEBUG:
+        print 'sending->\n', data
+    mycxi.send(data)
+    mycxi.closeLink()
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success" }
+    return ret 
+
+"""
+API: moveDown
+"""
+def moveDown(printer_addr,printer_port):
+    mycxi=cxiAccess(printer_addr,printer_port)
+    try:
+        mycxi.openLink()
+    except:
+        ret={ CXI_RET : -1,
+              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
+        return ret 
+    data = setPosition_(5) + powerCycle_()
+    if DEBUG:
+        print 'sending->\n', data
+    mycxi.send(data)
+    mycxi.closeLink()
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success" }
+    return ret 
+
+"""
+API: moveLeft
+"""
+def moveLeft():
+    global XSTART
+    global YSTART
+    XSTART = XSTART - 5
+    if DEBUG:
+        print "XSTART is ",XSTART
+        print "YSTART is ",YSTART
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success, XSTART %s, YSTART %s"%(XSTART,YSTART) }
+    return ret 
+
+"""
+API: moveRight
+"""
+def moveRight():
+    global XSTART 
+    global YSTART
+    XSTART = XSTART + 5
+    if DEBUG:
+        print "XSTART is ",XSTART
+        print "YSTART is ",YSTART
+    ret={ CXI_RET : 0,
+          CXI_MSG : "Success, XSTART %s, YSTART %s"%(XSTART,YSTART) }
+    return ret 
 
 """
 API: makeSliceLabel
@@ -644,151 +878,14 @@ def makeNoteLabel(printer_addr,printer_port,date,expertID,seqNum,pURL,idString,n
         ret={ CXI_RET : 0,
               CXI_MSG : "%s,%s:note label, %s" %(printer_addr,printer_port,msg) }
     mycxi.closeLink()
-    return ret 
+    return ret
 
-"""
-API: resetCxi
-"""
-def resetCxi(printer_addr,printer_port):
-    mycxi=cxiAccess(printer_addr,printer_port)
-    try:
-        mycxi.openLink()
-    except:
-        ret={ CXI_RET : -1,
-              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
-        return ret 
-
-    data = reset2Default_() + configure4SSXT_() + \
-           calibrateNow_()+ powerCycle_()
-    if DEBUG:
-        print 'sending->\n', data
-    mycxi.send(data)
-    mycxi.closeLink()
-    ret={ CXI_RET : 0,
-          CXI_MSG : "Success" }
-    return ret 
-
-"""
-xAPI: resetNetwork
-if LAB:
-    resetNetwork(printer_addr,printer_port,"10.102.237.47","255.255.255.0","10.102.237.254")
-if ISI:
-    resetNetwork(printer_addr,printer_port,"128.9.129.113","255.255.240.0","128.9.128.7")
-##mei home
-if MEI:
-    resetNetwork(printer_addr,printer_port,"192.168.1.108","255.255.250.0","192.168.1.1")
-"""
-def resetNetwork(printer_addr,printer_port,ip,netmask,gateway):
-    mycxi=cxiAccess(printer_addr,printer_port)
-    mycxi.extendtimeout(100)
-    data=resetConnectVars_(ip, netmask, gateway)
-    if DEBUG:
-        print 'sending->\n', data
-    mycxi.send(data)
-    mycxi.closeLink()
-
-"""
-API: moveUp
-"""
-def moveUp(printer_addr,printer_port):
-    mycxi=cxiAccess(printer_addr,printer_port)
-    try:
-        mycxi.openLink()
-    except:
-        ret={ CXI_RET : -1,
-              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
-        return ret 
-    data = setPosition_(-5) + powerCycle_()
-    if DEBUG:
-        print 'sending->\n', data
-    mycxi.send(data)
-    mycxi.closeLink()
-    ret={ CXI_RET : 0,
-          CXI_MSG : "Success" }
-    return ret 
-
-"""
-API: moveDown
-"""
-def moveDown(printer_addr,printer_port):
-    mycxi=cxiAccess(printer_addr,printer_port)
-    try:
-        mycxi.openLink()
-    except:
-        ret={ CXI_RET : -1,
-              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
-        return ret 
-    data = setPosition_(5) + powerCycle_()
-    if DEBUG:
-        print 'sending->\n', data
-    mycxi.send(data)
-    mycxi.closeLink()
-    ret={ CXI_RET : 0,
-          CXI_MSG : "Success" }
-    return ret 
-
-"""
-API: moveLeft
-"""
-def moveLeft():
-    global XSTART
-    global YSTART
-    XSTART = XSTART - 5
-    if DEBUG:
-        print "XSTART is ",XSTART
-        print "YSTART is ",YSTART
-    ret={ CXI_RET : 0,
-          CXI_MSG : "Success, XSTART %s, YSTART %s"%(XSTART,YSTART) }
-    return ret 
-
-"""
-API: moveRight
-"""
-def moveRight():
-    global XSTART 
-    global YSTART
-    XSTART = XSTART + 5
-    if DEBUG:
-        print "XSTART is ",XSTART
-        print "YSTART is ",YSTART
-    ret={ CXI_RET : 0,
-          CXI_MSG : "Success, XSTART %s, YSTART %s"%(XSTART,YSTART) }
-    return ret 
-
-"""
-xAPI: justCalibrate
-"""
-def justCalibrate(printer_addr, printer_port):
-    mycxi=cxiAccess(printer_addr, printer_port)
-    try:
-        mycxi.openLink()
-    except:
-        return 0
-    data = calibrateNow_() + powerCycle_()
-    if DEBUG:
-        print 'sending->\n', data
-    mycxi.send(data)
-    mycxi.closeLink()
-
-"""
-xAPI: cycleIt
-"""
-def cycleIt(printer_addr,printer_port):
-    mycxi=cxiAccess(printer_addr,printer_port)
-    try:
-        mycxi.openLink()
-    except:
-        return 0
-    data = powerCycle_()
-    if DEBUG:
-        print 'sending->\n', data
-    mycxi.send(data)
-    mycxi.closeLink()
 
 """
 API: printTestSample
+API: printBoxTestSample
 """
-def printTestSample(printer_addr,printer_port):
+def printSample(box,printer_addr,printer_port):
     ret = {}
     mycxi=cxiAccess(printer_addr,printer_port)
     try:
@@ -809,7 +906,11 @@ def printTestSample(printer_addr,printer_port):
               CXI_MSG : "printer is not well (%s,%s),%s"%(printer_addr,printer_port,msg) }
         return ret 
 
-    data = testLabel_()
+    if (box==1):
+        data = testBoxLabel_()
+    else:
+        data = testLabel_()
+
     if DEBUG:
         print 'sending->\n', data
     mycxi.send(data)
@@ -825,219 +926,60 @@ def printTestSample(printer_addr,printer_port):
     mycxi.closeLink()
     return ret 
 
+def printTestSample(printer_addr,printer_port):
+    return printSample(0, printer_addr, printer_port)
+
+def printBoxTestSample(printer_addr,printer_port):
+    return printSample(1, printer_addr, printer_port)
+
 """
-API: checkConfig
+xAPI: resetNetwork
+if LAB:
+    resetNetwork(printer_addr,printer_port,"10.102.237.47","255.255.255.0","10.102.237.254")
+if ISI:
+    resetNetwork(printer_addr,printer_port,"128.9.129.113","255.255.240.0","128.9.128.7")
+##mei home
+if MEI:
+    resetNetwork(printer_addr,printer_port,"192.168.1.116","255.255.250.0","192.168.1.1")
 """
-def checkConfig(printer_addr,printer_port):
+def XresetNetwork(printer_addr,printer_port,ip,netmask,gateway):
+    mycxi=cxiAccess(printer_addr,printer_port)
+    mycxi.extendtimeout(100)
+    data=resetConnectVars_(ip, netmask, gateway)
+    if DEBUG:
+        print 'sending->\n', data
+    mycxi.send(data)
+    mycxi.closeLink()
+
+"""
+xAPI: justCalibrate
+"""
+def XjustCalibrate(printer_addr, printer_port):
+    mycxi=cxiAccess(printer_addr, printer_port)
+    try:
+        mycxi.openLink()
+    except:
+        return 0
+    data = calibrateNow_() + powerCycle_()
+    if DEBUG:
+        print 'sending->\n', data
+    mycxi.send(data)
+    mycxi.closeLink()
+
+"""
+xAPI: cycleIt
+"""
+def XcycleIt(printer_addr,printer_port):
     mycxi=cxiAccess(printer_addr,printer_port)
     try:
         mycxi.openLink()
     except:
-        ret={ CXI_RET : -1,
-              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
-        return ret 
-    data = checkConfig_()
+        return 0
+    data = powerCycle_()
     if DEBUG:
         print 'sending->\n', data
     mycxi.send(data)
-    cnt=re.findall("VARIABLE",data)
-    expected=len(cnt)-1
-    result=mycxi.config_recv(expected)
     mycxi.closeLink()
-    rdata=extract_configs(result)
-    ret={ CXI_RET : expected,
-          CXI_MSG : rdata }
-    return ret 
 
-def extract_configs(data):
-    global CXI_CONFIG
-    dlist = data.splitlines()
-    for i in dlist:
-        a=i.split("=")
-        key=a[0].strip()
-        val=a[1].strip()
-        if CXI_CONFIG.has_key(key):
-            CXI_CONFIG[str(key)]=val
-        else:
-            if key=="ETHERNET RTEL TIMOUT":
-                CXI_CONFIG["ETHERNET RTEL TIMEOUT"]=val
-                continue
-            if key=="GAP SIZE":
-                CXI_CONFIG["GAP_SIZE"]=val
-                continue
-            if key=="ETHERNET IP ADDRESS":
-                CXI_CONFIG["ETHERNET IP"]=val
-                continue
-            if key=="ETHERNET GARP TIME":
-                CXI_CONFIG["ETHERNET GARP"]=val
-                continue
-            print 'Did not have this entry..',key
-
-    return CXI_CONFIG
-
-"""
-API: checkStatus
-"""
-def checkStatus(printer_addr, printer_port):
-    ret = {}
-    mycxi=cxiAccess(printer_addr, printer_port)
-    try:
-        mycxi.openLink()
-    except:
-        ret={ CXI_RET : -1,
-              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
-        return ret 
-    data = checkStatus_()
-    if DEBUG:
-        print 'sending->\n', data
-    mycxi.send(data)
-    rc,msg=mycxi.status_recv()
-    mycxi.closeLink()
-    ret={ CXI_RET : rc,
-          CXI_MSG : msg }
-    return ret 
-
-
-#####################################################################
-def test(printer_addr,printer_port):
-    global DEBUG
-    DEBUG = 1
-    usage=EOL + "Please select," + EOL \
-              + "0)check connection" + EOL \
-              + "1)get current status" + EOL \
-              + "2)get config setting" + EOL \
-              + "3)reset printer" + EOL \
-              + "4)shift up/down" + EOL \
-              + "5)shift left/right" + EOL \
-              + "n)make note label" + EOL \
-              + "s)make slice label" + EOL \
-              + "b)make box label" + EOL \
-              + "t)make test sample" + EOL \
-              + "x)exit"
-    while 1 :
-        print usage
-        tmp = sys.stdin.readline()
-        
-        ## secret sleepy test
-        if tmp[0]=='X':
-            test_sleep(printer_addr,printer_port)
-            break
-
-        if tmp[0]=='S':
-            test_special(printer_addr,printer_port)
-            break
-
-        if tmp[0]=='t':
-            printTestSample(printer_addr,printer_port)
-            continue
-
-        if tmp[0]=='n':
-            cnt=0
-            printed=makeNoteLabel(printer_addr,printer_port,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a note string that needs to be in there")
-            cnt+=printed[CXI_RET]
-            printed=makeNoteLabel(printer_addr,printer_port,"2013-10-15","RES",38,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000","this is a very very long note string that will go on and on and on and on")
-            printed=makeNoteLabel(printer_addr,printer_port,"2013-10-15","RES",39,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000","xbbbbbbbbbbbbbbbbbx chubby")
-            cnt+=printed[CXI_RET]
-            print "# of note labels got printed is ",cnt
-            if cnt == 0:
-                print printed[CXI_MSG]
-            continue
-
-        if tmp[0]=='s':
-            cnt=0
-            printed=makeSliceLabel(printer_addr,printer_port,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 38,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-38-000")
-            cnt+=printed[CXI_RET]
-## another one
-            printed=makeSliceLabel(printer_addr,printer_port,"2013-10-15", "wnt1creZEGG", "AntibodyX", "ExperimentX","RES", 39,0,"http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0-39-000")
-            cnt+=printed[CXI_RET]
-            print "# of slice labels got printed is ",cnt
-            if cnt == 0:
-                print printed[CXI_MSG]
-            continue
-
-        if tmp[0]=='b':
-            cnt=0
-            printed=makeBoxLabel(printer_addr,printer_port,"2013-10-15", "wnt1creZEGG", "RES","0","http://purl.org/usc-cirm","20131108-wnt1creZEGG-RES-0","box note goes here")
-            cnt+=printed[CXI_RET]
-            print "# of box labels got printed is ",cnt
-            if cnt == 0:
-                print printed[CXI_MSG]
-            continue
-
-        try:
-            data = int(tmp[0])
-        except :
-            break
-
-        if  (data > 9) | (data < 0):
-           break
-
-        if data == 0 :
-           ret=checkConnection(printer_addr,printer_port)
-           if ret[CXI_RET] == 1 :
-               print "Connection okay!"
-        elif data == 1 :
-           checkStatus(printer_addr,printer_port)
-        elif data == 2 :
-           ret=checkConfig(printer_addr,printer_port)
-        elif data == 3 :
-           resetCxi(printer_addr,printer_port)
-        elif data == 4 :
-           up=tmp.find("up")
-           if up > 0:
-               moveUp(printer_addr,printer_port)
-           else:
-               moveDown(printer_addr,printer_port)
-        elif data == 5 :
-           left=tmp.find("left")
-           if left > 0:
-               moveLeft()
-           else:
-               moveRight()
-        else:
-           print "bad place!!"
-
-def test_sleep(printer_addr,printer_port):
-    global DEBUG
-    DEBUG = 1
-    now_time = 0
-    print "start checking the sleepy cxi"
-    ret=checkConnection(printer_addr,printer_port)
-    while ret[CXI_RET]==1 :
-        print "at %d" % now_time
-        print "  --Connection okay!\n"
-        now_time += 20
-        sleep(20)
-        checkStatus(printer_addr,printer_port)
-        ret=checkConnection(printer_addr,printer_port)
-
-def test_special(printer_addr,printer_port):
-    global DEBUG
-    DEBUG = 1
-    mycxi=cxiAccess(printer_addr, printer_port)
-    try:
-        mycxi.openLink()
-    except:
-        ret={ CXI_RET : -1,
-              CXI_MSG : "can not connect to printer (%s,%s)"%(printer_addr,printer_port) }
-        return ret 
-    data = checkFirmware_()
-    if DEBUG:
-        print 'sending->\n', data
-    mycxi.send(data)
-    rc,msg=mycxi.status_recv()
-    mycxi.closeLink()
-    ret={ CXI_RET : rc,
-          CXI_MSG : msg }
-    print 'firmware info:%s'%msg
-    return ret 
-
-if __name__ == "__main__":
-    if MEI:
-        test("192.168.1.108",9100)
-    if ISI:
-        test("mycxi.isi.edu",9100)
-    if LAB:
-        test("labelprnter01.mgmt.usc.edu",9100)
 
 

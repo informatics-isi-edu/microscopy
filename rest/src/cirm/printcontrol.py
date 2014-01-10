@@ -29,13 +29,13 @@ class PrintControl:
     def GET(self, printerID, param):
         printer = web.input()
         printer_id = printer['printer_id']
-        printer_port = printer['printer_port']
+        printer_port = int(printer['printer_port'])
         response = []
         try:
             if param == 'getStatus':
                 res = cxi.utils.checkStatus(printer_id, printer_port)
             elif param == 'getConfiguration':
-                res = cxi.utils.checkConfig()
+                res = cxi.utils.checkConfig(printer_id, printer_port)
         except:
             res = {}
             res[self.CXI_RET] = 0

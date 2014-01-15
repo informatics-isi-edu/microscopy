@@ -5,19 +5,50 @@ Array.prototype.contains = function (elem) {
 	return false;
 };
 
+var selectedEndpoint = null;
+var endpointsList = [
+                     'alsuser#bl832data',
+                     'anugrah007#loginservice',
+                     'bmnitsche#tibglobServiceXS',
+                     'cats#astroserver',
+                     'ec2user#NGSrepo',
+                     'egitestuser01#gw13dtn',
+                     'egitestuser01#joe',
+                     'its#UChicagoITServicesGCMU',
+                     'jamieross#iMac-devserver',
+                     'kochmedia#server01',
+                     'meuser#maria-cmu',
+                     'rdsiuser#RDSI-Node-WA',
+                     'rkarsten#Karstens_Imac_server',
+                     'rkawa#server',
+                     'rtudoran#serv',
+                     'tlevshina#desusers_gridftp',
+                     'tmerritt#service0',
+                     'uchicago#ITServices'
+                 ];
+
+var ENDPOINT_SOURCE='cirm#cirm';
+var TILES_DIR='/home/cirm/tiles/';
 var CXI_RET='Return value';
 var CXI_MSG='Return Message';
 var GUEST_USER = '********';
 var GUEST_PASSWORD = '********';
 var GLOBUS_AUTHN = true;
-var PRINTER_ADDR = 'mycxi.isi.edu';
-var PRINTER_PORT = 9100;
+var SLIDE_PRINTER_ADDR = 'mycxi.isi.edu';
+var SLIDE_PRINTER_PORT = 9100;
+var BOX_PRINTER_ADDR = 'mycxilabel.isi.edu';
+var BOX_PRINTER_PORT = 9100;
+var PRINTER_ADDR = null;
+var PRINTER_PORT = 0;
 var HOME;
+var USER;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
 var PRINT_JOB_HOME = '/ermrest/printer/';
 var PRINT_CONTROL_HOME = '/ermrest/printer/';
+var GLOBUS_TRANSFER_HOME = '/ermrest/transfer';
 var ZOOMIFY_HOME = '/ermrest/zoomify/';
+var DOWNLOAD_HOME = '/cirm-files/';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
 var CIRM_START_INFO = '<p class="intro">Choose an entity from the left sidebar or use the search box to find relevant images.</p>';
@@ -32,35 +63,41 @@ var mobileParams = null;
 var newBoxId = null;
 var newExperimentId = null;
 var newSlideId = null;
+var newSearchKeywords = null;
 
 var goauth_cookie = 'globusonline-goauth';
 var token = null;
 
 var URL_ESCAPE = new String("~!()'");
 
-var boxColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator', 'comment'];
-var boxEditColumns = ['comment'];
-var boxDisplayColumns = {'id': 'Box ID', 'section_date': 'Section Date', 'sample_name': 'Sample Name', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment'};
+var filesTableColumns = ['thumbnail', 'filename', 'tilesdir'];
+var filesTableDisplayColumns = {'thumbnail': 'Thumbnail', 'filename': 'File Name', 'tilesdir': 'Tiles Directory'};
+var fileDisplayValue = {'thumbnail': getFileThumbnail};
+var filesDict = {};
+
+var boxColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator', 'comment', 'tags'];
+var boxEditColumns = ['comment', 'tags'];
+var boxDisplayColumns = {'id': 'Box ID', 'section_date': 'Section Date', 'sample_name': 'Sample Name', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment', 'tags': 'Tags'};
 var boxesDict = {};
 var boxesList = [];
 // {"id":"20131108-wnt1creZEGG-RES-0","section_date":"2013-11-08","sample_name":"wnt1creZEGG","initials":"RES","disambiguator":"0","comment":"This is a box of origin"}
 
-var experimentColumns = ['id', 'experiment_date', 'experiment_description', 'initials', 'disambiguator', 'comment'];
-var experimentEditColumns = ['comment'];
-var experimentDisplayColumns = {'id': 'Experiment ID', 'experiment_date': 'Experiment Date', 'experiment_description': 'Experiment Description', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment'};
+var experimentColumns = ['id', 'experiment_date', 'experiment_description', 'initials', 'disambiguator', 'comment', 'tags'];
+var experimentEditColumns = ['comment', 'tags'];
+var experimentDisplayColumns = {'id': 'Experiment ID', 'experiment_date': 'Experiment Date', 'experiment_description': 'Experiment Description', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment', 'tags': 'Tags'};
 var experimentsDict = {};
 var experimentsList = [];
 // {"id":"20131115-myantibody2-KC-0","experiment_date":"2013-11-15","experiment_description":"myantibody2","initials":"KC","disambiguator":"0","comment":"This is Karl's experiment"}
 
 var slideNoDisplayColumns = ['id'];
 var slideClassColumns = {'box_of_origin_id': 'box', 'experiment_id': 'experiment'};
-var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'box_of_origin_id', 'experiment_id', 'comment'];
-var slideTableDisplayColumns = {'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
-var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideColumnValue, 'experiment_id': getSlideColumnValue, 'comment': getSlideColumnValue, 'thumbnail': getSlideThumbnail};
+var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'box_of_origin_id', 'experiment_id', 'comment', 'tags'];
+var slideTableDisplayColumns = {'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
+var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideColumnValue, 'experiment_id': getSlideColumnValue, 'comment': getSlideColumnValue, 'tags': getSlideColumnValue, 'thumbnail': getSlideThumbnail};
 
-var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment'];
-var slideDisplayColumns = {'id': 'Slide ID', 'box_of_origin_id': 'Box ID', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'experiment_id': 'Experiment ID', 'comment': 'Comment'};
-var slideEditColumns = ['comment'];
+var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment', 'tags'];
+var slideDisplayColumns = {'id': 'Slide ID', 'box_of_origin_id': 'Box ID', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
+var slideEditColumns = ['comment', 'tags'];
 var slideExperimentColumn = 'experiment_id';
 var slidesDict = {};
 var slidesList = [];
@@ -69,16 +106,15 @@ var unassignedSlidesDict = {};
 var unassignedSlidesList = [];
 //{"id":"20131108-wnt1creZEGG-RES-0-09-000","sequence_num":9,"revision":0,"box_of_origin_id":"20131108-wnt1creZEGG-RES-0","experiment_id":null,"comment":"This is a slide"}
 
-var scanColumns = ['id', 'slide_id', 'scan_num', 'filename', 'thumbnail', 'tilesdir', 'comment'];
-var scanEditColumns = ['comment'];
-var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'scan_num': 'Scan Number', 'filename': 'File', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'comment': 'Comment'};
+var scanColumns = ['id', 'slide_id', 'scan_num', 'filename', 'thumbnail', 'tilesdir', 'comment', 'tags'];
+var scanEditColumns = ['comment', 'tags'];
+var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'scan_num': 'Scan Number', 'filename': 'File', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'comment': 'Comment', 'tags': 'Tags'};
 var scansDict = {};
 var scansList = [];
 // {"id":"20131108-wnt1creZEGG-RES-0-38-001-000","slide_id":"20131108-wnt1creZEGG-RES-0-38-001","scan_num":0,"filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","thumbnail":"20131108-wnt1creZEGG-RES-0-38-001.jpeg","tilesdir":"20131108-wnt1creZEGG-RES-0-38-001/","comment":"This is a scan"}
 
-
-var searchData = [];
-// { label: 'anders', category: 'Experiment' }
+var searchList = [];
+var isSlidePrinter = false;
 
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
@@ -518,8 +554,7 @@ function postGetExperimentScans(data, textStatus, jqXHR, param) {
 		scansDict[item['id']] = item;
 	});
 	appendSlides('experiment');
-	initSearchData();
-	$('#search').catcomplete('option', {'source': searchData});
+	$('#centerPanelBottom').show();
 	selectNewSlide();
 }
 
@@ -549,20 +584,21 @@ function postGetBoxScans(data, textStatus, jqXHR, param) {
 		scansDict[item['id']] = item;
 	});
 	appendSlides('box');
-	initSearchData();
-	$('#search').catcomplete('option', {'source': searchData});
+	$('#centerPanelBottom').show();
 	selectNewSlide();
 }
 
 function renderLogin() {
 	HOME = '' + window.location;
-	var index = HOME.indexOf('/cirm');
+	var index = HOME.lastIndexOf('/cirm');
 	HOME = HOME.substring(0, index);
 	ERMREST_HOME = HOME + ERMREST_HOME;
 	WEBAUTHN_HOME = HOME + WEBAUTHN_HOME;
 	PRINT_JOB_HOME = HOME + PRINT_JOB_HOME;
 	PRINT_CONTROL_HOME = HOME + PRINT_CONTROL_HOME;
+	GLOBUS_TRANSFER_HOME = HOME + GLOBUS_TRANSFER_HOME;
 	ZOOMIFY_HOME = HOME + ZOOMIFY_HOME;
+	DOWNLOAD_HOME = HOME + DOWNLOAD_HOME;
 	if (isMobileSearch()) {
 		submitMobileLogin();
 		return;
@@ -676,6 +712,7 @@ function submitMobileDatabaseLogin() {
 }
 
 function submitLogin() {
+	USER = $('#username').val();
 	if (GLOBUS_AUTHN) {
 		submitGlobusLogin($('#username').val(), $('#password').val());
 	} else {
@@ -819,6 +856,21 @@ function selectNewExperiment() {
 	}
 }
 
+function selectNewSearch() {
+	var newSearch = $('li', $('#SearchUL'))[0];
+	$(newSearch).click();
+}
+
+function selectSearch(keywords) {
+	$.each($('li', $('#SearchUL')), function(i, li) {
+		if ($(li).html() == keywords) {
+			$('#leftPanel').accordion( "option", "active", 2 );
+			$(li).click();
+			return false;
+		}
+	});
+}
+
 function selectNewSlide() {
 	if (newSlideId != null) {
 		$.each($('li', $('#SlideUL')), function(i, slide) {
@@ -840,9 +892,15 @@ function getEntityContent(entityList, displayName, entityName, clickFunction, cr
 	obj['Create'] = createFunction;
 	var values = [];
 	var arr = [].concat(entityList);
-	arr.sort(compareIds);
+	if (entityName != 'Search') {
+		arr.sort(compareIds);
+	}
 	$.each(arr, function(i, item) {
-		values.push(item['id']);
+		if (entityName != 'Search') {
+			values.push(item['id']);
+		} else {
+			values.push(item);
+		}
 	});
 	obj['Values'] = values;
 	entityContent.push(obj);
@@ -857,13 +915,17 @@ function initPanels() {
 	loadLeftPanel(leftPanel, boxesContent);
 	var experimentsContent = getEntityContent(experimentsList, 'Experiments', 'Experiment', displayExperiment, createExperiment);
 	loadLeftPanel(leftPanel, experimentsContent);
-	var active = (newExperimentId == null) ? 0 : 1;
+	var searchContent = getEntityContent(searchList, 'Search History', 'Search', displaySearch, null);
+	loadLeftPanel(leftPanel, searchContent);
+	var active = (newSearchKeywords != null) ? 2 : ((newExperimentId == null) ? 0 : 1);
 	leftPanel.accordion({ 'header': 'h4',
 		'heightStyle': 'content',
 		'active': active});
 	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
-	$('#centerPanelTop').html(CIRM_START_INFO);
+	if (newSearchKeywords == null) {
+		$('#centerPanelTop').html(CIRM_START_INFO);
+	}
 	var bottomPanel = $('#bottomPanel');
 	initBottomPanel(bottomPanel);
 }
@@ -912,6 +974,17 @@ function getSlideThumbnail(slide, td, val) {
 	td.append(a);
 }
 
+function getFileThumbnail(td, scan) {
+	var img = $('<img>');
+	img.attr({'alt': 'Undefined',
+		'title': 'Thumbnail',
+		'src': 'images/'+scan['thumbnail'],
+		'width': 30,
+		'height': 30
+		});
+	td.append(img);
+}
+
 function addSlides() {
 	var li = $('.highlighted', $('#leftPanel'))[0];
 	var experimentId = $(li).html();
@@ -940,25 +1013,33 @@ function postAddSlides(data, textStatus, jqXHR, param) {
 	appendSlides('experiment');
 }
 
-function checkUncheckAll(tableId, thId, buttonId) {
+function checkUncheckAll(tableId, thId, buttons) {
 	var checked = $('#' + thId).prop('checked');
 	if (checked) {
 		$('td', $('#' + tableId)).find('input:not(:checked)').prop('checked', true);
 		$('td', $('#' + tableId)).find('input:disabled').prop('checked', false);
-		$('#'+ buttonId).removeAttr('disabled');
+		$.each(buttons, function(i, buttonId) {
+			$('#'+ buttonId).removeAttr('disabled');
+		});
 	} else {
 		$('td', $('#' + tableId)).find('input:checked').prop('checked', false);
-		$('#'+ buttonId).attr('disabled', 'disabled');
+		$.each(buttons, function(i, buttonId) {
+			$('#'+ buttonId).attr('disabled', 'disabled');
+		});
 	}
 }
 
-function checkAvailableSlides(tableId, thId, buttonId) {
+function checkAvailableSlides(tableId, thId, buttons) {
 	var count = $('td', $('#' + tableId)).find('input:checked').length;
 	if (count == 0) {
 		$('#' + thId).prop('checked', false);
-		$('#'+ buttonId).attr('disabled', 'disabled');
+		$.each(buttons, function(i, buttonId) {
+			$('#'+ buttonId).attr('disabled', 'disabled');
+		});
 	} else {
-		$('#'+ buttonId).removeAttr('disabled');
+		$.each(buttons, function(i, buttonId) {
+			$('#'+ buttonId).removeAttr('disabled');
+		});
 		if ($('td', $('#' + tableId)).find('input:not(:checked)').length == $('td', $('#' + tableId)).find('input:disabled').length) {
 			$('#' + thId).prop('checked', true);
 		} else {
@@ -987,7 +1068,7 @@ function displayUnassignedSlides() {
 		var input = $('<input>');
 		input.attr({'type': 'checkbox',
 			'id': 'selectAllUnassignedSlidesTh'});
-		input.click(function(event) {checkUncheckAll('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', 'addButton');});
+		input.click(function(event) {checkUncheckAll('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
 		th.append(input);
 		$.each(slideTableColumns, function(i, col) {
 			if (!slideNoDisplayColumns.contains(col)) {
@@ -1011,7 +1092,7 @@ function displayUnassignedSlides() {
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',
 				'slideId': row['id']});
-			input.click(function(event) {checkAvailableSlides('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', 'addButton');});
+			input.click(function(event) {checkAvailableSlides('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
 			td.append(input);
 			$.each(slideTableColumns, function(j, col) {
 				if (!slideNoDisplayColumns.contains(col)) {
@@ -1038,6 +1119,7 @@ function displayUnassignedSlides() {
 	$('#addButton').attr('disabled', 'disabled');
 	$('#addSlidesButton').hide();
 	$('#printSlideButton').hide();
+	$('#globusTransferButton').hide();
 	$('#refreshButton').show();
 	$('#centerPanelMiddle').show();
 	$('#centerPanelTop').hide();
@@ -1062,7 +1144,7 @@ function appendSlides(item) {
 		var input = $('<input>');
 		input.attr({'type': 'checkbox',
 			'id': 'selectAllAssignedSlidesTh'});
-		input.click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', 'printSlideButton');});
+		input.click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
 		th.append(input);
 		$.each(slideTableColumns, function(i, col) {
 			if (!slideNoDisplayColumns.contains(col)) {
@@ -1086,7 +1168,7 @@ function appendSlides(item) {
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',
 				'slideId': row['id']});
-			input.click(function(event) {checkAvailableSlides('slidesTable', 'selectAllAssignedSlidesTh', 'printSlideButton');});
+			input.click(function(event) {checkAvailableSlides('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
 			td.append(input);
 			if (row['experiment_id'] == null) {
 				input.attr('disabled', 'disabled');
@@ -1114,7 +1196,11 @@ function appendSlides(item) {
 		$('#printSlideButton').show();
 		$('#printSlideButton').attr('disabled', 'disabled');
 	}
-	$('#editButton').show();
+	if (item == 'search') {
+		$('#editButton').hide();
+	} else {
+		$('#editButton').show();
+	}
 	$('#cancelButton').hide();
 	$('#saveButton').hide();
 	$('#refreshButton').show();
@@ -1134,6 +1220,10 @@ function appendSlides(item) {
 		if (arr.length > 0) {
 			$('#printSlideButton').show();
 		}
+	}
+	if (arr.length > 0) {
+		$('#globusTransferButton').show();
+		$('#globusTransferButton').attr('disabled', 'disabled');
 	}
 }
 
@@ -1156,42 +1246,101 @@ function initTopPanel() {
 	input.attr({'id': 'search',
 		'size': '50'});
 	div.append(input);
-	$.widget('custom.catcomplete', $.ui.autocomplete, {
-		_renderMenu: function( ul, items ) {
-			var that = this,
-			currentCategory = '';
-			$.each( items, function( index, item ) {
-				if ( item.category != currentCategory ) {
-					ul.append('<li class="ui-autocomplete-category">' + item.category + '</li>');
-					currentCategory = item.category;
-				}
-				that._renderItemData( ul, item );
-			});
-			ul.css('z-index', Math.pow(2,32) - 1);
-		}
-	});
-	initSearchData();
-	$('#search').catcomplete({
-		delay: 0,
-		source: searchData,
-		select: function(event, ui) {displaySearchResult(event, ui);}
-	});
+	input.keyup(function(event) {checkSearch(event);});
 }
 
-function displaySearchResult(event, ui) {
-	var ul = null;
-	var active = 0;
-	if (ui.item.category == 'Boxes') {
-		ul = $('#BoxUL');
-	} else if (ui.item.category == 'Experiments') {
-		ul = $('#ExperimentUL');
-		active = 1;
+function getSearchExpression(originalValue, delimiter) {
+	var arr = originalValue.split(' ');
+	var keywords = [];
+	$.each(arr, function(i, value) {
+		if (value != '') {
+			keywords.push(value);
+		}
+	});
+	keywords = keywords.join(delimiter);
+	return keywords;
+}
+
+function checkSearch(event) {
+	if (event.which == 13) {
+		var originalValue = $('#search').val().replace(/^\s*/, "").replace(/\s*$/, "");
+		if (originalValue.length > 0) {
+			originalValue = getSearchExpression(originalValue, ' ');
+			if (searchList.contains(originalValue)) {
+				selectSearch(originalValue);
+			} else {
+				searchList.unshift(originalValue);
+				newSearchKeywords = originalValue;
+				drawPanels();
+				newSearchKeywords = null;
+				selectNewSearch();
+			}
+		}
 	}
-	if (ul != null) {
-		$('#leftPanel').accordion('option', {'active': active});
-		var label = ui.item.label;
-		clickEntity(ul, label);
-	}
+}
+
+function getSearchSlides(keywords, originalValue) {
+	var url = ERMREST_HOME + '/scan';
+	var params = {'keywords': keywords,
+			'originalValue': originalValue};
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSearchSlides, params, null, 0);
+}
+
+function postGetSearchSlides(data, textStatus, jqXHR, param) {
+	scansDict = {};
+	scansList = data;
+	$.each(data, function(i, item) {
+		scansDict[item['id']] = item;
+	});
+	getSlideSearchSlides(param['keywords'], param['originalValue']);
+}
+
+function getSlideSearchSlides(keywords, originalValue) {
+	var url = ERMREST_HOME + '/slide/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords);
+	var params = {'keywords': keywords,
+			'originalValue': originalValue};
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlideSearchSlides, params, null, 0);
+}
+
+function postGetSlideSearchSlides(data, textStatus, jqXHR, param) {
+	slidesDict = {};
+	$.each(data, function(i, item) {
+		slidesDict[item['id']] = item;
+	});
+	getExperimentSearchSlides(param['keywords'], param['originalValue']);
+}
+
+function getExperimentSearchSlides(keywords, originalValue) {
+	var url = ERMREST_HOME + '/experiment/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/slide';
+	var params = {'keywords': keywords,
+			'originalValue': originalValue};
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSearchSlides, params, null, 0);
+}
+
+function postGetExperimentSearchSlides(data, textStatus, jqXHR, param) {
+	$.each(data, function(i, item) {
+		slidesDict[item['id']] = item;
+	});
+	getBoxSearchSlides(param['keywords'], param['originalValue']);
+}
+
+function getBoxSearchSlides(keywords, originalValue) {
+	var url = ERMREST_HOME + '/box/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/slide';
+	var params = {'keywords': keywords,
+			'originalValue': originalValue};
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxSearchSlides, params, null, 0);
+}
+
+function postGetBoxSearchSlides(data, textStatus, jqXHR, param) {
+	$.each(data, function(i, item) {
+		slidesDict[item['id']] = item;
+	});
+	slidesList = [];
+	$.each(slidesDict, function(key, item) {
+		slidesList.push(item);
+	});
+	slidesList.sort(compareIds);
+	appendSlides('search');
 }
 
 function clickEntity(ul, label) {
@@ -1203,40 +1352,20 @@ function clickEntity(ul, label) {
 	});
 }
 
-function initSearchData() {
-	searchData = [];
-	var arr = [].concat(boxesList);
-	arr.sort(compareIds);
-	var value = '';
-	$.each(arr, function(i, item) {
-		if (item['id'] != value) {
-			value = item['id'];
-			searchData.push({'label': value, 'category': 'Boxes', 'item': item});
-		}
-	});
-	var arr = [].concat(experimentsList);
-	arr.sort(compareIds);
-	var value = '';
-	$.each(arr, function(i, item) {
-		if (item['id'] != value) {
-			value = item['id'];
-			searchData.push({'label': value, 'category': 'Experiments', 'item': item});
-		}
-	});
-}
-
 function loadLeftPanel(panel, vals) {
 	$.each(vals, function(i, val) {
 		var h4 = $('<h4>');
 		panel.append(h4);
 		h4.html(val['Display']);
-		var buttonImage = $('<button>').button({icons: {primary: 'ui-icon-circle-plus'},
-			text: false});
-		buttonImage.addClass('newEntity');
-		buttonImage.click(function(event) {val['Create']();});
-		buttonImage.attr('title', 'New '+val['Name']);
-		buttonImage.css('width', 5);
-		h4.append(buttonImage);
+		if (val['Create'] != null) {
+			var buttonImage = $('<button>').button({icons: {primary: 'ui-icon-circle-plus'},
+				text: false});
+			buttonImage.addClass('newEntity');
+			buttonImage.click(function(event) {val['Create']();});
+			buttonImage.attr('title', 'New '+val['Name']);
+			buttonImage.css('width', 5);
+			h4.append(buttonImage);
+		}
 		var div = $('<div>');
 		div.attr('id', val['Name']+'Div');
 		panel.append(div);
@@ -1451,7 +1580,6 @@ function initCenterPanelButtons() {
 	panel.append(button);
 	button.attr('id', 'addSlidesButton');
 	button.html('Add Slides');
-	button.button();
 	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {getUnassignedSlides();});
 
 	button = $('<button>');
@@ -1471,6 +1599,12 @@ function initCenterPanelButtons() {
 	button.attr('id', 'backButton');
 	button.html('Back');
 	button.button({icons: {primary: 'ui-icon-arrowthick-1-w'}});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'submitButton');
+	button.html('Submit');
+	button.button({icons: {primary: 'ui-icon-play'}}).click(function(event) {globusFileTransfer();});
 
 	button = $('<button>');
 	panel.append(button);
@@ -1496,6 +1630,12 @@ function initCenterPanelButtons() {
 	button.attr('id', 'transferButton');
 	button.html('Download');
 	button.button({icons: {primary: 'ui-icon-arrowthick-1-s'}});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'globusTransferButton');
+	button.html('Transfer');
+	button.button({icons: {primary: 'ui-icon-transferthick-e-w'}}).click(function(event) {submitTransfer();});
 
 	$('button', panel).hide();
 }
@@ -1529,8 +1669,8 @@ function initBottomPanel(panel) {
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'printerButton');
-	button.html('Printer');
-	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printerManaging();});
+	button.html('Printers');
+	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printersManaging();});
 
 	button = $('<button>');
 	panel.append(button);
@@ -1648,8 +1788,6 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	} else if (item == 'box') {
 		$('#printBoxButton').show();
 	}
-	initSearchData();
-	$('#search').catcomplete('option', {'source': searchData});
 }
 
 function refresh() {
@@ -1679,7 +1817,9 @@ function cancel(item) {
 }
 
 function transferImage(image) {
-	var czi = 'http://lonestar.isi.edu/~schuler/' + image['filename'];
+	//var czi = 'http://lonestar.isi.edu/~schuler/' + image['filename'];
+	// var czi = DOWNLOAD_HOME + image['filename'];
+	var czi = 'http://cirm-dev.misd.isi.edu/cirm-files/' + image['filename'];
 	window.open(
 	  czi,
 	  '_blank' // <- This is what makes it open in a new window.
@@ -1873,11 +2013,168 @@ function createSlide() {
 	$('#backButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
+	$('#globusTransferButton').hide();
 }
 
-function printerManaging() {
+function renderTransferFiles(files) {
 	var centerPanel = $('#centerPanelTop');
-	centerPanel.html('<p class="intro">Printer Administration</p>');
+	centerPanel.html('<p class="intro">Transfer Files</p>');
+	centerPanel.show();
+	var table = $('<table>');
+	centerPanel.append(table);
+	table.addClass('radio_entity');
+
+	var tr = $('<tr>');
+	table.append(tr);
+
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Destination Endpoint:');
+	var td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'id': 'destinationEnpointInput',
+		'size': 30});
+	td.append(input);
+	$('#destinationEnpointInput').autocomplete({
+		source: endpointsList,
+		select: function(event, ui) {setSelectedEndpoint(ui.item.value);}
+	});
+
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Destination Directory:');
+	var td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'id': 'destinationDirectoryInput',
+		'type': 'text',
+		'size': 30});
+	td.append(input);
+	input.keyup(function(event) {checkFilesTransferButton();});
+	input.val('');
+
+	var table1 = $('<table>');
+	centerPanel.append(table1);
+	table1.attr('id', 'filesTable');
+	var tr = $('<tr>');
+	table1.append(tr);
+	var th = $('<th>');
+	tr.append(th);
+	var input = $('<input>');
+	input.attr({'type': 'checkbox',
+		'id': 'selectAllFilesTh'});
+	input.click(function(event) {checkUncheckAll('filesTable', 'selectAllFilesTh', ['submitButton']);});
+	th.append(input);
+	$.each(filesTableColumns, function(i, col) {
+		var th = $('<th>');
+		tr.append(th);
+		th.html(filesTableDisplayColumns[col]);
+	});
+	$.each(files, function(i, file) {
+		var tr = $('<tr>');
+		table1.append(tr);
+		if (i%2 == 1) {
+			tr.addClass('odd');
+		}
+		var td = $('<td>');
+		td.addClass('center');
+		tr.append(td);
+		var input = $('<input>');
+		input.attr({'type': 'checkbox',
+			'filename': file});
+		input.click(function(event) {checkAvailableSlides('filesTable', 'selectAllFilesTh', ['submitButton']);});
+		td.append(input);
+		$.each(filesTableColumns, function(j, col) {
+			var td = $('<td>');
+			tr.append(td);
+			if (fileDisplayValue[col] != null) {
+				fileDisplayValue[col](td, filesDict[file]);
+			} else {
+				td.html(filesDict[file][col]);
+			}
+		});
+	});
+	$('button', $('#centerPanelBottom')).hide();
+	$('#submitButton').attr('disabled', 'disabled');
+	$('#submitButton').show();
+	$('#backButton').unbind('click');
+	$('#backButton').click(function(event) {appendSlides(getSlidesType());});
+	$('#backButton').show();
+	$('#centerPanelMiddle').hide();
+	$('#centerPanelTop').show();
+	$('#globusTransferButton').hide();
+	selectedEndpoint = null;
+}
+
+function setSelectedEndpoint(value) {
+	selectedEndpoint = value;
+	checkFilesTransferButton();
+}
+
+function checkFilesTransferButton() {
+	if (selectedEndpoint != null &&
+			$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+			$('td', $('#filesTable')).find('input:checked').length > 0) {
+			$('#submitButton').removeAttr('disabled');
+		} else {
+			$('#submitButton').attr('disabled', 'disabled');
+		}
+}
+
+function getSlidesType() {
+	var ret = null;
+	if ($('.highlighted', $('#BoxDiv')).length > 0) {
+		ret = 'box';
+	} else if ($('.highlighted', $('#ExperimentDiv')).length > 0) {
+		ret = 'experiment';
+	} else if ($('.highlighted', $('#SearchDiv')).length > 0) {
+		ret = 'search';
+	}
+	return ret;
+}
+
+function printersManaging() {
+	$('li', $('#leftPanel')).removeClass('highlighted');
+	$('#rightPanelTop').html('');
+	$('button', $('#rightPanelBottom')).hide();
+	$('button', $('#centerPanelBottom')).hide();
+	var centerPanel = $('#centerPanelTop');
+	centerPanel.html('<p class="intro">Printers</p>');
+	var p = $('<p>');
+	p.addClass('center');
+	centerPanel.append(p);
+	var button = $('<button>');
+	p.append(button);
+	button.html('Box Labels Printer');
+	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printerManaging('Box');});
+	var p = $('<p>');
+	p.addClass('center');
+	centerPanel.append(p);
+	var button = $('<button>');
+	p.append(button);
+	button.html('Slide Labels Printer');
+	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printerManaging('Slide');});
+}
+
+function printerManaging(printer) {
+	var centerPanel = $('#centerPanelTop');
+	isSlidePrinter = (printer == 'Slide');
+	if (isSlidePrinter) {
+		PRINTER_ADDR = SLIDE_PRINTER_ADDR;
+		PRINTER_PORT = SLIDE_PRINTER_PORT;
+		centerPanel.html('<p class="intro">Slide Labels Printer</p>');
+	} else {
+		PRINTER_ADDR = BOX_PRINTER_ADDR;
+		PRINTER_PORT = BOX_PRINTER_PORT;
+		centerPanel.html('<p class="intro">Box Labels Printer</p>');
+	}
 	var printTable = $('<table>');
 	centerPanel.append(printTable);
 	printTable.addClass('radio_entity itemTable');
@@ -1913,7 +2210,6 @@ function printerManaging() {
 	a.html('Get Status');
 	td.append(a);
 	
-	/*
 	var tr = $('<tr>');
 	printTable.append(tr);
 	var td = $('<td>');
@@ -1924,6 +2220,7 @@ function printerManaging() {
 	a.html('Get Configuration');
 	td.append(a);
 	
+	/*
 	var tr = $('<tr>');
 	printTable.append(tr);
 	var td = $('<td>');
@@ -2006,6 +2303,9 @@ function printerManaging() {
 	*/
 	
 	$('button', $('#centerPanelBottom')).hide();
+	$('#backButton').unbind('click');
+	$('#backButton').click(function(event) {printersManaging();});
+	$('#backButton').show();
 	$('#printBoxButton').hide();
 	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
@@ -2060,6 +2360,13 @@ function printerSettings() {
 function updatePrinterSettings() {
 	PRINTER_ADDR = $('#printerAddrInput').val();
 	PRINTER_PORT = parseInt($('#printerPortInput').val());
+	if (isSlidePrinter) {
+		SLIDE_PRINTER_ADDR = PRINTER_ADDR;
+		SLIDE_PRINTER_PORT = PRINTER_PORT;
+	} else {
+		BOX_PRINTER_ADDR = PRINTER_ADDR;
+		BOX_PRINTER_PORT = PRINTER_PORT;
+	}
 	cancelPrinterSettings();
 }
 
@@ -2090,7 +2397,7 @@ function postManagePrinter(data, textStatus, jqXHR, param) {
 	if (data[CXI_RET] <= 0) {
 		alert('An error was reported in sending the request for "' + param['param'] + '".\nReason: '+data[CXI_MSG]);
 	} else {
-		alert('The request for "' + param['param'] + '" was send successfully.\nResult: '+data[CXI_MSG]);
+		alert('The request for "' + param['param'] + '" was send successfully.\nResult: '+JSON.stringify(data[CXI_MSG]));
 	}
 }
 
@@ -2198,6 +2505,7 @@ function createExperiment() {
 	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
+	$('#globusTransferButton').hide();
 }
 
 function displaySlide(id) {
@@ -2213,6 +2521,8 @@ function displayBox(ul, li) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	li.addClass('highlighted');
 	$('#clearButton').show();
+	$('#centerPanelTop').html('');
+	$('#centerPanelBottom').hide();
 	displayEntity('box', boxesDict[li.html()]);
 	getSlides(li.html());
 }
@@ -2221,8 +2531,22 @@ function displayExperiment(ul, li) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	li.addClass('highlighted');
 	$('#clearButton').show();
+	$('#centerPanelTop').html('');
+	$('#centerPanelBottom').hide();
 	displayEntity('experiment', experimentsDict[li.html()]);
 	getExperimentSlides(li.html());
+}
+
+function displaySearch(ul, li) {
+	$('li', $('#leftPanel')).removeClass('highlighted');
+	li.addClass('highlighted');
+	$('#clearButton').show();
+	$('#rightPanelTop').html('');
+	$('#centerPanelTop').html('');
+	$('#centerPanelBottom').show();
+	$('#printBoxButton').hide();
+	$('button', $('#centerPanelBottom')).hide();
+	getSearchSlides(getSearchExpression(li.html(), '&'), li.html());
 }
 
 function checkBoxSaveButton() {
@@ -2341,6 +2665,7 @@ function createBox() {
 	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
+	$('#globusTransferButton').hide();
 }
 
 function saveBox() {
@@ -2433,6 +2758,66 @@ function postSaveSlide(data, textStatus, jqXHR, param) {
 		slidesDict[item['id']] = item;
 	});
 	appendSlides('box');
+	$('#centerPanelBottom').show();
+}
+
+function submitTransfer() {
+	var url = ERMREST_HOME + '/scan/';
+	var slides = [];
+	$.each($('td', $('#slidesTable')).find('input:checked'), function(i, checkbox) {
+		slides.push('slide_id=' + encodeSafeURIComponent($(checkbox).attr('slideId')));
+	});
+	url += slides.join(';');
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitTransfer, null, null, 0);
+}
+
+function postSubmitTransfer(data, textStatus, jqXHR, param) {
+	var files = [];
+	filesDict = {};
+	$.each(data, function(i, scan) {
+		var filename = scan['filename'];
+		if (!files.contains(filename)) {
+			files.push(filename);
+			filesDict[filename] = scan;
+		}
+	});
+	files.sort(compareIgnoreCase);
+	renderTransferFiles(files);
+}
+
+function globusFileTransfer() {
+	var endpoint_2 = $('#destinationEnpointInput').val();
+	var files = [];
+	$.each($('td', $('#filesTable')).find('input:checked'), function(i, checkbox) {
+		var file = $(checkbox).attr('filename');
+		files.push(file);
+	});
+	var destDir = $('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "");
+	if (destDir[destDir.length-1] != '/') {
+		destDir += '/';
+	}
+	var url = GLOBUS_TRANSFER_HOME;
+	var obj = new Object();
+	obj['user'] = USER;
+	obj['token'] = token;
+	obj['endpoint_1'] = ENDPOINT_SOURCE;
+	obj['endpoint_2'] = endpoint_2;
+	obj['files'] = files;
+	var arr = [];
+	$.each(files, function(i, file) {
+		var scan = filesDict[file];
+		var item = {};
+		item['file_from'] = TILES_DIR + scan['tilesdir'] + file;
+		item['file_to'] = destDir + file;
+		arr.push(item);
+	});
+	obj['files'] = arr;
+	cirmAJAX.PUT(url, 'application/json', false, obj, true, postGlobusFileTransfer, null, null, 0);
+}
+
+function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
+	alert('Result: ' + JSON.stringify(data));
+	$('#backButton').click();
 }
 
 function submitPrintSlide() {
@@ -2451,8 +2836,8 @@ function submitPrintSlide() {
 		obj['experiment_description'] = experiment['experiment_description'];
 		obj['initials'] = experiment['initials'];
 		obj['id'] = slide['id'];
-		obj['printer_id'] = PRINTER_ADDR;
-		obj['printer_port'] = PRINTER_PORT;
+		obj['printer_id'] = SLIDE_PRINTER_ADDR;
+		obj['printer_port'] = SLIDE_PRINTER_PORT;
 		arr.push(obj);
 	});
 	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintSlide, null, null, 0);
@@ -2475,8 +2860,8 @@ function submitPrintBox() {
 	$.each(boxColumns, function(i, col) {
 		obj[col] = box[col];
 	});
-	obj['printer_id'] = PRINTER_ADDR;
-	obj['printer_port'] = PRINTER_PORT;
+	obj['printer_id'] = BOX_PRINTER_ADDR;
+	obj['printer_port'] = BOX_PRINTER_PORT;
 	arr.push(obj);
 	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintBox, null, null, 0);
 }

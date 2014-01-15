@@ -7,6 +7,7 @@
 import sys
 import socket
 import re
+from cxifont import *
 
 DEBUG = 0
 XSTART = 10
@@ -36,7 +37,7 @@ CXI_SETTING = {
 "ETHERNET GARP":"5",
 "USER_FEEDBACK":"ON",
 "ETHERNET RTEL":"ON",
-"ETHERNET RTEL TIMEOUT":"10"
+"ETHERNET RTEL TIMEOUT":"100"
 }
 
 CXI_BOX_SETTING = {
@@ -51,7 +52,7 @@ CXI_BOX_SETTING = {
 "ETHERNET GARP":"5",
 "USER_FEEDBACK":"ON",
 "ETHERNET RTEL":"ON",
-"ETHERNET RTEL TIMEOUT":"10"
+"ETHERNET RTEL TIMEOUT":"100"
 }
 
 CXI_CONFIG = {
@@ -109,8 +110,8 @@ class cxiAccess():
           print "addr is ", self.addr
        try:
            self.cxi.connect((self.addr_ip,self.port))
-       except socket.error:
-           print "Fail to connect to %s, power cycle the printer" % self.addr
+       except socket.error, msg:
+           print "Fail to connect to %s(%s), power cycle the printer" % (self.addr,msg)
            ## force fail on assert
            assert(0)
        else:
@@ -253,31 +254,13 @@ def pos(xdelta, ydelta):
     ret=SPACE + xloc(xdelta) + SPACE + yloc(ydelta) + SPACE
     return ret
 
+def idbox(bsize):
+    ret=SPACE + str(bsize) + SPACE + "40 3" + SPACE
+    return ret
+
 def apos(x, y):
     ret=SPACE + str(x) + SPACE + str(y) + SPACE
     return ret
-
-def chop(s, width):
-    if DEBUG:
-        print 'chop(%s)' % s
-    if s == 0:
-        return 0, 0;
-    if len(s)<= width:
-        return s, 0;
-    if s[width].isspace():
-        p=s[0:width]
-        return p, s[width+1:];
-    else:
-        idx=s[0:width].rfind(' ')
-        if idx <= 0:
-            n=s[width:]
-            idx=n.find(' ')
-            if idx <= 0:
-                return s[0:width], s[width:]
-            else:
-                return s[0:width], n[idx+1:]
-        p=s[0:idx]
-        return p, s[idx+1:]
 
 #####################################################################
 """
@@ -478,7 +461,7 @@ def testBoxLabel_():
       "TEXT 1"+ pos(10,35) + "12345" + EOL +  \
       "TEXT 1"+ pos(10,65) + "abcefg" + EOL +  \
       "TEXT 1"+ pos(10,95) +"MNOPQ" + EOL +  \
-      "BARCODE DATAMATRIX (,F,,,1.5,~)" + apos(400,100) + EOL + "~%70s~"%(purl) + EOL + \
+      "BARCODE DATAMATRIX (,F,,,1.5,~)" + apos(420,100) + EOL + "~%70s~"%(purl) + EOL + \
       "END" + EOL
     return pclcmds
 
@@ -488,13 +471,15 @@ def makeSliceLabel_(date,genotype,antibody,experiment,expertID,seqNum,revNum,pUR
     seq="% 4d" %(seqNum)
     rev="rev:%03d" %revNum
     purl="%s/slide?id=%s" %(pURL,idString)
+    myfont=cxiFont()
+    bsize=myfont.calcBits(expertID)
     pclcmds = "! 0 100 260 1" + EOL + \
       "TEXT 1" + pos(0,0) + date + seq +EOL +  \
-      "TEXT 1" + pos(0,30) + genotype + EOL + \
-      "TEXT 1" + pos(0,60) + antibody + EOL + \
-      "TEXT 1" + pos(0,90) + experiment + EOL +  \
-      "TEXT 1" + pos(0,135) + rev + EOL + \
-      "DRAW_BOX" + pos(0,180) + "65 40 3" + EOL +\
+      "TEXT 0" + pos(0,35) + genotype + EOL + \
+      "TEXT 0" + pos(0,65) + antibody + EOL + \
+      "TEXT 0" + pos(0,95) + experiment + EOL +  \
+      "TEXT 0" + pos(0,135) + rev + EOL + \
+      "DRAW_BOX" + pos(0,180) + idbox(bsize) + EOL +\
       "TEXT 0" + pos(5,185) + expertID + EOL + \
       "BARCODE DATAMATRIX (,F,,,1,~)" +apos(140,140) + EOL + "~%70s~"%(purl) + EOL + \
       "END" + EOL
@@ -505,17 +490,11 @@ def makeSliceLabel_(date,genotype,antibody,experiment,expertID,seqNum,revNum,pUR
 def makeBoxLabel_(date,genotype,expertID,disNum,pURL,idString,noteString):
     purl="%s/box?id=%s" %(pURL,idString)
     tmp=noteString
-    ltmp=noteString.lower()
-    if tmp == ltmp:
-        line1,tmp=chop(tmp,22)
-        line2,tmp=chop(tmp,22)
-        line3,tmp=chop(tmp,22)
-        line4,tmp=chop(tmp,22)
-    else:   
-        line1,tmp=chop(tmp,19)
-        line2,tmp=chop(tmp,19)
-        line3,tmp=chop(tmp,19)
-        line4,tmp=chop(tmp,19)
+    myfont=cxiFont()
+    line1,tmp=myfont.chopBits(tmp,500)
+    line2,tmp=myfont.chopBits(tmp,500)
+    line3,tmp=myfont.chopBits(tmp,500)
+    line4,tmp=myfont.chopBits(tmp,500)
     pclcmds = "! 0 100 300 1" + EOL + \
       "TEXT 1" + pos(0,0) + date + EOL +  \
       "DRAW_BOX" + pos(185,-5) + "30 30 3" + EOL +\
@@ -529,10 +508,11 @@ def makeBoxLabel_(date,genotype,expertID,disNum,pURL,idString,noteString):
         pclcmds=pclcmds+ "TEXT 1" + pos(0,150) + line3 + EOL
     if line4 != 0:
         pclcmds=pclcmds+ "TEXT 1" + pos(0,190) + line4 + EOL
+    bsize=myfont.calcBits(expertID)
     pclcmds=pclcmds + \
-      "DRAW_BOX" + pos(0,230) + "65 40 3" + EOL +\
+      "DRAW_BOX" + pos(0,230) + idbox(bsize) + EOL +\
       "TEXT 0" + pos(5,235) + expertID + EOL + \
-      "BARCODE DATAMATRIX (,F,,,1.5,~)" + apos(400,100) + EOL + "~%70s~"%(purl) + EOL + \
+      "BARCODE DATAMATRIX (,F,,,1.5,~)" + apos(420,100) + EOL + "~%70s~"%(purl) + EOL + \
       "END" + EOL
     return pclcmds
 
@@ -545,19 +525,12 @@ def makeNoteLabel_(date,expertID,seqNum,pURL,idString,noteString):
     seq="% 4d" %(seqNum)
     purl="%s/slide?id=%s" %(pURL,idString)
     tmp=noteString
-    ltmp=noteString.lower()
-    if tmp == ltmp:
-        line1,tmp=chop(tmp,17)
-        line2,tmp=chop(tmp,17)
-        line3,tmp=chop(tmp,17)
-        line4,tmp=chop(tmp,8)
-        line5,tmp=chop(tmp,8)
-    else:
-        line1,tmp=chop(tmp,14)
-        line2,tmp=chop(tmp,14)
-        line3,tmp=chop(tmp,14)
-        line4,tmp=chop(tmp,7)
-        line5,tmp=chop(tmp,7)
+    myfont=cxiFont()
+    line1,tmp=myfont.chopBits(tmp,360)
+    line2,tmp=myfont.chopBits(tmp,360)
+    line3,tmp=myfont.chopBits(tmp,360)
+    line4,tmp=myfont.chopBits(tmp,200)
+    line5,tmp=myfont.chopBits(tmp,200)
 
     pclcmds = "! 0 100 260 1" + EOL + \
       "TEXT 1" + pos(0,0) + date + seq  + EOL 
@@ -571,7 +544,8 @@ def makeNoteLabel_(date,expertID,seqNum,pURL,idString,noteString):
         pclcmds=pclcmds + "TEXT 0"+ pos(0,120) + line4 + EOL
     if line5 != 0 :
         pclcmds=pclcmds + "TEXT 0" + pos(0,150) + line5 + EOL
-    pclcmds=pclcmds + "DRAW_BOX" + pos(0,180) + "65 40 3" + EOL +\
+    bsize=myfont.calcBits(expertID)
+    pclcmds=pclcmds + "DRAW_BOX" + pos(0,180) + idbox(bsize) + EOL +\
       "TEXT 0" + pos(5,185) + expertID + EOL + \
       "BARCODE DATAMATRIX (,F,,,1,~)" + apos(140,140) + EOL + "~%70s~"%(purl) + EOL + \
       "END" + EOL

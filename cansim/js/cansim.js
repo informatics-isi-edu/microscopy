@@ -5,6 +5,20 @@ Array.prototype.contains = function (elem) {
 	return false;
 };
 
+var rootTable = 'MultiCellXML';
+var rootDisplayName = 'Simulations';
+var rootEntityName = 'Simulation';
+var rootColumn = 'name';
+var rootDict = {};
+var rootList = [];
+var rootRefTable = 'MultiCellXML';
+var rootRefColumn = 'simulation_id';
+var expandStack = [];
+
+var newSearchKeywords = null;
+
+var GLOBUS_AUTHN = true;
+
 var HOME;
 var USER;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
@@ -12,7 +26,7 @@ var WEBAUTHN_HOME = '/ermrest/authn/session';
 var DOWNLOAD_HOME = '/cansim-files/';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
-var CIRM_START_INFO = '<p class="intro">Choose an entity from the left sidebar or use the search box to find relevant images.</p>';
+var CIRM_START_INFO = '<p class="intro">Choose an entity from the left sidebar.</p>';
 var CIRM_NO_ENTITIES_INFO = '<p class="intro">No entities are available.</p>';
 
 var goauth_cookie = 'globusonline-goauth';
@@ -20,20 +34,34 @@ var token = null;
 
 var URL_ESCAPE = new String("~!()'");
 
-var slideNoDisplayColumns = ['id'];
-var slideClassColumns = {'box_of_origin_id': 'box', 'experiment_id': 'experiment'};
-var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'box_of_origin_id', 'experiment_id', 'comment', 'tags'];
-var slideTableDisplayColumns = {'thumbnail': 'Thumbnail', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
-var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideColumnValue, 'experiment_id': getSlideColumnValue, 'comment': getSlideColumnValue, 'tags': getSlideColumnValue, 'thumbnail': getSlideThumbnail};
-
-var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment', 'tags'];
-var slideDisplayColumns = {'id': 'Slide ID', 'box_of_origin_id': 'Box ID', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
-var slideEditColumns = ['comment', 'tags'];
-var slideExperimentColumn = 'experiment_id';
-var slidesDict = {};
-var slidesList = [];
-
 var searchList = [];
+
+var tables = {
+		'simulation': {'id': '', 'name': ''},
+		'MultiCellXML': {'id': '', 'simulation_id': '', 'metadata_id': 'metadata', 'cell_lines_id': 'cell_line'},
+		'metadata': {'id': '', 'data_source_id': 'data_source', 'bounding_box_id': 'bounding_box', 'current_time': ''},
+		'data_source': {'id': '', 'filename': '', 'created': '', 'last_modified': '', 'description': '', 'UserInformation_id': 'UserInformation', 'reference_id': 'reference', 'ProgramInformation_id': 'ProgramInformation', 'notes': ''},
+		'UserInformation': {'id': '', 'Name': '', 'Affiliation': '', 'Location': '', 'email': '', 'URL': '', 'Phone': ''},
+		'reference': {'id': '', 'citation': '', 'URL': '', 'note': ''},
+		'ProgramInformation': {'id': '', 'Name': '', 'Version': '', 'Compiled': '', 'Author': '', 'email': '', 'URL': ''},
+		'bounding_box': {'id': '', 'lower_bounds': '', 'upper_bounds': ''},
+		'cell_line': {'id': '', 'cell_lines_id': '', 'data_source': '', 'microenvironment_phenotype_pairs_id': 'microenvironment_phenotype_pair'},
+		'microenvironment_phenotype_pair': {'id': '', 'microenvironment_phenotype_pairs_id': '', 'microenvironment_vector_id': 'microenvironment_vector', 'phenotype_parameter_vector_id': 'phenotype_parameter_vector'},
+		'microenvironment_vector': {'id': '', 'oxygen': ''},
+		'phenotype_parameter_vector': {'id': '', 'duration_of_G1': '', 'duration_of_S': '', 'duration_of_G2': '', 'duration_of_M': '', 'fraction_failing_G1_checkpoint': '', 'cell_volume': '', 'cell_nuclear_volume': '', 'fluid_fraction': '', 'oxygen_uptake_rate_per_volume': '', 'Youngs_modulus': '', 'maximum_cell_deformation': ''}
+};
+
+var cirmTables = {
+		'slide': {'id': '', 'sequence_num': '', 'revision': '', 'box_of_origin_id': 'box', 'experiment_id': 'experiment', 'comment': '', 'tags': ''},
+		'box': {'id': '', 'section_date': '', 'sample_name': '', 'initials': '', 'disambiguator': '', 'comment': '', 'tags': ''},
+		'experiment': {'id': '', 'experiment_date': '', 'experiment_description': '', 'initials': '', 'disambiguator': '', 'comment': '', 'tags': ''}
+};
+
+tables = cirmTables;
+rootTable = 'box';
+rootRefTable = 'slide';
+rootRefColumn = 'box_of_origin_id';
+rootColumn = 'id';
 
 var restAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
@@ -221,210 +249,15 @@ function init() {
 	setTimeout('renderLogin()', 1);
 }
 
-function initREST() {
-	getBoxes(null);
-}
-
-function mobileRequest() {
-	var url = null;
-	if (mobileParams['slide'] != null) {
-		var slide = encodeSafeURIComponent(mobileParams['slide']['id']);
-		var experiment = '';
-		var experimentDate = '';
-		if (mobileParams['slide']['experiment_id'] != null) {
-			experiment = encodeSafeURIComponent(mobileParams['experiment']['experiment_description']);
-			experimentDate = encodeSafeURIComponent(mobileParams['experiment']['experiment_date']);
-		}
-		var genotype = encodeSafeURIComponent(mobileParams['box']['sample_name']);
-		var img = [];
-		$.each(mobileParams['scans'], function(i, scan) {
-			img.push(encodeSafeURIComponent('images/'+scan['thumbnail']));
-		});
-		url = '/cirm/mobile.html?slide='+slide+
-			'&experiment='+experiment+
-			'&date='+experimentDate+
-			'&genotype='+genotype;
-		if (img.length > 0) {
-			url += '&img=' + img.join(',');
-		}
-	} else if (mobileParams['box'] != null) {
-		var id = encodeSafeURIComponent(mobileParams['box']['id']);
-		var sectionDate = encodeSafeURIComponent(mobileParams['box']['section_date']);
-		var genotype = encodeSafeURIComponent(mobileParams['box']['sample_name']);
-		var initials = encodeSafeURIComponent(mobileParams['box']['initials']);
-		var disambiguator = encodeSafeURIComponent(mobileParams['box']['disambiguator']);
-		url = '/cirm/box.html?id='+id+
-		'&disambiguator='+disambiguator+
-		'&date='+sectionDate+
-		'&initials='+initials+
-		'&genotype='+genotype;
-	}
-	if (url != null) {
-		window.location = url;
-	}
-}
-
-function getBox(id) {
-	var url = ERMREST_HOME + '/box/id=' + encodeSafeURIComponent(id);
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBox, {'id': id}, null, 0);
-}
-
-function postGetBox(data, textStatus, jqXHR, param) {
-	if (data.length == 0) {
-		alert('Box not found.');
-		submitLogout();
-		return;
-	}
-	mobileParams['box'] = data[0];
-	submitLogout();
-}
-
-function getRootEntities(table) {
-	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table);
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetRootEntities, {'id': id}, null, 0);
-}
-
-function postGetRootEntities(data, textStatus, jqXHR, param) {
-	if (mobileParams != null) {
-		mobileParams['box'] = data[0];
-	} else {
-		boxesList = data;
-		boxesDict = {};
-		$.each(data, function(i, item) {
-			boxesDict[item['id']] = item;
-		});
-	}
-	
-	getExperiments(mobileParams == null ? null : mobileParams.slide.experiment_id);
-}
-
-function getExperiments(id) {
-	var url = ERMREST_HOME + '/experiment';
-	if (id != null) {
-		url += '/id=' + encodeSafeURIComponent(id);
-	}
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperiments, null, null, 0);
-}
-
-function postGetExperiments(data, textStatus, jqXHR, param) {
-	if (mobileParams != null) {
-		mobileParams['experiment'] = data[0];
-		getScans(mobileParams['slide']['id']);
-	} else {
-		experimentsList = data;
-		experimentsDict = {};
-		$.each(data, function(i, item) {
-			experimentsDict[item['id']] = item;
-		});
-		drawPanels();
-	}
-}
-
-function getUnassignedSlides() {
-	var url = ERMREST_HOME + '/slide/experiment_id::null::';
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetUnassignedSlides, null, null, 0);
-}
-
-function postGetUnassignedSlides(data, textStatus, jqXHR, param) {
-	unassignedSlidesList = data;
-	unassignedSlidesDict = {};
-	$.each(data, function(i, item) {
-		unassignedSlidesDict[item['id']] = item;
-	});
-	displayUnassignedSlides();
-}
-
-function getSlide(id) {
-	var url = ERMREST_HOME + '/slide/id=' + encodeSafeURIComponent(id);
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlide, null, null, 0);
-}
-
-function postGetSlide(data, textStatus, jqXHR, param) {
-	if (data.length == 0) {
-		alert('Slide not found.');
-		submitLogout();
-		return;
-	}
-	mobileParams['slide'] = data[0];
-	getBoxes(data[0]['box_of_origin_id']);
-}
-
-function getExperimentSlides(experimentId) {
-	var url = ERMREST_HOME + '/slide/experiment_id=' + encodeSafeURIComponent(experimentId);
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSlides, {'experimentId': experimentId}, null, 0);
-}
-
-function postGetExperimentSlides(data, textStatus, jqXHR, param) {
-	slidesList = data;
-	slidesDict = {};
-	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
-	});
-	getExperimentScans(param['experimentId']);
-}
-
-function getExperimentScans(experimentId) {
-	var url = ERMREST_HOME + '/slide/experiment_id=' + encodeSafeURIComponent(experimentId) + '/scan';
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentScans, null, null, 0);
-}
-
-function postGetExperimentScans(data, textStatus, jqXHR, param) {
-	scansList = data;
-	scansDict = {};
-	$.each(data, function(i, item) {
-		scansDict[item['id']] = item;
-	});
-	appendSlides('experiment');
-	$('#centerPanelBottom').show();
-	selectNewSlide();
-}
-
-function getSlides(boxId) {
-	var url = ERMREST_HOME + '/box/id=' + encodeSafeURIComponent(boxId) + '/slide';
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlides, {'boxId': boxId}, null, 0);
-}
-
-function postGetSlides(data, textStatus, jqXHR, param) {
-	slidesList = data;
-	slidesDict = {};
-	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
-	});
-	getBoxScans(param['boxId']);
-}
-
-function getBoxScans(boxId) {
-	var url = ERMREST_HOME + '/scan/id::regexp::' + encodeSafeURIComponent(boxId) + '*';
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxScans, null, null, 0);
-}
-
-function postGetBoxScans(data, textStatus, jqXHR, param) {
-	scansList = data;
-	scansDict = {};
-	$.each(data, function(i, item) {
-		scansDict[item['id']] = item;
-	});
-	appendSlides('box');
-	$('#centerPanelBottom').show();
-	selectNewSlide();
-}
-
 function renderLogin() {
 	HOME = '' + window.location;
-	var index = HOME.lastIndexOf('/cirm');
+	var index = HOME.lastIndexOf('/cansim');
 	HOME = HOME.substring(0, index);
 	ERMREST_HOME = HOME + ERMREST_HOME;
 	WEBAUTHN_HOME = HOME + WEBAUTHN_HOME;
-	PRINT_JOB_HOME = HOME + PRINT_JOB_HOME;
-	PRINT_CONTROL_HOME = HOME + PRINT_CONTROL_HOME;
-	GLOBUS_TRANSFER_HOME = HOME + GLOBUS_TRANSFER_HOME;
-	ZOOMIFY_HOME = HOME + ZOOMIFY_HOME;
 	DOWNLOAD_HOME = HOME + DOWNLOAD_HOME;
-	if (isMobileSearch()) {
-		submitMobileLogin();
-		return;
-	}
-	var uiDiv = $('#cirm');
+
+	var uiDiv = $('#cansim');
 	uiDiv.html('');
 	var logoDiv = $('<div>');
 	uiDiv.append(logoDiv);
@@ -486,50 +319,10 @@ function renderLogin() {
 	input.click(function(event) {submitLogin();});
 }
 
-function submitLogout() {
-	if (GLOBUS_AUTHN) {
-		token = $.cookie(goauth_cookie);
-		if (token != null) {
-			$.removeCookie(goauth_cookie);
-		}
-		postSubmitLogout();
-	} else {
-		var url = WEBAUTHN_HOME;
-		restAJAX.DELETE(url, true, postSubmitLogout, null, errorSubmitLogout, 0);
-	}
-}
-
-function postSubmitLogout(data, textStatus, jqXHR, param) {
-	if (mobileParams == null) {
-		window.location = window.location;
-	} else {
-		mobileRequest();
-	}
-}
-
-function errorSubmitLogout(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
-	window.location = window.location;
-}
-
 function checkSubmitLogin(event) {
 	if (event.which == 13) {
 		submitLogin();
 	}
-}
-
-function submitMobileLogin() {
-	if (GLOBUS_AUTHN) {
-		submitGlobusLogin(GUEST_USER, GUEST_PASSWORD);
-	} else {
-		submitMobileDatabaseLogin();
-	}
-}
-
-function submitMobileDatabaseLogin() {
-	var url = WEBAUTHN_HOME;
-	var obj = {'username': GUEST_USER,
-			'password': GUEST_PASSWORD};
-	restAJAX.POST(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postSubmitLogin, null, null, 0);
 }
 
 function submitLogin() {
@@ -600,8 +393,27 @@ function postSubmitLogin(data, textStatus, jqXHR, param) {
 	initREST();
 }
 
+function initREST() {
+	getRootEntities(rootTable);
+}
+
+function getRootEntities() {
+	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(rootTable);
+	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetRootEntities, null, null, 0);
+}
+
+function postGetRootEntities(data, textStatus, jqXHR, param) {
+	rootList = data;
+	rootDict = {};
+	$.each(data, function(i, item) {
+		rootDict[item['id']] = item;
+	});
+	
+	drawPanels();
+}
+
 function drawPanels() {
-	var cirm = $('#cirm');
+	var cirm = $('#cansim');
 	cirm.html('');
 	var container = $('<div>');
 	cirm.append(container);
@@ -616,9 +428,6 @@ function drawPanels() {
 	div.addClass('pane ui-layout-center');
 	var subdiv = $('<div>');
 	subdiv.attr('id', 'centerPanelTop');
-	div.append(subdiv);
-	subdiv = $('<div>');
-	subdiv.attr('id', 'centerPanelMiddle');
 	div.append(subdiv);
 	subdiv = $('<div>');
 	subdiv.attr('id', 'centerPanelBottom');
@@ -649,37 +458,131 @@ function drawPanels() {
 		west: {size: 350},
 		north: {resizable: false},
 		south: {resizable: false}});
-	selectNewBox();
-	selectNewExperiment();
 	$('#centerPanel').css('max-height', $('#centerPanel').css('height'));
 }
 
-function selectNewBox() {
-	if (newBoxId != null) {
-		$.each($('li', $('#BoxUL')), function(i, box) {
-			if ($(box).html() == newBoxId) {
-				$(box).click();
-				return false;
+function initCenterPanelButtons() {
+	var panel = $('#centerPanelBottom');
+	panel.append('<br>');
+		
+	var button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'backButton');
+	button.html('Back');
+	button.button({icons: {primary: 'ui-icon-arrowthick-1-w'}}).click(function(event) {goBack();});
+
+	$('button', panel).hide();
+}
+
+function goBack() {
+	expandStack.pop();
+	var item = expandStack.pop();
+	var params = item['params'].join(',');
+	item['f'](params);
+	$('#backButton').hide();
+}
+
+function initRightPanelButtons() {
+	var panel = $('#rightPanelBottom');
+	
+	var button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'editButton');
+	button.html('Edit');
+	button.button({icons: {primary: 'ui-icon-note'}});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'cancelButton');
+	button.html('Cancel');
+	button.button({icons: {primary: 'ui-icon-cancel'}});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'saveButton');
+	button.html('Save');
+	button.button({icons: {primary: 'ui-icon-document'}});
+
+	$('button', panel).hide();
+}
+
+function initPanels() {
+	initTopPanel();
+	var leftPanel = $('#leftPanel');
+	leftPanel.html('');
+	var rootContent = getEntityContent(rootList, rootDisplayName, rootEntityName, displayRootEntity, null);
+	loadLeftPanel(leftPanel, rootContent);
+	//var searchContent = getEntityContent(searchList, 'Search History', 'Search', displaySearch, null);
+	//loadLeftPanel(leftPanel, searchContent);
+	//var active = (newSearchKeywords != null) ? 1 : 0;
+	var active = 0;
+	leftPanel.accordion({ 'header': 'h4',
+		'heightStyle': 'content',
+		'active': active});
+	var rightPanel = $('#rightPanelTop');
+	rightPanel.html('');
+	$('#centerPanelTop').html(CIRM_START_INFO);
+	/*
+	if (newSearchKeywords == null) {
+		$('#centerPanelTop').html(CIRM_START_INFO);
+	}
+	*/
+	var bottomPanel = $('#bottomPanel');
+	initBottomPanel(bottomPanel);
+}
+
+function initTopPanel() {
+	var topPanel = $('#topPanel');
+	var div = $('<div>');
+	div.attr('id', 'header');
+	topPanel.append(div);
+	var h1 = $('<h1>');
+	h1.html('Cancer Simulation Viewer');
+	div.append(h1);
+	/*
+	var div = $('<div>');
+	div.attr('id', 'searchForm');
+	topPanel.append(div);
+	var label = $('<label>');
+	div.append(label);
+	label.attr('for', 'search');
+	label.html('Search: ');
+	var input = $('<input>');
+	input.attr({'id': 'search',
+		'size': '50'});
+	div.append(input);
+	input.keyup(function(event) {checkSearch(event);});
+	*/
+}
+
+function checkSearch(event) {
+	if (event.which == 13) {
+		var originalValue = $('#search').val().replace(/^\s*/, "").replace(/\s*$/, "");
+		if (originalValue.length > 0) {
+			originalValue = getSearchExpression(originalValue, ' ');
+			if (searchList.contains(originalValue)) {
+				selectSearch(originalValue);
+			} else {
+				searchList.unshift(originalValue);
+				newSearchKeywords = originalValue;
+				drawPanels();
+				newSearchKeywords = null;
+				selectNewSearch();
 			}
-		});
+		}
 	}
 }
 
-function selectNewExperiment() {
-	if (newExperimentId != null) {
-		$.each($('li', $('#ExperimentUL')), function(i, experiment) {
-			if ($(experiment).html() == newExperimentId) {
-				newExperimentId = null;
-				$(experiment).click();
-				return false;
-			}
-		});
-	}
-}
-
-function selectNewSearch() {
-	var newSearch = $('li', $('#SearchUL'))[0];
-	$(newSearch).click();
+function getSearchExpression(originalValue, delimiter) {
+	var arr = originalValue.split(' ');
+	var keywords = [];
+	$.each(arr, function(i, value) {
+		if (value != '') {
+			keywords.push(value);
+		}
+	});
+	keywords = keywords.join(delimiter);
+	return keywords;
 }
 
 function selectSearch(keywords) {
@@ -692,16 +595,170 @@ function selectSearch(keywords) {
 	});
 }
 
-function selectNewSlide() {
-	if (newSlideId != null) {
-		$.each($('li', $('#SlideUL')), function(i, slide) {
-			if ($(slide).html() == newSlideId) {
-				newSlideId = null;
-				$(slide).click();
-				return false;
+function selectNewSearch() {
+	var newSearch = $('li', $('#SearchUL'))[0];
+	$(newSearch).click();
+}
+
+function displayRootEntity(ul, li) {
+	$('li', $('#leftPanel')).removeClass('highlighted');
+	li.addClass('highlighted');
+	//$('#clearButton').show();
+	$('#centerPanelTop').html('');
+	//$('#centerPanelBottom').hide();
+	displayEntity(rootTable, rootDict[li.html()]);
+	//getSlides(li.html());
+	expandEntity(li.html());
+}
+
+function displayEntity(table, item) {
+	var cols = tables[table];
+	$('#editButton').unbind('click');
+	//$('#editButton').click(function(event) {editEntity(itemType);});
+	$('#cancelButton').unbind('click');
+	//$('#cancelButton').click(function(event) {cancel(updateItem);});
+	$('#saveButton').unbind('click');
+	//$('#saveButton').click(function(event) {updateEntity(itemType);});
+	//$('#saveButton').removeAttr('disabled');
+	$('#editButton').hide();
+	$('#cancelButton').hide();
+	$('#saveButton').hide();
+
+	var rightPanel = $('#rightPanelTop');
+	rightPanel.html('');
+
+	$.each(cols, function(col, val) {
+		var dl = $('<dl>');
+		rightPanel.append(dl);
+		var dt = $('<dt>');
+		dl.append(dt);
+		dt.addClass('info');
+		//dt.html(displayCols[col]+': ');
+		dt.html(col+': ');
+		var span = $('<span>');
+		dl.append(span);
+		var dd = $('<dd>');
+		dd.attr('id', col + 'Label');
+		dd.html(item[col]);
+		span.append(dd);
+		var input = $('<input>');
+		input.attr({'type': 'text',
+			'id': col + 'Input',
+			'size': 30});
+		span.append(input);
+		input.hide();
+	});
+}
+
+function expandLink(table, id) {
+	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table) + '/id=' + encodeSafeURIComponent(id);
+	var params = {'table': table,
+			'params': [table, id]};
+	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postExpandLink, {'table': table}, null, 0);
+}
+
+function postExpandLink(data, textStatus, jqXHR, param) {
+	var query = {'f': expandLink,
+			'params': param['params']};
+	expandStack.push(query);
+	appendEntities(data, param['table']);
+	$('#backButton').show();
+}
+
+function setEntityColumn(table, id, td) {
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:expandLink("' + table + '", "' + id + '")');
+	a.html(id);
+	td.append(a);
+}
+
+function appendEntities(data, tableName) {
+	var centerPanel = $('#centerPanelTop');
+	var arr = [].concat(data);
+	//arr.sort(compareIds);
+	if (arr.length == 0) {
+		centerPanel.html(CIRM_NO_ENTITIES_INFO);
+	} else {
+		var colNames = getColumnNames(data[0]);
+		centerPanel.html('');
+		var p = $('<p>');
+		centerPanel.append(p);
+		p.addClass('intro');
+		p.html(tableName);
+		var table = $('<table>');
+		centerPanel.append(table);
+		table.attr('id', 'queryTable');
+		table.addClass('itemTable');
+		var tr = $('<tr>');
+		table.append(tr);
+		$.each(colNames, function(i, col) {
+			var th = $('<th>');
+			tr.append(th);
+			th.html(col);
+		});
+		$.each(data, function(i, row) {
+			var tr = $('<tr>');
+			table.append(tr);
+			if (i%2 == 1) {
+				tr.addClass('odd');
 			}
+			$.each(colNames, function(j, col) {
+				var td = $('<td>');
+				tr.append(td);
+				if (tables[tableName][col] != '') {
+					setEntityColumn(tables[tableName][col], row[col], td);
+				} else {
+					td.html(row[col]);
+				}
+			});
 		});
 	}
+	$('#centerPanelTop').show();
+}
+
+function getColumnNames(row) {
+	var res = [];
+	$.each(row, function(col, val) {
+		res.push(col);
+	});
+	return res;
+}
+
+function expandEntity(id) {
+	$('#backButton').hide();
+	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(rootRefTable) + '/' + encodeSafeURIComponent(rootRefColumn ) + '=' + encodeSafeURIComponent(id);
+	var params = {'table': rootRefTable,
+			'params': [id]};
+	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postExpandEntity, params, null, 0);
+}
+
+function postExpandEntity(data, textStatus, jqXHR, param) {
+	var query = {'f': expandEntity,
+			'params': param['params']};
+	expandStack.push(query);
+	appendEntities(data, param['table']);
+}
+
+function submitLogout() {
+	if (GLOBUS_AUTHN) {
+		token = $.cookie(goauth_cookie);
+		if (token != null) {
+			$.removeCookie(goauth_cookie);
+		}
+		postSubmitLogout();
+	} else {
+		var url = WEBAUTHN_HOME;
+		restAJAX.DELETE(url, true, postSubmitLogout, null, errorSubmitLogout, 0);
+	}
+}
+
+function postSubmitLogout(data, textStatus, jqXHR, param) {
+	window.location = window.location;
+}
+
+function errorSubmitLogout(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
+	window.location = window.location;
 }
 
 function getEntityContent(entityList, displayName, entityName, clickFunction, createFunction) {
@@ -728,62 +785,16 @@ function getEntityContent(entityList, displayName, entityName, clickFunction, cr
 	return entityContent;
 }
 
-function initPanels() {
-	initTopPanel();
-	var leftPanel = $('#leftPanel');
-	leftPanel.html('');
-	var boxesContent = getEntityContent(boxesList, 'Boxes', 'Box', displayBox, createBox);
-	loadLeftPanel(leftPanel, boxesContent);
-	var experimentsContent = getEntityContent(experimentsList, 'Experiments', 'Experiment', displayExperiment, createExperiment);
-	loadLeftPanel(leftPanel, experimentsContent);
-	var searchContent = getEntityContent(searchList, 'Search History', 'Search', displaySearch, null);
-	loadLeftPanel(leftPanel, searchContent);
-	var active = (newSearchKeywords != null) ? 2 : ((newExperimentId == null) ? 0 : 1);
-	leftPanel.accordion({ 'header': 'h4',
-		'heightStyle': 'content',
-		'active': active});
-	var rightPanel = $('#rightPanelTop');
-	rightPanel.html('');
-	if (newSearchKeywords == null) {
-		$('#centerPanelTop').html(CIRM_START_INFO);
-	}
-	var bottomPanel = $('#bottomPanel');
-	initBottomPanel(bottomPanel);
-}
-
-function getSlideIdValue(slide, td, val, index) {
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
-	a.html(index);
-	td.append(a);
-}
-
-function getSlideColumnValue(slide, td, val, index) {
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
-	a.html(val);
-	td.append(a);
-}
-
-function getSlideThumbnail(slide, td, val) {
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
+function setThumbnail(file, td) {
 	var img = $('<img>');
-	$.each(scansList, function(i, scan) {
-		if (scan['id'].indexOf(slide['id']) == 0) {
-			img.attr({'alt': 'Undefined',
-				'title': 'Thumbnail',
-				'src': 'images/'+scan['thumbnail'],
-				'width': 30,
-				'height': 30
-				});
-			return false;
-		}
-	});
-	if (img.attr('src') == null) {
+	if (file != null) {
+		img.attr({'alt': 'Undefined',
+			'title': 'Thumbnail',
+			'src': 'images/'+file,
+			'width': 30,
+			'height': 30
+			});
+	} else {
 		img.attr({'alt': 'Undefined',
 			'title': 'Thumbnail',
 			'src': 'images/blank.jpeg',
@@ -791,377 +802,18 @@ function getSlideThumbnail(slide, td, val) {
 			'height': 30
 			});
 	}
-	a.append(img);
-	td.append(a);
-}
-
-function getFileThumbnail(td, scan) {
-	var img = $('<img>');
-	img.attr({'alt': 'Undefined',
-		'title': 'Thumbnail',
-		'src': 'images/'+scan['thumbnail'],
-		'width': 30,
-		'height': 30
-		});
 	td.append(img);
 }
 
-function addSlides() {
-	var li = $('.highlighted', $('#leftPanel'))[0];
-	var experimentId = $(li).html();
-	var url = ERMREST_HOME + '/slide';
-	var arr = [];
-	$.each($('td', $('#unassignedSlidesTable')).find('input:checked'), function(i, checkbox) {
-		var slide = unassignedSlidesDict[$(checkbox).attr('slideId')];
-		var obj = new Object();
-		$.each(slideColumns, function(j, col) {
-			if (col == slideExperimentColumn) {
-				obj[col] = experimentId;
-			} else {
-				obj[col] = slide[col];
-			}
-		});
-		arr.push(obj);
-	});
-	restAJAX.PUT(url, 'application/json', false, arr, true, postAddSlides, null, null, 0);
-}
-
-function postAddSlides(data, textStatus, jqXHR, param) {
-	$.each(data, function(i, item) {
-		slidesList.push(item);
-		slidesDict[item['id']] = item;
-	});
-	appendSlides('experiment');
-}
-
-function checkUncheckAll(tableId, thId, buttons) {
-	var checked = $('#' + thId).prop('checked');
-	if (checked) {
-		$('td', $('#' + tableId)).find('input:not(:checked)').prop('checked', true);
-		$('td', $('#' + tableId)).find('input:disabled').prop('checked', false);
-		$.each(buttons, function(i, buttonId) {
-			$('#'+ buttonId).removeAttr('disabled');
-		});
-	} else {
-		$('td', $('#' + tableId)).find('input:checked').prop('checked', false);
-		$.each(buttons, function(i, buttonId) {
-			$('#'+ buttonId).attr('disabled', 'disabled');
-		});
-	}
-}
-
-function checkAvailableSlides(tableId, thId, buttons) {
-	var count = $('td', $('#' + tableId)).find('input:checked').length;
-	if (count == 0) {
-		$('#' + thId).prop('checked', false);
-		$.each(buttons, function(i, buttonId) {
-			$('#'+ buttonId).attr('disabled', 'disabled');
-		});
-	} else {
-		$.each(buttons, function(i, buttonId) {
-			$('#'+ buttonId).removeAttr('disabled');
-		});
-		if ($('td', $('#' + tableId)).find('input:not(:checked)').length == $('td', $('#' + tableId)).find('input:disabled').length) {
-			$('#' + thId).prop('checked', true);
-		} else {
-			$('#' + thId).prop('checked', false);
-		}
-	}
-}
-
-function displayUnassignedSlides() {
-	var centerPanel = $('#centerPanelMiddle');
-	centerPanel.html('');
-	var arr = [].concat(unassignedSlidesList);
-	arr.sort(compareIds);
-	if (arr.length == 0) {
-		centerPanel.append(CIRM_NO_UNASSIGNED_SLIDES_INFO);
-	} else {
-		centerPanel.append(CIRM_UNASSIGNED_SLIDES_INFO);
-		var table = $('<table>');
-		centerPanel.append(table);
-		table.attr('id', 'unassignedSlidesTable');
-		table.addClass('itemTable');
-		var tr = $('<tr>');
-		table.append(tr);
-		var th = $('<th>');
-		tr.append(th);
-		var input = $('<input>');
-		input.attr({'type': 'checkbox',
-			'id': 'selectAllUnassignedSlidesTh'});
-		input.click(function(event) {checkUncheckAll('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
-		th.append(input);
-		$.each(slideTableColumns, function(i, col) {
-			if (!slideNoDisplayColumns.contains(col)) {
-				var th = $('<th>');
-				tr.append(th);
-				th.html(slideTableDisplayColumns[col]);
-				if (slideClassColumns[col] != null) {
-					th.addClass(slideClassColumns[col]);
-				}
-			}
-		});
-		$.each(arr, function(i, row) {
-			var tr = $('<tr>');
-			table.append(tr);
-			if (i%2 == 1) {
-				tr.addClass('odd');
-			}
-			var td = $('<td>');
-			td.addClass('center');
-			tr.append(td);
-			var input = $('<input>');
-			input.attr({'type': 'checkbox',
-				'slideId': row['id']});
-			input.click(function(event) {checkAvailableSlides('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
-			td.append(input);
-			$.each(slideTableColumns, function(j, col) {
-				if (!slideNoDisplayColumns.contains(col)) {
-					var td = $('<td>');
-					tr.append(td);
-					if (slideDisplayValue[col] != null) {
-						slideDisplayValue[col](row, td, row[col], i+1);
-					} else {
-						td.html(row[col]);
-					}
-					if (slideClassColumns[col] != null) {
-						td.addClass(slideClassColumns[col]);
-					}
-				}
-			});
-		});
-		$('.experiment', table).hide();
-	}
-	centerPanel.show();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides('experiment');});
-	$('#backButton').show();
-	$('#addButton').show();
-	$('#addButton').attr('disabled', 'disabled');
-	$('#addSlidesButton').hide();
-	$('#printSlideButton').hide();
-	$('#globusTransferButton').hide();
-	$('#refreshButton').show();
-	$('#centerPanelMiddle').show();
-	$('#centerPanelTop').hide();
-}
-
-function appendSlides(item) {
-	var centerPanel = $('#centerPanelTop');
-	var arr = [].concat(slidesList);
-	arr.sort(compareIds);
-	if (arr.length == 0) {
-		centerPanel.html(CIRM_NO_SLIDES_INFO);
-	} else {
-		centerPanel.html('');
-		var table = $('<table>');
-		centerPanel.append(table);
-		table.attr('id', 'slidesTable');
-		table.addClass('itemTable');
-		var tr = $('<tr>');
-		table.append(tr);
-		var th = $('<th>');
-		tr.append(th);
-		var input = $('<input>');
-		input.attr({'type': 'checkbox',
-			'id': 'selectAllAssignedSlidesTh'});
-		input.click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
-		th.append(input);
-		$.each(slideTableColumns, function(i, col) {
-			if (!slideNoDisplayColumns.contains(col)) {
-				var th = $('<th>');
-				tr.append(th);
-				th.html(slideTableDisplayColumns[col]);
-				if (slideClassColumns[col] != null) {
-					th.addClass(slideClassColumns[col]);
-				}
-			}
-		});
-		$.each(arr, function(i, row) {
-			var tr = $('<tr>');
-			table.append(tr);
-			if (i%2 == 1) {
-				tr.addClass('odd');
-			}
-			var td = $('<td>');
-			td.addClass('center');
-			tr.append(td);
-			var input = $('<input>');
-			input.attr({'type': 'checkbox',
-				'slideId': row['id']});
-			input.click(function(event) {checkAvailableSlides('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
-			td.append(input);
-			if (row['experiment_id'] == null) {
-				input.attr('disabled', 'disabled');
-			}
-			$.each(slideTableColumns, function(j, col) {
-				if (!slideNoDisplayColumns.contains(col)) {
-					var td = $('<td>');
-					tr.append(td);
-					if (slideDisplayValue[col] != null) {
-						slideDisplayValue[col](row, td, row[col], i+1);
-					} else {
-						td.html(row[col]);
-					}
-					if (slideClassColumns[col] != null) {
-						td.addClass(slideClassColumns[col]);
-					}
-				}
-			});
-		});
-		$('.'+item, table).hide();
-	}
-	$('#centerPanelMiddle').hide();
-	$('#centerPanelTop').show();
-	if (arr.length > 0 && item == 'experiment') {
-		$('#printSlideButton').show();
-		$('#printSlideButton').attr('disabled', 'disabled');
-	}
-	if (item == 'search') {
-		$('#editButton').hide();
-	} else {
-		$('#editButton').show();
-	}
-	$('#cancelButton').hide();
-	$('#saveButton').hide();
-	$('#refreshButton').show();
-	$('button', $('#centerPanelBottom')).hide();
-	if (item == 'box') {
-		$('#createSlideButton').show();
-		$('#printBoxButton').show();
-		if (newBoxId != null) {
-			$('#createSlideButton').click();
-			newBoxId = null;
-		}
-	}
-	if (item == 'experiment') {
-		$('#printBoxButton').hide();
-		$('#createSlideButton').hide();
-		$('#addSlidesButton').show();
-		if (arr.length > 0) {
-			$('#printSlideButton').show();
-		}
-	}
-	if (arr.length > 0) {
-		$('#globusTransferButton').show();
-		$('#globusTransferButton').attr('disabled', 'disabled');
-	}
-}
-
-function initTopPanel() {
-	var topPanel = $('#topPanel');
-	var div = $('<div>');
-	div.attr('id', 'header');
-	topPanel.append(div);
-	var h1 = $('<h1>');
-	h1.html('CIRM Microscopy Image Viewer');
-	div.append(h1);
-	var div = $('<div>');
-	div.attr('id', 'searchForm');
-	topPanel.append(div);
-	var label = $('<label>');
-	div.append(label);
-	label.attr('for', 'search');
-	label.html('Search: ');
-	var input = $('<input>');
-	input.attr({'id': 'search',
-		'size': '50'});
-	div.append(input);
-	input.keyup(function(event) {checkSearch(event);});
-}
-
-function getSearchExpression(originalValue, delimiter) {
-	var arr = originalValue.split(' ');
-	var keywords = [];
-	$.each(arr, function(i, value) {
-		if (value != '') {
-			keywords.push(value);
-		}
-	});
-	keywords = keywords.join(delimiter);
-	return keywords;
-}
-
-function checkSearch(event) {
-	if (event.which == 13) {
-		var originalValue = $('#search').val().replace(/^\s*/, "").replace(/\s*$/, "");
-		if (originalValue.length > 0) {
-			originalValue = getSearchExpression(originalValue, ' ');
-			if (searchList.contains(originalValue)) {
-				selectSearch(originalValue);
-			} else {
-				searchList.unshift(originalValue);
-				newSearchKeywords = originalValue;
-				drawPanels();
-				newSearchKeywords = null;
-				selectNewSearch();
-			}
-		}
-	}
-}
-
-function getSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/scan';
+function getSearchEntities(table, keywords, originalValue) {
+	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table) + '/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords);
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSearchSlides, params, null, 0);
+	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSearchEntities, params, null, 0);
 }
 
-function postGetSearchSlides(data, textStatus, jqXHR, param) {
-	scansDict = {};
-	scansList = data;
-	$.each(data, function(i, item) {
-		scansDict[item['id']] = item;
-	});
-	getSlideSearchSlides(param['keywords'], param['originalValue']);
-}
-
-function getSlideSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/slide/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords);
-	var params = {'keywords': keywords,
-			'originalValue': originalValue};
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlideSearchSlides, params, null, 0);
-}
-
-function postGetSlideSearchSlides(data, textStatus, jqXHR, param) {
-	slidesDict = {};
-	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
-	});
-	getExperimentSearchSlides(param['keywords'], param['originalValue']);
-}
-
-function getExperimentSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/experiment/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/slide';
-	var params = {'keywords': keywords,
-			'originalValue': originalValue};
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSearchSlides, params, null, 0);
-}
-
-function postGetExperimentSearchSlides(data, textStatus, jqXHR, param) {
-	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
-	});
-	getBoxSearchSlides(param['keywords'], param['originalValue']);
-}
-
-function getBoxSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/box/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/slide';
-	var params = {'keywords': keywords,
-			'originalValue': originalValue};
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxSearchSlides, params, null, 0);
-}
-
-function postGetBoxSearchSlides(data, textStatus, jqXHR, param) {
-	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
-	});
-	slidesList = [];
-	$.each(slidesDict, function(key, item) {
-		slidesList.push(item);
-	});
-	slidesList.sort(compareIds);
-	appendSlides('search');
+function postGetSearchEntities(data, textStatus, jqXHR, param) {
+	appendEntities(data);
 }
 
 function clickEntity(ul, label) {
@@ -1207,260 +859,6 @@ function loadLeftPanel(panel, vals) {
 	});
 }
 
-function checkSlideSaveButton() {
-	if ($('#slideRevision').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#slideSequenceNumber').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#slidesCount').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
-		$('#createButton').removeAttr('disabled');
-	} else {
-		$('#createButton').attr('disabled', 'disabled');
-	}
-}
-
-function checkExperimentSaveButton() {
-	if ($('#experimentDate').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#experimentRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#experimentDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#experimentDescription').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
-		$('#createButton').removeAttr('disabled');
-	} else {
-		$('#createButton').attr('disabled', 'disabled');
-	}
-}
-
-function getScans(id) {
-	var url = ERMREST_HOME + '/slide/id='+encodeSafeURIComponent(id)+'/scan';
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetScans, null, null, 0);
-}
-
-function postGetScans(data, textStatus, jqXHR, param) {
-	if (mobileParams != null) {
-		mobileParams['scans'] = data;
-		submitLogout();
-	} else {
-		appendImage(data);
-	}
-}
-
-function appendImage(images) {
-	var item = 'box';
-	if ($('.highlighted', $('#ExperimentDiv')).length > 0) {
-		item = 'experiment';
-	}
-	var centerPanel = $('#centerPanelTop');
-	if (images.length == 0) {
-		centerPanel.html(CIRM_NO_SCANS_INFO);
-	} else {
-		centerPanel.html('');
-	}
-	$.each(images, function(i, image) {
-		var img = $('<img>');
-		img.attr({'alt': 'Undefined',
-			'title': 'Thumbnail',
-			'src': 'images/'+image['thumbnail'],
-			'width': 100,
-			'height': 100,
-			'index': image['id']
-			});
-		centerPanel.append(img);
-		img.click(function(event) {displayScan($(this), image);});
-		img.dblclick(function(event) {enlargeImage($(this), image);});
-	});
-	$('button', $('#centerPanelBottom')).hide();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides(item);});
-	$('#backButton').show();
-	$('#printBoxButton').hide();
-	$('#refreshButton').show();
-	$('#editButton').show();
-	$('#centerPanelMiddle').hide();
-	$('#centerPanelTop').show();
-}
-
-function enlargeImage(img, image) {
-	if (cirm_mobile) {
-		var label = image['slide_id'];
-		mobileParams = {};
-		getSlide(label);
-	} else {
-		var tilesHTML = ZOOMIFY_HOME + image['tilesdir'].substr(0, image['tilesdir'].length-1);
-		window.open(
-		  tilesHTML,
-		  '_blank' // <- This is what makes it open in a new window.
-		);
-	}
-}
-
-function displayEntity(itemType, item) {
-	var updateItem = null;
-	var cols = null;
-	var displayCols = null;
-	if (itemType == 'scan') {
-		updateItem = 'updateScan';
-		cols = scanColumns;
-		displayCols = scanDisplayColumns;
-	} else if (itemType == 'slide') {
-		updateItem = 'updateSlide';
-		cols = slideColumns;
-		displayCols = slideDisplayColumns;
-	} else if (itemType == 'box') {
-		updateItem = 'updateBox';
-		cols = boxColumns;
-		displayCols = boxDisplayColumns;
-	} else if (itemType == 'experiment') {
-		updateItem = 'updateExperiment';
-		cols = experimentColumns;
-		displayCols = experimentDisplayColumns;
-	}
-
-	$('#editButton').unbind('click');
-	$('#editButton').click(function(event) {editEntity(itemType);});
-	$('#cancelButton').unbind('click');
-	$('#cancelButton').click(function(event) {cancel(updateItem);});
-	$('#saveButton').unbind('click');
-	$('#saveButton').click(function(event) {updateEntity(itemType);});
-	$('#saveButton').removeAttr('disabled');
-	$('#printerButton').show();
-	if (itemType == 'scan' || itemType == 'slide') {
-		$('#refreshButton').show();
-	}
-	$('#editButton').show();
-	$('#cancelButton').hide();
-	$('#saveButton').hide();
-
-	var rightPanel = $('#rightPanelTop');
-	rightPanel.html('');
-
-	$.each(cols, function(i, col) {
-		var dl = $('<dl>');
-		rightPanel.append(dl);
-		var dt = $('<dt>');
-		dl.append(dt);
-		dt.addClass('info');
-		dt.html(displayCols[col]+': ');
-		var span = $('<span>');
-		dl.append(span);
-		var dd = $('<dd>');
-		dd.attr('id', col + 'Label');
-		dd.html(item[col]);
-		span.append(dd);
-		var input = $('<input>');
-		input.attr({'type': 'text',
-			'id': col + 'Input',
-			'size': 30});
-		span.append(input);
-		input.hide();
-	});
-}
-
-function displayScan(img, image) {
-	displayEntity('scan', image);
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides('box');});
-	$('#backButton').show();
-	$('#transferButton').unbind('click');
-	$('#transferButton').click(function(event) {transferImage(image);});
-	$('#transferButton').show();
-	$('#enlargeButton').unbind('click');
-	$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
-	$('#enlargeButton').show();
-
-	$('img', $('#centerPanelTop')).removeClass('highlighted');
-	img.addClass('highlighted');
-}
-
-function initRightPanelButtons() {
-	var panel = $('#rightPanelBottom');
-	
-	var button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'editButton');
-	button.html('Edit');
-	button.button({icons: {primary: 'ui-icon-note'}});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'cancelButton');
-	button.html('Cancel');
-	button.button({icons: {primary: 'ui-icon-cancel'}});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'saveButton');
-	button.html('Save');
-	button.button({icons: {primary: 'ui-icon-document'}});
-
-	$('button', panel).hide();
-}
-
-function initCenterPanelButtons() {
-	var panel = $('#centerPanelBottom');
-	panel.append('<br>');
-		
-	var button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'addSlidesButton');
-	button.html('Add Slides');
-	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {getUnassignedSlides();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'createSlideButton');
-	button.html('New Slide(s)');
-	button.button({icons: {primary: 'ui-icon-newwin'}}).click(function(event) {createSlide();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'printSlideButton');
-	button.html('Print Slide(s)');
-	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintSlide();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'backButton');
-	button.html('Back');
-	button.button({icons: {primary: 'ui-icon-arrowthick-1-w'}});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'submitButton');
-	button.html('Submit');
-	button.button({icons: {primary: 'ui-icon-play'}}).click(function(event) {globusFileTransfer();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'createButton');
-	button.html('Create');
-	button.button({icons: {primary: 'ui-icon-document'}});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'addButton');
-	button.html('Add');
-	button.button();
-	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {addSlides();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'enlargeButton');
-	button.html('Enlarge Image');
-	button.button({icons: {primary: 'ui-icon-zoomin'}});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'transferButton');
-	button.html('Download');
-	button.button({icons: {primary: 'ui-icon-arrowthick-1-s'}});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'globusTransferButton');
-	button.html('Transfer');
-	button.button({icons: {primary: 'ui-icon-transferthick-e-w'}}).click(function(event) {submitTransfer();});
-
-	$('button', panel).hide();
-}
-
 function initBottomPanel(panel) {
 	panel.html('');
 
@@ -1469,196 +867,11 @@ function initBottomPanel(panel) {
 	div.attr('id', 'viterbi');
 	div.html('<a href="http://viterbi.usc.edu" target="_newtab2">USC Viterbi School of Engineering</a>');
 
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'printBoxButton');
-	button.html('Print Box');
-	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintBox();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'refreshButton');
-	button.html('Refresh');
-	button.button({icons: {primary: 'ui-icon-refresh'}}).click(function(event) {refresh();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'clearButton');
-	button.html('Clear');
-	button.button({icons: {primary: 'ui-icon-arrowrefresh-1-n'}}).click(function(event) {clear();});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'printerButton');
-	button.html('Printers');
-	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printersManaging();});
-
-	button = $('<button>');
+	var button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'logoutButton');
 	button.html('Logout');
 	button.button({icons: {primary: 'ui-icon-home'}}).click(function(event) {submitLogout();});
-
-	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
-}
-
-function editEntity(item) {
-	var cols = null;
-	if (item == 'scan') {
-		cols = scanEditColumns;
-	} else if (item == 'slide') {
-		cols = slideEditColumns;
-	} else if (item == 'box') {
-		cols = boxEditColumns;
-	} else if (item == 'experiment') {
-		cols = experimentEditColumns;
-	}
-	$.each(cols, function(i, col) {
-		$('#' + col + 'Input').val($('#' + col + 'Label').html());
-		$('#' + col + 'Input').show();
-		$('#' + col + 'Label').hide();
-	});
-
-	$('#printBoxButton').hide();
-	$('#refreshButton').show();
-	$('#cancelButton').show();
-	$('#saveButton').show();
-	$('#editButton').hide();
-}
-
-function updateEntity(item) {
-	var cols = null;
-	var editCols = null;
-	if (item == 'scan') {
-		cols = scanColumns;
-		editCols = scanEditColumns;
-	} else if (item == 'slide') {
-		cols = slideColumns;
-		editCols = slideEditColumns;
-	} else if (item == 'box') {
-		cols = boxColumns;
-		editCols = boxEditColumns;
-	} else if (item == 'experiment') {
-		cols = experimentColumns;
-		editCols = experimentEditColumns;
-	}
-
-	var url = ERMREST_HOME + '/' + item + '/id=' + encodeSafeURIComponent($('#idLabel').html());
-	var arr = [];
-	var obj = new Object();
-	$.each(cols, function(i, col) {
-		if (editCols.contains(col)) {
-			obj[col] = $('#' + col + 'Input').val();
-		} else {
-			obj[col] = $('#' + col + 'Label').html();
-		}
-		if (obj[col] == '') {
-			delete obj[col];
-		}
-	});
-	arr.push(obj);
-	restAJAX.PUT(url, 'application/json', false, arr, true, postUpdateEntity, {'item': item}, null, 0);
-}
-
-function postUpdateEntity(data, textStatus, jqXHR, param) {
-	var item = param['item'];
-	var colDict = null;
-	var colList = null;
-	var cols = null;
-	var displayCols = null;
-	if (item == 'scan') {
-		colDict = scansDict;
-		colList = scansList;
-		cols = scanColumns;
-		displayCols = scanDisplayColumns;
-	} else if (item == 'slide') {
-		colDict = slidesDict;
-		colList = slidesList;
-		cols = slideColumns;
-		displayCols = slideDisplayColumns;
-	} else if (item == 'box') {
-		colDict = boxesDict;
-		colList = boxesList;
-		cols = boxColumns;
-		displayCols = boxDisplayColumns;
-	} else if (item == 'experiment') {
-		colDict = experimentsDict;
-		colList = experimentsList;
-		cols = experimentColumns;
-		displayCols = experimentDisplayColumns;
-	}
-
-	data = data[0];
-	colDict[data['id']] = data;
-	var temp = [];
-	$.each(colList, function(i, col) {
-		if (col['id'] != data['id']) {
-			temp.push(col);
-		} else {
-			temp.push(data);
-		}
-	});
-	colList = temp;
-	displayEntity(item, data);
-	$('#printBoxButton').hide();
-	$('#refreshButton').show();
-	if (item == 'scan') {
-		$('#transferButton').show();
-		$('#enlargeButton').show();
-	} else if (item == 'box') {
-		$('#printBoxButton').show();
-	}
-}
-
-function refresh() {
-	var li = $('.highlighted', $('#leftPanel'))[0];
-	if (li != null) {
-		$(li).click();
-	}
-}
-
-function cancel(item) {
-	if (item == 'createBox' || item == 'createExperiment') {
-		$('#centerPanelTop').html(CIRM_START_INFO);
-		$('li', $('#leftPanel')).removeClass('highlighted');
-		$('#centerPanelMiddle').hide();
-		$('#centerPanelTop').show();
-	} else if (item == 'createSlide' || item == 'printSlide') {
-		$($('.highlighted', $('#BoxDiv'))[0]).click();
-	} else if (item == 'addSlides') {
-		$($('.highlighted', $('#ExperimentDiv'))[0]).click();
-	} else if (item == 'updateBox' || item == 'updateExperiment' || item == 'updateSlide' || item == 'updateScan') {
-		$('input', $('#rightPanelTop')).hide();
-		$('dd', $('#rightPanelTop')).show();
-		$('#editButton').show();
-		$('#cancelButton').hide();
-		$('#saveButton').hide();
-	}
-}
-
-function transferImage(image) {
-	//var czi = 'http://lonestar.isi.edu/~schuler/' + image['filename'];
-	// var czi = DOWNLOAD_HOME + image['filename'];
-	var czi = 'http://cirm-dev.misd.isi.edu/cirm-files/' + image['filename'];
-	window.open(
-	  czi,
-	  '_blank' // <- This is what makes it open in a new window.
-	);
-}
-
-function clear() {
-	$('li', $('#leftPanel')).removeClass('highlighted');
-	$('#rightPanelTop').html('');
-	$('#centerPanelTop').html(CIRM_START_INFO);
-	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
-	$('button', $('#centerPanelBottom')).hide();
-	$('button', $('#rightPanelBottom')).hide();
-	$('#search').val('');
-	$('#SlideDiv').remove();
-	$('#centerPanelMiddle').hide();
-	$('#centerPanelTop').show();
 }
 
 function compareIgnoreCase(str1, str2) {
@@ -1756,943 +969,13 @@ function encodeSafeURIComponent(value) {
 	return ret;
 }
 
-function createSlide() {
-	var centerPanel = $('#centerPanelTop');
-	centerPanel.html('<p class="intro">New Slide(s)</p>');
-	centerPanel.show();
-	var table = $('<table>');
-	centerPanel.append(table);
-	table.addClass('define_entity');
-
-	var tr = $('<tr>');
-	table.append(tr);
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Sequence Number:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'slideSequenceNumber',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkSlideSaveButton();});
-	input.val('1');
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Revision:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'slideRevision',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkSlideSaveButton();});
-	input.val('0');
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Comment:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'slideComment',
-		'type': 'text'});
-	td.append(input);
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Number of Slides:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'slidesCount',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkSlideSaveButton();});
-	input.val(1);
-
-	$('#createSlideButton').hide();
-	$('#createButton').unbind('click');
-	$('#createButton').click(function(event) {saveSlide();});
-	$('#createButton').show();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides('box');});
-	$('#backButton').show();
-	$('#centerPanelMiddle').hide();
-	$('#centerPanelTop').show();
-	$('#globusTransferButton').hide();
-}
-
-function renderTransferFiles(files) {
-	var centerPanel = $('#centerPanelTop');
-	centerPanel.html('<p class="intro">Transfer Files</p>');
-	centerPanel.show();
-	var table = $('<table>');
-	centerPanel.append(table);
-	table.addClass('radio_entity');
-
-	var tr = $('<tr>');
-	table.append(tr);
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Destination Endpoint:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'destinationEnpointInput',
-		'size': 30});
-	td.append(input);
-	$('#destinationEnpointInput').autocomplete({
-		source: endpointsList,
-		select: function(event, ui) {setSelectedEndpoint(ui.item.value);}
-	});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Destination Directory:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'destinationDirectoryInput',
-		'type': 'text',
-		'size': 30});
-	td.append(input);
-	input.keyup(function(event) {checkFilesTransferButton();});
-	input.val('');
-
-	var table1 = $('<table>');
-	centerPanel.append(table1);
-	table1.attr('id', 'filesTable');
-	var tr = $('<tr>');
-	table1.append(tr);
-	var th = $('<th>');
-	tr.append(th);
-	var input = $('<input>');
-	input.attr({'type': 'checkbox',
-		'id': 'selectAllFilesTh'});
-	input.click(function(event) {checkUncheckAll('filesTable', 'selectAllFilesTh', ['submitButton']);});
-	th.append(input);
-	$.each(filesTableColumns, function(i, col) {
-		var th = $('<th>');
-		tr.append(th);
-		th.html(filesTableDisplayColumns[col]);
-	});
-	$.each(files, function(i, file) {
-		var tr = $('<tr>');
-		table1.append(tr);
-		if (i%2 == 1) {
-			tr.addClass('odd');
-		}
-		var td = $('<td>');
-		td.addClass('center');
-		tr.append(td);
-		var input = $('<input>');
-		input.attr({'type': 'checkbox',
-			'filename': file});
-		input.click(function(event) {checkAvailableSlides('filesTable', 'selectAllFilesTh', ['submitButton']);});
-		td.append(input);
-		$.each(filesTableColumns, function(j, col) {
-			var td = $('<td>');
-			tr.append(td);
-			if (fileDisplayValue[col] != null) {
-				fileDisplayValue[col](td, filesDict[file]);
-			} else {
-				td.html(filesDict[file][col]);
-			}
-		});
-	});
-	$('button', $('#centerPanelBottom')).hide();
-	$('#submitButton').attr('disabled', 'disabled');
-	$('#submitButton').show();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides(getSlidesType());});
-	$('#backButton').show();
-	$('#centerPanelMiddle').hide();
-	$('#centerPanelTop').show();
-	$('#globusTransferButton').hide();
-	selectedEndpoint = null;
-}
-
-function setSelectedEndpoint(value) {
-	selectedEndpoint = value;
-	checkFilesTransferButton();
-}
-
-function checkFilesTransferButton() {
-	if (selectedEndpoint != null &&
-			$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-			$('td', $('#filesTable')).find('input:checked').length > 0) {
-			$('#submitButton').removeAttr('disabled');
-		} else {
-			$('#submitButton').attr('disabled', 'disabled');
-		}
-}
-
-function getSlidesType() {
-	var ret = null;
-	if ($('.highlighted', $('#BoxDiv')).length > 0) {
-		ret = 'box';
-	} else if ($('.highlighted', $('#ExperimentDiv')).length > 0) {
-		ret = 'experiment';
-	} else if ($('.highlighted', $('#SearchDiv')).length > 0) {
-		ret = 'search';
-	}
-	return ret;
-}
-
-function printersManaging() {
-	$('li', $('#leftPanel')).removeClass('highlighted');
-	$('#rightPanelTop').html('');
-	$('button', $('#rightPanelBottom')).hide();
-	$('button', $('#centerPanelBottom')).hide();
-	var centerPanel = $('#centerPanelTop');
-	centerPanel.html('<p class="intro">Printers</p>');
-	var p = $('<p>');
-	p.addClass('center');
-	centerPanel.append(p);
-	var button = $('<button>');
-	p.append(button);
-	button.html('Box Labels Printer');
-	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printerManaging('Box');});
-	var p = $('<p>');
-	p.addClass('center');
-	centerPanel.append(p);
-	var button = $('<button>');
-	p.append(button);
-	button.html('Slide Labels Printer');
-	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printerManaging('Slide');});
-}
-
-function printerManaging(printer) {
-	var centerPanel = $('#centerPanelTop');
-	isSlidePrinter = (printer == 'Slide');
-	if (isSlidePrinter) {
-		PRINTER_ADDR = SLIDE_PRINTER_ADDR;
-		PRINTER_PORT = SLIDE_PRINTER_PORT;
-		centerPanel.html('<p class="intro">Slide Labels Printer</p>');
-	} else {
-		PRINTER_ADDR = BOX_PRINTER_ADDR;
-		PRINTER_PORT = BOX_PRINTER_PORT;
-		centerPanel.html('<p class="intro">Box Labels Printer</p>');
-	}
-	var printTable = $('<table>');
-	centerPanel.append(printTable);
-	printTable.addClass('radio_entity itemTable');
-	printTable.attr({'align': 'center',
-		'id': 'printerAdminTable'});
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:printerSettings()');
-	a.html('Printer Setting');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("checkConnection")');
-	a.html('Check Connection');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("getStatus")');
-	a.html('Get Status');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("getConfiguration")');
-	a.html('Get Configuration');
-	td.append(a);
-	
-	/*
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("resetPrinter")');
-	a.html('Reset Printer');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("calibratePrinter")');
-	a.html('Calibrate Printer');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("forcePowerCycle")');
-	a.html('Force Power Cycle');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("shiftUp")');
-	a.html('Shift Up');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("shiftDown")');
-	a.html('Shift Down');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("shiftLeft")');
-	a.html('Shift Left');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("shiftRight")');
-	a.html('Shift Right');
-	td.append(a);
-	
-	var tr = $('<tr>');
-	printTable.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	var a = $('<a>');
-	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:managePrinter("testPrinter")');
-	a.html('Test Printer');
-	td.append(a);
-	*/
-	
-	$('button', $('#centerPanelBottom')).hide();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {printersManaging();});
-	$('#backButton').show();
-	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
-	$('#centerPanelMiddle').hide();
-	$('#centerPanelTop').show();
-}
-
-function printerSettings() {
-	var rightPanel = $('#rightPanelTop');
-	rightPanel.html('');
-	var dl = $('<dl>');
-	rightPanel.append(dl);
-	var dt = $('<dt>');
-	dl.append(dt);
-	dt.addClass('info');
-	dt.html('Address: ');
-	var span = $('<span>');
-	dl.append(span);
-	var input = $('<input>');
-	input.attr({'type': 'text',
-		'id': 'printerAddrInput',
-		'size': 30});
-	span.append(input);
-	input.val(PRINTER_ADDR);
-	
-	var dl = $('<dl>');
-	rightPanel.append(dl);
-	var dt = $('<dt>');
-	dl.append(dt);
-	dt.addClass('info');
-	dt.html('Port: ');
-	var span = $('<span>');
-	dl.append(span);
-	var input = $('<input>');
-	input.attr({'type': 'text',
-		'id': 'printerPortInput',
-		'size': 30});
-	span.append(input);
-	input.val(PRINTER_PORT);
-	
-	$('#cancelButton').unbind('click');
-	$('#cancelButton').click(function(event) {cancelPrinterSettings();});
-	$('#saveButton').unbind('click');
-	$('#saveButton').click(function(event) {updatePrinterSettings();});
-	$('#saveButton').removeAttr('disabled');
-	$('#cancelButton').show();
-	$('#saveButton').show();
-	$('#editButton').hide();
-	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
-}
-
-function updatePrinterSettings() {
-	PRINTER_ADDR = $('#printerAddrInput').val();
-	PRINTER_PORT = parseInt($('#printerPortInput').val());
-	if (isSlidePrinter) {
-		SLIDE_PRINTER_ADDR = PRINTER_ADDR;
-		SLIDE_PRINTER_PORT = PRINTER_PORT;
-	} else {
-		BOX_PRINTER_ADDR = PRINTER_ADDR;
-		BOX_PRINTER_PORT = PRINTER_PORT;
-	}
-	cancelPrinterSettings();
-}
-
-function cancelPrinterSettings() {
-	var rightPanel = $('#rightPanelTop');
-	rightPanel.html('');
-	$('button', $('#rightPanelBottom')).hide();
-	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
-}
-
-function managePrinter(param) {
-	var url = PRINT_CONTROL_HOME + 'id/control/' + encodeSafeURIComponent(param) + '/';
-	var arr = [];
-	var obj = new Object();
-	obj['printer_id'] = PRINTER_ADDR;
-	obj['printer_port'] = PRINTER_PORT;
-	arr.push(obj);
-	if (param == 'getStatus' || param == 'getConfiguration') {
-		restAJAX.fetch(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postManagePrinter, {'param': param}, null, 0);
-	} else {
-		restAJAX.PUT(url, 'application/json', false, arr, true, postManagePrinter, {'param': param}, null, 0);
-	}
-}
-
-function postManagePrinter(data, textStatus, jqXHR, param) {
-	data = data[0];
-	if (data[CXI_RET] <= 0) {
-		alert('An error was reported in sending the request for "' + param['param'] + '".\nReason: '+data[CXI_MSG]);
-	} else {
-		alert('The request for "' + param['param'] + '" was send successfully.\nResult: '+JSON.stringify(data[CXI_MSG]));
-	}
-}
-
-function createExperiment() {
-	$('#rightPanelTop').html('');
-	$('button', $('#rightPanelBottom')).hide();
-	var centerPanel = $('#centerPanelTop');
-	centerPanel.html('');
-	centerPanel.append(CIRM_NEW_EXPERIMENT);
-	centerPanel.show();
-	var table = $('<table>');
-	centerPanel.append(table);
-	table.addClass('define_entity');
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Experiment Date:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'experimentDate',
-		'type': 'text'});
-	input.addClass('datepicker');
-	td.append(input);
-	$('.datepicker').datetimepicker({	dateFormat: 'yy-mm-dd',
-		timeFormat: '',
-		separator: '',
-		changeYear: true,
-		showTime: false,
-		showHour: false,
-		showMinute: false
-	});
-	input.change(function(event) {checkExperimentSaveButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Experiment Description:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'experimentDescription',
-		'maxlength': '15',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkExperimentSaveButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Initials:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'experimentRI',
-		'maxlength': '3',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkExperimentSaveButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Disambiguator:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'experimentDisambiguator',
-		'maxlength': '1',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkExperimentSaveButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Comment:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'experimentComment',
-		'type': 'text'});
-	td.append(input);
-
-	$('button', $('#centerPanelBottom')).hide();
-	$('#createButton').unbind('click');
-	$('#createButton').click(function(event) {saveExperiment();});
-	$('#createButton').show();
-	$('#createButton').attr('disabled', 'disabled');
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {clear();});
-	$('#backButton').show();
-	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
-	$('#centerPanelMiddle').hide();
-	$('#centerPanelTop').show();
-	$('#globusTransferButton').hide();
-}
-
-function displaySlide(id) {
-	var item = slidesDict[id];
-	if (item == null) {
-		item = unassignedSlidesDict[id];
-	}
-	displayEntity('slide', item);
-	getScans(id);
-}
-
-function displayBox(ul, li) {
-	$('li', $('#leftPanel')).removeClass('highlighted');
-	li.addClass('highlighted');
-	$('#clearButton').show();
-	$('#centerPanelTop').html('');
-	$('#centerPanelBottom').hide();
-	displayEntity('box', boxesDict[li.html()]);
-	getSlides(li.html());
-}
-
-function displayExperiment(ul, li) {
-	$('li', $('#leftPanel')).removeClass('highlighted');
-	li.addClass('highlighted');
-	$('#clearButton').show();
-	$('#centerPanelTop').html('');
-	$('#centerPanelBottom').hide();
-	displayEntity('experiment', experimentsDict[li.html()]);
-	getExperimentSlides(li.html());
-}
-
 function displaySearch(ul, li) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	li.addClass('highlighted');
-	$('#clearButton').show();
 	$('#rightPanelTop').html('');
 	$('#centerPanelTop').html('');
 	$('#centerPanelBottom').show();
-	$('#printBoxButton').hide();
 	$('button', $('#centerPanelBottom')).hide();
-	getSearchSlides(getSearchExpression(li.html(), '&'), li.html());
-}
-
-function checkBoxSaveButton() {
-	if ($('#boxDate').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#boxGenotype').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#boxRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#boxDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
-		$('#createButton').removeAttr('disabled');
-	} else {
-		$('#createButton').attr('disabled', 'disabled');
-	}
-}
-
-function createBox() {
-	$('li', $('#leftPanel')).removeClass('highlighted');
-	$('#rightPanelTop').html('');
-	$('button', $('#rightPanelBottom')).hide();
-	var centerPanel = $('#centerPanelTop');
-	centerPanel.html('');
-	centerPanel.append(CIRM_NEW_BOX);
-	centerPanel.show();
-	var table = $('<table>');
-	centerPanel.append(table);
-	table.addClass('define_entity');
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Section Date:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'boxDate',
-		'type': 'text'});
-	input.addClass('datepicker');
-	td.append(input);
-	$('.datepicker').datetimepicker({	dateFormat: 'yy-mm-dd',
-		timeFormat: '',
-		separator: '',
-		changeYear: true,
-		showTime: false,
-		showHour: false,
-		showMinute: false
-	});
-	input.change(function(event) {checkBoxSaveButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Sample Name (Genotype):');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'boxGenotype',
-		'maxlength': '15',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkBoxSaveButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Researcher Initials:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'boxRI',
-		'maxlength': '3',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkBoxSaveButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Disambiguator:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'boxDisambiguator',
-		'maxlength': '1',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkBoxSaveButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Comment:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'boxComment',
-		'type': 'text'});
-	td.append(input);
-
-	$('button', $('#centerPanelBottom')).hide();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {clear();});
-	$('#backButton').show();
-	$('#createButton').unbind('click');
-	$('#createButton').click(function(event) {saveBox();});
-	$('#createButton').show();
-	$('#createButton').attr('disabled', 'disabled');
-	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
-	$('#centerPanelMiddle').hide();
-	$('#centerPanelTop').show();
-	$('#globusTransferButton').hide();
-}
-
-function saveBox() {
-	var boxDate = $('#boxDate').val().split('-').join('');
-	var url = ERMREST_HOME + '/box';
-	var arr = [];
-	var obj = new Object();
-	obj['section_date'] = $('#boxDate').val();
-	obj['sample_name'] = $('#boxGenotype').val();
-	obj['initials'] = $('#boxRI').val();
-	obj['disambiguator'] = $('#boxDisambiguator').val();
-	obj['comment'] = $('#boxComment').val();
-	var id = [boxDate, $('#boxGenotype').val(), $('#boxRI').val(), $('#boxDisambiguator').val()].join('-');
-	obj['id'] = id;
-	arr.push(obj);
-	restAJAX.POST(url, 'application/json', false, arr, true, postSaveBox, null, null, 0);
-}
-
-function postSaveBox(data, textStatus, jqXHR, param) {
-	data = $.parseJSON(data);
-	newBoxId = data[0]['id'];
-	getBoxes(null);
-}
-
-function saveExperiment() {
-	var url = ERMREST_HOME + '/experiment';
-	var arr = [];
-	var obj = new Object();
-	obj['experiment_date'] = $('#experimentDate').val();
-	obj['experiment_description'] = $('#experimentDescription').val();
-	obj['initials'] = $('#experimentRI').val();
-	obj['disambiguator'] = $('#experimentDisambiguator').val();
-	obj['comment'] = $('#experimentComment').val();
-	var experimentDate = $('#experimentDate').val().split('-').join('');
-	var id = [experimentDate, $('#experimentDescription').val(), $('#experimentRI').val(), $('#experimentDisambiguator').val()].join('-');
-	obj['id'] = id;
-	arr.push(obj);
-	restAJAX.POST(url, 'application/json', false, arr, true, postSaveExperiment, null, null, 0);
-}
-
-function postSaveExperiment(data, textStatus, jqXHR, param) {
-	data = $.parseJSON(data);
-	newExperimentId = data[0]['id'];
-	getBoxes(null);
-}
-
-function saveSlide() {
-	var slidesCount = parseInt($('#slidesCount').val());
-	var sequence_num = parseInt($('#slideSequenceNumber').val());
-	var revision = parseInt($('#slideRevision').val());
-	if (isNaN(slidesCount) || slidesCount < 1) {
-		alert('Invalid value for the Number of Slides: "' + $('#slidesCount').val() + '".');
-		return;
-	} else if (isNaN(sequence_num)) {
-		alert('Invalid value for the Sequence Number: "' + $('#slideSequenceNumber').val() + '".');
-		return;
-	} else if (isNaN(revision)) {
-			alert('Invalid value for the Revision: "' + $('#slideRevision').val() + '".');
-			return;
-	}
-	var id = $($('.highlighted', $('#BoxDiv'))[0]).html();
-	var url = ERMREST_HOME + '/slide';
-	var arr = [];
-	for (var i=0; i < slidesCount; i++) {
-		var obj = new Object();
-		obj['box_of_origin_id'] = id;
-		obj['sequence_num'] = sequence_num;
-		obj['revision'] = $('#slideRevision').val();
-		obj['comment'] = $('#slideComment').val();
-		var slideRevision = '' + $('#slideRevision').val();
-		while (slideRevision.length < 3) {
-			slideRevision = '0' + slideRevision;
-		}
-		var slideSequenceNumber = '' + sequence_num++;
-		while (slideSequenceNumber.length < 2) {
-			slideSequenceNumber = '0' + slideSequenceNumber;
-		}
-		var slideId = [id, slideSequenceNumber, slideRevision].join('-');
-		obj['id'] = slideId;
-		arr.push(obj);
-	}
-//alert(JSON.stringify(arr));
-	restAJAX.POST(url, 'application/json', false, arr, true, postSaveSlide, null, null, 0);
-}
-
-function postSaveSlide(data, textStatus, jqXHR, param) {
-	data = $.parseJSON(data);
-	$.each(data, function(i, item) {
-		slidesList.push(item);
-		slidesDict[item['id']] = item;
-	});
-	appendSlides('box');
-	$('#centerPanelBottom').show();
-}
-
-function submitTransfer() {
-	var url = ERMREST_HOME + '/scan/';
-	var slides = [];
-	$.each($('td', $('#slidesTable')).find('input:checked'), function(i, checkbox) {
-		slides.push('slide_id=' + encodeSafeURIComponent($(checkbox).attr('slideId')));
-	});
-	url += slides.join(';');
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitTransfer, null, null, 0);
-}
-
-function postSubmitTransfer(data, textStatus, jqXHR, param) {
-	var files = [];
-	filesDict = {};
-	$.each(data, function(i, scan) {
-		var filename = scan['filename'];
-		if (!files.contains(filename)) {
-			files.push(filename);
-			filesDict[filename] = scan;
-		}
-	});
-	files.sort(compareIgnoreCase);
-	renderTransferFiles(files);
-}
-
-function globusFileTransfer() {
-	var endpoint_2 = $('#destinationEnpointInput').val();
-	var files = [];
-	$.each($('td', $('#filesTable')).find('input:checked'), function(i, checkbox) {
-		var file = $(checkbox).attr('filename');
-		files.push(file);
-	});
-	var destDir = $('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "");
-	if (destDir[destDir.length-1] != '/') {
-		destDir += '/';
-	}
-	var url = GLOBUS_TRANSFER_HOME;
-	var obj = new Object();
-	obj['user'] = USER;
-	obj['token'] = token;
-	obj['endpoint_1'] = ENDPOINT_SOURCE;
-	obj['endpoint_2'] = endpoint_2;
-	obj['files'] = files;
-	var arr = [];
-	$.each(files, function(i, file) {
-		var scan = filesDict[file];
-		var item = {};
-		item['file_from'] = TILES_DIR + scan['tilesdir'] + file;
-		item['file_to'] = destDir + file;
-		arr.push(item);
-	});
-	obj['files'] = arr;
-	restAJAX.PUT(url, 'application/json', false, obj, true, postGlobusFileTransfer, null, null, 0);
-}
-
-function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
-	alert('Result: ' + JSON.stringify(data));
-	$('#backButton').click();
-}
-
-function submitPrintSlide() {
-	var url = PRINT_JOB_HOME + 'slide/job';
-	var arr = [];
-	$.each($('td', $('#slidesTable')).find('input:checked'), function(i, checkbox) {
-		var slide = slidesDict[$(checkbox).attr('slideId')];
-		var box = boxesDict[slide['box_of_origin_id']];
-		var experiment = experimentsDict[slide['experiment_id']];
-		var obj = new Object();
-		obj['revision'] = slide['revision'];
-		obj['sequence_num'] = slide['sequence_num'];
-		obj['experiment'] = slide['experiment_id'];
-		obj['experiment_date'] = experiment['experiment_date'];
-		obj['sample_name'] = box['sample_name'];
-		obj['experiment_description'] = experiment['experiment_description'];
-		obj['initials'] = experiment['initials'];
-		obj['id'] = slide['id'];
-		obj['printer_id'] = SLIDE_PRINTER_ADDR;
-		obj['printer_port'] = SLIDE_PRINTER_PORT;
-		arr.push(obj);
-	});
-	restAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintSlide, null, null, 0);
-}
-
-function postSubmitPrintSlide(data, textStatus, jqXHR, param) {
-	data = $.parseJSON(data)[0];
-	if (data[CXI_RET] <= 0) {
-		alert('An error was reported in sending the request for printing the slide label(s).\nReason: '+data[CXI_MSG]);
-	} else {
-		alert('The request for printing the slide label(s) was submitted successfully.');
-	}
-}
-
-function submitPrintBox() {
-	var url = PRINT_JOB_HOME + 'box/job';
-	var arr = [];
-	var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).html()];
-	var obj = {};
-	$.each(boxColumns, function(i, col) {
-		obj[col] = box[col];
-	});
-	obj['printer_id'] = BOX_PRINTER_ADDR;
-	obj['printer_port'] = BOX_PRINTER_PORT;
-	arr.push(obj);
-	restAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintBox, null, null, 0);
-}
-
-function postSubmitPrintBox(data, textStatus, jqXHR, param) {
-	data = $.parseJSON(data)[0];
-	if (data[CXI_RET] <= 0) {
-		alert('An error was reported in sending the request for printing the box label.\nReason: '+data[CXI_MSG]);
-	} else {
-		alert('The request for printing the box label was submitted successfully.');
-	}
+	getSearchEntities(getSearchExpression(li.html(), '&'), li.html());
 }
 

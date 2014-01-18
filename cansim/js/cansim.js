@@ -5,13 +5,13 @@ Array.prototype.contains = function (elem) {
 	return false;
 };
 
-var rootTable = 'MultiCellXML';
+var rootTable = 'simulation';
 var rootDisplayName = 'Simulations';
 var rootEntityName = 'Simulation';
 var rootColumn = 'name';
 var rootDict = {};
 var rootList = [];
-var rootRefTable = 'MultiCellXML';
+var rootRefTable = 'MultiCell';
 var rootRefColumn = 'simulation_id';
 var expandStack = [];
 
@@ -23,7 +23,7 @@ var HOME;
 var USER;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
-var DOWNLOAD_HOME = '/cansim-files/';
+var DOWNLOAD_HOME = '/cansim_files/';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
 var CIRM_START_INFO = '<p class="intro">Choose an entity from the left sidebar.</p>';
@@ -38,17 +38,25 @@ var searchList = [];
 
 var tables = {
 		'simulation': {'id': '', 'name': ''},
-		'MultiCellXML': {'id': '', 'simulation_id': '', 'metadata_id': 'metadata', 'cell_lines_id': 'cell_line'},
+		'MultiCell': {'id': '', 'simulation_id': '', 'metadata_id': 'metadata', 'cell_line_id': 'cell_line'},
 		'metadata': {'id': '', 'data_source_id': 'data_source', 'bounding_box_id': 'bounding_box', 'current_time': ''},
 		'data_source': {'id': '', 'filename': '', 'created': '', 'last_modified': '', 'description': '', 'UserInformation_id': 'UserInformation', 'reference_id': 'reference', 'ProgramInformation_id': 'ProgramInformation', 'notes': ''},
 		'UserInformation': {'id': '', 'Name': '', 'Affiliation': '', 'Location': '', 'email': '', 'URL': '', 'Phone': ''},
 		'reference': {'id': '', 'citation': '', 'URL': '', 'note': ''},
 		'ProgramInformation': {'id': '', 'Name': '', 'Version': '', 'Compiled': '', 'Author': '', 'email': '', 'URL': ''},
 		'bounding_box': {'id': '', 'lower_bounds': '', 'upper_bounds': ''},
-		'cell_line': {'id': '', 'cell_lines_id': '', 'data_source': '', 'microenvironment_phenotype_pairs_id': 'microenvironment_phenotype_pair'},
-		'microenvironment_phenotype_pair': {'id': '', 'microenvironment_phenotype_pairs_id': '', 'microenvironment_vector_id': 'microenvironment_vector', 'phenotype_parameter_vector_id': 'phenotype_parameter_vector'},
+		'cell_line': {'id': 'microenvironment_phenotype_pair', 'data_source': ''},
+		'microenvironment_phenotype_pair': {'id': '', 'cell_line_id': '', 'microenvironment_vector_id': 'microenvironment_vector', 'phenotype_parameter_vector_id': 'phenotype_parameter_vector'},
 		'microenvironment_vector': {'id': '', 'oxygen': ''},
 		'phenotype_parameter_vector': {'id': '', 'duration_of_G1': '', 'duration_of_S': '', 'duration_of_G2': '', 'duration_of_M': '', 'fraction_failing_G1_checkpoint': '', 'cell_volume': '', 'cell_nuclear_volume': '', 'fluid_fraction': '', 'oxygen_uptake_rate_per_volume': '', 'Youngs_modulus': '', 'maximum_cell_deformation': ''}
+};
+
+var referenceTables = {
+		'cell_line': {'id': 'cell_line_id'}
+};
+
+var downloadTables = {
+		'data_source': {'filename': ''}
 };
 
 var cirmTables = {
@@ -56,12 +64,6 @@ var cirmTables = {
 		'box': {'id': '', 'section_date': '', 'sample_name': '', 'initials': '', 'disambiguator': '', 'comment': '', 'tags': ''},
 		'experiment': {'id': '', 'experiment_date': '', 'experiment_description': '', 'initials': '', 'disambiguator': '', 'comment': '', 'tags': ''}
 };
-
-tables = cirmTables;
-rootTable = 'box';
-rootRefTable = 'slide';
-rootRefColumn = 'box_of_origin_id';
-rootColumn = 'id';
 
 var restAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
@@ -474,11 +476,30 @@ function initCenterPanelButtons() {
 	$('button', panel).hide();
 }
 
+function callFunction(f, args) {
+	var no = args.length;
+	switch(no) {
+	case 0:
+		f();
+		break;
+	case 1:
+		f(args[0]);
+		break;
+	case 2:
+		f(args[0], args[1]);
+		break;
+	case 3:
+		f(args[0], args[1], args[2]);
+		break;
+	default:
+		alert('Function with ' + no + ' arguments is not yet implemented.');
+			
+	}
+}
 function goBack() {
 	expandStack.pop();
 	var item = expandStack.pop();
-	var params = item['params'].join(',');
-	item['f'](params);
+	callFunction(item['f'], item['params']);
 	$('#backButton').hide();
 }
 
@@ -603,16 +624,13 @@ function selectNewSearch() {
 function displayRootEntity(ul, li) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	li.addClass('highlighted');
-	//$('#clearButton').show();
 	$('#centerPanelTop').html('');
-	//$('#centerPanelBottom').hide();
-	displayEntity(rootTable, rootDict[li.html()]);
-	//getSlides(li.html());
-	expandEntity(li.html());
+	displayEntity(rootTable, rootDict[li.attr('entityId')]);
+	expandEntity(li.attr('entityId'));
 }
 
 function displayEntity(table, item) {
-	var cols = tables[table];
+	var cols = getTableColumns(table);
 	$('#editButton').unbind('click');
 	//$('#editButton').click(function(event) {editEntity(itemType);});
 	$('#cancelButton').unbind('click');
@@ -627,13 +645,12 @@ function displayEntity(table, item) {
 	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
 
-	$.each(cols, function(col, val) {
+	$.each(cols, function(i, col) {
 		var dl = $('<dl>');
 		rightPanel.append(dl);
 		var dt = $('<dt>');
 		dl.append(dt);
 		dt.addClass('info');
-		//dt.html(displayCols[col]+': ');
 		dt.html(col+': ');
 		var span = $('<span>');
 		dl.append(span);
@@ -650,11 +667,11 @@ function displayEntity(table, item) {
 	});
 }
 
-function expandLink(table, id) {
-	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table) + '/id=' + encodeSafeURIComponent(id);
+function expandLink(table, col, id) {
+	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table) + '/' + encodeSafeURIComponent(col) + '=' + encodeSafeURIComponent(id);
 	var params = {'table': table,
-			'params': [table, id]};
-	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postExpandLink, {'table': table}, null, 0);
+			'params': [table, col, id]};
+	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postExpandLink, params, null, 0);
 }
 
 function postExpandLink(data, textStatus, jqXHR, param) {
@@ -665,18 +682,33 @@ function postExpandLink(data, textStatus, jqXHR, param) {
 	$('#backButton').show();
 }
 
-function setEntityColumn(table, id, td) {
+function setEntityColumn(table, col, id, td) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:expandLink("' + table + '", "' + id + '")');
+	a.attr('href', 'javascript:expandLink("' + table + '", "' + col + '", "' + id + '")');
 	a.html(id);
 	td.append(a);
+}
+
+function setDownloadLink(filename, td) {
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:download("' + filename + '")');
+	a.html(filename);
+	td.append(a);
+}
+
+function download(filename) {
+	var url = DOWNLOAD_HOME + filename;
+	window.open(
+	  url,
+	  '_blank' // <- This is what makes it open in a new window.
+	);
 }
 
 function appendEntities(data, tableName) {
 	var centerPanel = $('#centerPanelTop');
 	var arr = [].concat(data);
-	//arr.sort(compareIds);
 	if (arr.length == 0) {
 		centerPanel.html(CIRM_NO_ENTITIES_INFO);
 	} else {
@@ -705,9 +737,15 @@ function appendEntities(data, tableName) {
 			}
 			$.each(colNames, function(j, col) {
 				var td = $('<td>');
+				td.addClass('center');
 				tr.append(td);
-				if (tables[tableName][col] != '') {
-					setEntityColumn(tables[tableName][col], row[col], td);
+				if (isDownload(tableName, col)) {
+					setDownloadLink(row[col], td);
+				}
+				else if (isReference(tableName, col)) {
+					var refTable = getReferenceTable(tableName, col);
+					var refColumn = getReferenceColumn(tableName, col);
+					setEntityColumn(refTable, refColumn, row[col], td);
 				} else {
 					td.html(row[col]);
 				}
@@ -769,17 +807,17 @@ function getEntityContent(entityList, displayName, entityName, clickFunction, cr
 	obj['Click'] = clickFunction;
 	obj['Create'] = createFunction;
 	var values = [];
+	var ids = [];
 	var arr = [].concat(entityList);
-	if (entityName != 'Search') {
-		arr.sort(compareIds);
-	}
 	$.each(arr, function(i, item) {
 		if (entityName != 'Search') {
-			values.push(item['id']);
+			ids.push(item['id']);
+			values.push(item[rootColumn]);
 		} else {
 			values.push(item);
 		}
 	});
+	obj['ids'] = ids;
 	obj['Values'] = values;
 	entityContent.push(obj);
 	return entityContent;
@@ -846,8 +884,10 @@ function loadLeftPanel(panel, vals) {
 		div.append(ul);
 		ul.addClass('left_panel');
 		ul.attr('id', val['Name']+'UL');
+		var ids = val['ids'];
 		$.each(val['Values'], function(j, value) {
 			var li = $('<li>');
+			li.attr('entityId', ids[j]);
 			ul.append(li);
 			li.addClass('nowrap');
 			li.html(value);
@@ -979,3 +1019,36 @@ function displaySearch(ul, li) {
 	getSearchEntities(getSearchExpression(li.html(), '&'), li.html());
 }
 
+function getReferenceColumn(table, col) {
+	var ret = 'id';
+	if (referenceTables[table] != null && referenceTables[table][col] != null) {
+		ret = referenceTables[table][col];
+	}
+	return ret;
+}
+
+function getReferenceTable(table, col) {
+	var ret = tables[table][col];
+	return ret;
+}
+
+function getTableColumns(table) {
+	ret = [];
+	$.each(tables[table], function(col, val) {
+		ret.push(col);
+	});
+	return ret;
+}
+
+function isReference(table, col) {
+	ret = (tables[table][col] != '');
+	return ret;
+}
+
+function isDownload(tableName, col) {
+	var ret = false;
+	if (downloadTables[tableName] != null && downloadTables[tableName][col] != null) {
+		ret = true;
+	}
+	return ret;
+}

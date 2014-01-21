@@ -266,7 +266,7 @@ function renderLogin() {
 	var img = $('<img>');
 	logoDiv.append(img);
 	img.attr({'alt': 'USC logo',
-		'src': '/cirm/images/usc-primaryshieldwordmark.png',
+		'src': '/cansim/images/usc-primaryshieldwordmark.png',
 		'width': 300,
 		'height': 100
 		});

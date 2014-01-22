@@ -9,10 +9,12 @@ var rootTable = 'simulation';
 var rootDisplayName = 'Simulations';
 var rootEntityName = 'Simulation';
 var rootColumn = 'name';
+
 var rootDict = {};
 var rootList = [];
-var rootRefTable = 'MultiCell';
-var rootRefColumn = 'simulation_id';
+var rootRefTable = null;
+var rootRefColumn = null;
+
 var expandStack = [];
 var tablesMetadata = {};
 
@@ -399,6 +401,7 @@ function initREST() {
 }
 
 function getRootEntities() {
+	setRootReferences();
 	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(rootTable);
 	restAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetRootEntities, null, null, 0);
 }
@@ -1169,3 +1172,34 @@ function getReferenceColumn(table, col) {
 	return ret;
 }
 
+function setRootReferences() {
+	getMetadata(rootTable);
+	var data = tablesMetadata[rootTable];
+	if (data != null) {
+		var uniques = data['uniques'];
+		$.each(uniques, function(i, unique) {
+			var referenced_bys = unique['referenced_bys'];
+			$.each(referenced_bys, function(j, referenced_by) {
+				rootRefTable = referenced_by['referring_table']['table_name'];
+				var unique_to_referring_maps = referenced_by['unique_to_referring_maps'];
+				$.each(unique_to_referring_maps, function(k, unique_to_referring_map) {
+					$.each(unique_to_referring_map, function(key, val) {
+						if (key == 'id') {
+							rootRefColumn = val;
+							return false;
+						}
+					});
+					if (rootRefColumn != null) {
+						return false;
+					}
+				});
+				if (rootRefColumn != null) {
+					return false;
+				}
+			});
+			if (rootRefColumn != null) {
+				return false;
+			}
+		});
+	}
+}

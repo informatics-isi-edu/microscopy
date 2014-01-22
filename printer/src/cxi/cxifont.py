@@ -7,16 +7,19 @@
 import sys
 
 DEBUG = 0
-DEFAULT_BIT_SIZE=15
+DEFAULT_BIT_SIZE=10
+SPACE = " "
+EOL = "\r\n"
 
 default_bit_list = {
-"A":22, "B":22, "C":22, "D":22, "E":22, "F":22, "G":22, "H":22, "I":10,
-"J":18, "K":22, "L":22, "M":28, "N":22, "O":22, "P":22, "Q":22, "R":22,
-"S":22, "T":22, "U":22, "V":22, "W":28, "X":22, "Y":22, "Z":22, "1":10,
-"2":20, "3":20, "4":20, "5":20, "6":20, "7":20, "8":20, "9":20, "9":20,
-"0":20, "a":20, "b":20, "c":20, "d":20, "e":20, "f":18, "g":20, "h":20,
-"i":20, "j":20, "k":20, "l":20, "m":20, "n":20, "o":20, "p":20, "q":20,
-"r":18, "s":20, "t":18, "u":20, "v":20, "w":22, "x":20, "y":20, "z":20 }
+"A":21, "B":22.4, "C":23.8, "D":23.8, "E":21, "F":19.6, "G":25.2, "H":23.8,
+"I":8.5, "J":16, "K":21, "L":18.2, "M":28, "N":23.8, "O":25.2, "P":21, 
+"Q":25.2, "R":23.8, "S":21, "T":19.6, "U":22, "V":21, "W":28, "X":21, 
+"Y":22.4, "Z":19.6, "1":10, "2":16.8, "3":16.8, "4":16.8, "5":16.8, "6":16.8,
+"7":16.8, "8":16.8, "9":16.8, "9":16.8, "0":16.8, "a":16.8, "b":18, "c":16,
+"d":18, "e":20, "f":9.5, "g":18, "h":18, "i":8.5, "j":8.5, "k":16, "l":8.5, 
+"m":20, "n":18, "o":16.8, "p":18, "q":18, "r":11, "s":16, "t":9.5, "u":18, 
+"v":16, "w":23.8, "x":16, "y":16, "z":16 }
 
 #####################################################################
 class cxiFont():
@@ -71,7 +74,10 @@ class cxiFont():
        while(idx < sz) : 
            total += self.getBits(input[idx])
            idx += 1
-       return total
+       val=int(total)
+       if val<total:
+           val+=1
+       return val
 
     def chopBits(self,input,limit):
        sz=len(input)
@@ -95,6 +101,60 @@ class cxiFont():
        else:
            return input[0:sidx], input[sidx+1:]
 
+#####################################################################
+## utility routines
+def apos(xval, yval):
+    ret= SPACE  + str(xval) + SPACE + str(yval) + SPACE
+    return ret
+
+def chartype(c):
+    i=0
+    ret=""
+    while i <=10:
+       ret=ret+str(c)
+       i+=1
+    ret=ret+" "+str(c)
+    return ret
+
+####################################################
+# grouping of various char in TEXT 0 format (stored in 'font_file')
+# W is pegged at 28 bits
+#  W i j l I f t r W
+#  W c s k v y x z J W
+#  W b d g h n p q u W
+#  W a o 1 2 3 4 5 6 7 8 9 0 W
+#  W L T Z F X P S A E K V W
+#  W Y B w C D H N R G O Q M
+def makeFontSampleLabel(infile):
+    pclcmds=""
+    try:
+       fptr=open(infile,"r")
+    except:
+       if DEBUG:
+           print "Can not open %s to read!!" % self.file
+    lines=fptr.readlines()
+    if DEBUG:
+       print "What is read.."
+       print aline
+
+    for aline in lines:
+        if aline[0] == "x" :
+            continue
+        pclcmds = pclcmds + "! 0 100 300 1" + EOL + \
+           "DRAW_BOX"+ apos(10,5) +"580 280 4" + EOL
+        idx=5
+
+        alist=aline.split(" ")
+        for j in alist:
+            j.strip() 
+            pclcmds = pclcmds + \
+               "TEXT 0"+ apos(10,idx)  + chartype(j[0]) + EOL
+            idx+=20
+        pclcmds=pclcmds + "END" + EOL
+    return pclcmds
+
+#####################################################################
+## local testing main
 def main():
     print "font file name?"
     tmp = sys.stdin.readline()

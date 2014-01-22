@@ -465,6 +465,10 @@ def testBoxLabel_():
       "END" + EOL
     return pclcmds
 
+def testBoxLabel2_():
+    pclcmds=makeFontSampleLabel("font_file")
+    return pclcmds
+
 """
 """
 def makeSliceLabel_(date,genotype,antibody,experiment,expertID,seqNum,revNum,pURL,idString):
@@ -491,10 +495,10 @@ def makeBoxLabel_(date,genotype,expertID,disNum,pURL,idString,noteString):
     purl="%s/box?id=%s" %(pURL,idString)
     tmp=noteString
     myfont=cxiFont()
-    line1,tmp=myfont.chopBits(tmp,500)
-    line2,tmp=myfont.chopBits(tmp,500)
-    line3,tmp=myfont.chopBits(tmp,500)
-    line4,tmp=myfont.chopBits(tmp,500)
+    line1,tmp=myfont.chopBits(tmp,350)
+    line2,tmp=myfont.chopBits(tmp,350)
+    line3,tmp=myfont.chopBits(tmp,350)
+    line4,tmp=myfont.chopBits(tmp,350)
     pclcmds = "! 0 100 300 1" + EOL + \
       "TEXT 1" + pos(0,0) + date + EOL +  \
       "DRAW_BOX" + pos(185,-5) + "30 30 3" + EOL +\
@@ -526,11 +530,11 @@ def makeNoteLabel_(date,expertID,seqNum,pURL,idString,noteString):
     purl="%s/slide?id=%s" %(pURL,idString)
     tmp=noteString
     myfont=cxiFont()
-    line1,tmp=myfont.chopBits(tmp,360)
-    line2,tmp=myfont.chopBits(tmp,360)
-    line3,tmp=myfont.chopBits(tmp,360)
-    line4,tmp=myfont.chopBits(tmp,200)
-    line5,tmp=myfont.chopBits(tmp,200)
+    line1,tmp=myfont.chopBits(tmp,280)
+    line2,tmp=myfont.chopBits(tmp,280)
+    line3,tmp=myfont.chopBits(tmp,280)
+    line4,tmp=myfont.chopBits(tmp,140)
+    line5,tmp=myfont.chopBits(tmp,140)
 
     pclcmds = "! 0 100 260 1" + EOL + \
       "TEXT 1" + pos(0,0) + date + seq  + EOL 

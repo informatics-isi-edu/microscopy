@@ -14,6 +14,7 @@ var rootList = [];
 var rootRefTable = 'MultiCell';
 var rootRefColumn = 'simulation_id';
 var expandStack = [];
+var tablesMetadata = {};
 
 var newSearchKeywords = null;
 
@@ -22,6 +23,7 @@ var GLOBUS_AUTHN = true;
 var HOME;
 var USER;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
+var ERMREST_SCHEMA_HOME = '/ermrest/catalog/1/schema/cansim/table/';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
 var DOWNLOAD_HOME = '/cansim_files/';
 var MAX_RETRIES = 10;
@@ -36,6 +38,7 @@ var URL_ESCAPE = new String("~!()'");
 
 var searchList = [];
 
+/*
 var tables = {
 		'simulation': {'id': '', 'name': ''},
 		'MultiCell': {'id': '', 'simulation_id': '', 'metadata_id': 'metadata', 'cell_line_id': 'cell_line'},
@@ -50,19 +53,14 @@ var tables = {
 		'microenvironment_vector': {'id': '', 'oxygen': ''},
 		'phenotype_parameter_vector': {'id': '', 'duration_of_G1': '', 'duration_of_S': '', 'duration_of_G2': '', 'duration_of_M': '', 'fraction_failing_G1_checkpoint': '', 'cell_volume': '', 'cell_nuclear_volume': '', 'fluid_fraction': '', 'oxygen_uptake_rate_per_volume': '', 'Youngs_modulus': '', 'maximum_cell_deformation': ''}
 };
+*/
 
 var referenceTables = {
-		'cell_line': {'id': 'cell_line_id'}
+		'cell_line': {'id': {'table': 'microenvironment_phenotype_pair', 'refColumn': 'cell_line_id'}}
 };
 
 var downloadTables = {
 		'data_source': {'filename': ''}
-};
-
-var cirmTables = {
-		'slide': {'id': '', 'sequence_num': '', 'revision': '', 'box_of_origin_id': 'box', 'experiment_id': 'experiment', 'comment': '', 'tags': ''},
-		'box': {'id': '', 'section_date': '', 'sample_name': '', 'initials': '', 'disambiguator': '', 'comment': '', 'tags': ''},
-		'experiment': {'id': '', 'experiment_date': '', 'experiment_description': '', 'initials': '', 'disambiguator': '', 'comment': '', 'tags': ''}
 };
 
 var restAJAX = {
@@ -258,6 +256,7 @@ function renderLogin() {
 	ERMREST_HOME = HOME + ERMREST_HOME;
 	WEBAUTHN_HOME = HOME + WEBAUTHN_HOME;
 	DOWNLOAD_HOME = HOME + DOWNLOAD_HOME;
+	ERMREST_SCHEMA_HOME = HOME + ERMREST_SCHEMA_HOME;
 
 	var uiDiv = $('#cansim');
 	uiDiv.html('');
@@ -412,6 +411,47 @@ function postGetRootEntities(data, textStatus, jqXHR, param) {
 	});
 	
 	drawPanels();
+}
+
+function getMetadata(table) {
+	var url = ERMREST_SCHEMA_HOME + encodeSafeURIComponent(table);
+	document.body.style.cursor = 'wait';
+	$.ajax({
+		url: url,
+		contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+		headers: make_headers(),
+		timeout: AJAX_TIMEOUT,
+		async: false,
+		accepts: {text: 'application/json'},
+		processData: true,
+		data: [],
+		dataType: 'json',
+		success: function(data, textStatus, jqXHR) {
+			document.body.style.cursor = 'default';
+			tablesMetadata[table] = data;
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			document.body.style.cursor = 'default';
+			var msg = '';
+			var err = jqXHR.status;
+			if (err != null) {
+				msg += 'Status: ' + err + '\n';
+			}
+			err = jqXHR.responseText;
+			if (err != null) {
+				msg += 'ResponseText: ' + err + '\n';
+			}
+			if (textStatus != null) {
+				msg += 'TextStatus: ' + textStatus + '\n';
+			}
+			if (errorThrown != null) {
+				msg += 'ErrorThrown: ' + errorThrown + '\n';
+			}
+			msg += 'URL: ' + url + '\n';
+			document.body.style.cursor = 'default';
+			alert(msg);
+		}
+	});
 }
 
 function drawPanels() {
@@ -712,6 +752,7 @@ function appendEntities(data, tableName) {
 	if (arr.length == 0) {
 		centerPanel.html(CIRM_NO_ENTITIES_INFO);
 	} else {
+		getMetadata(tableName);
 		var colNames = getColumnNames(data[0]);
 		centerPanel.html('');
 		var p = $('<p>');
@@ -1019,32 +1060,6 @@ function displaySearch(ul, li) {
 	getSearchEntities(getSearchExpression(li.html(), '&'), li.html());
 }
 
-function getReferenceColumn(table, col) {
-	var ret = 'id';
-	if (referenceTables[table] != null && referenceTables[table][col] != null) {
-		ret = referenceTables[table][col];
-	}
-	return ret;
-}
-
-function getReferenceTable(table, col) {
-	var ret = tables[table][col];
-	return ret;
-}
-
-function getTableColumns(table) {
-	ret = [];
-	$.each(tables[table], function(col, val) {
-		ret.push(col);
-	});
-	return ret;
-}
-
-function isReference(table, col) {
-	ret = (tables[table][col] != '');
-	return ret;
-}
-
 function isDownload(tableName, col) {
 	var ret = false;
 	if (downloadTables[tableName] != null && downloadTables[tableName][col] != null) {
@@ -1052,3 +1067,105 @@ function isDownload(tableName, col) {
 	}
 	return ret;
 }
+
+function getTableColumns(table) {
+	getMetadata(table);
+	var data = tablesMetadata[table];
+	var ret = [];
+	if (data != null) {
+		var column_definitions = data['column_definitions'];
+		$.each(column_definitions, function(i, col) {
+			ret.push(col['name']);
+		});
+	}
+	return ret;
+}
+
+function isReference(table, col) {
+	var ret = false;
+	if (referenceTables[table] != null && referenceTables[table][col] != null) {
+		ret = true;
+	} else {
+		var data = tablesMetadata[table];
+		if (data != null) {
+			var foreign_keys = data['foreign_keys'];
+			$.each(foreign_keys, function(i, foreign_key) {
+				if (foreign_key['ref_columns'].contains(col)) {
+					ret = true;
+					return false;
+				}
+			});
+		}
+	}
+	return ret;
+}
+
+function getReferenceTable(table, col) {
+	var ret = null;
+	if (referenceTables[table] != null && referenceTables[table][col] != null) {
+		ret = referenceTables[table][col]['table'];
+	} else {
+		var reference = getReference(table, col);
+		if (reference != null) {
+			ret = reference['referred_table']['table_name'];
+		}
+	}
+	return ret;
+}
+
+function getReference(table, col) {
+	var ret = null;
+	var data = tablesMetadata[table];
+	if (data != null) {
+		var foreign_keys = data['foreign_keys'];
+		$.each(foreign_keys, function(i, foreign_key) {
+			if (foreign_key['ref_columns'].contains(col)) {
+				var references = foreign_key['references'];
+				var hasReference = false;
+				$.each(references, function(j, reference) {
+					var referring_to_unique_maps = reference['referring_to_unique_maps'];
+					$.each(referring_to_unique_maps, function(k, referring_to_unique_map) {
+						$.each(referring_to_unique_map, function(key, val) {
+							if (key == col) {
+								ret = reference;
+								return false;
+							}
+						});
+					});
+					if (ret != null) {
+						return false;
+					}
+				});
+			}
+			if (ret != null) {
+				return false;
+			}
+		});
+	}
+	return ret;
+}
+
+function getReferenceColumn(table, col) {
+	var ret = null;
+	if (referenceTables[table] != null && referenceTables[table][col] != null) {
+		ret = referenceTables[table][col]['refColumn'];
+	} else {
+		var reference = getReference(table, col);
+		if (reference != null) {
+			var referring_to_unique_maps = reference['referring_to_unique_maps'];
+			$.each(referring_to_unique_maps, function(i, referring_to_unique_map) {
+				$.each(referring_to_unique_map, function(key, val) {
+					if (key == col) {
+						ret = val;
+						return false;
+					}
+				});
+				if (ret != null) {
+					return false;
+				}
+			});
+		}
+	}
+	return ret;
+}
+

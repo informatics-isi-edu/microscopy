@@ -58,11 +58,15 @@ var tables = {
 */
 
 var referenceTables = {
-		'cell_line': {'id': {'table': 'microenvironment_phenotype_pair', 'refColumn': 'cell_line_id'}}
+		//'cell_line': {'id': {'table': 'microenvironment_phenotype_pair', 'refColumn': 'cell_line_id'}}
 };
 
 var downloadTables = {
 		'data_source': {'filename': ''}
+};
+
+var thumbnailTables = {
+		'data_source': {'thumbnail': ''}
 };
 
 var restAJAX = {
@@ -785,6 +789,8 @@ function appendEntities(data, tableName) {
 				tr.append(td);
 				if (isDownload(tableName, col)) {
 					setDownloadLink(row[col], td);
+				} else if (isThumbnail(tableName, col)) {
+					setThumbnail(row[col], td);
 				}
 				else if (isReference(tableName, col)) {
 					var refTable = getReferenceTable(tableName, col);
@@ -872,7 +878,7 @@ function setThumbnail(file, td) {
 	if (file != null) {
 		img.attr({'alt': 'Undefined',
 			'title': 'Thumbnail',
-			'src': 'images/'+file,
+			'src': DOWNLOAD_HOME+file,
 			'width': 30,
 			'height': 30
 			});
@@ -1070,6 +1076,15 @@ function isDownload(tableName, col) {
 	}
 	return ret;
 }
+
+function isThumbnail(tableName, col) {
+	var ret = false;
+	if (thumbnailTables[tableName] != null && thumbnailTables[tableName][col] != null) {
+		ret = true;
+	}
+	return ret;
+}
+
 
 function getTableColumns(table) {
 	getMetadata(table);

@@ -25,46 +25,51 @@ class GlobusClient:
     def __init__(self):
         self.args = ['transfer.py']
         
-    def PUT(self):
+    def POST(self):
         # get the transfer parameters
         input_data = cStringIO.StringIO(web.ctx.env['wsgi.input'].read())
         json_data = json.load(input_data)
         response = []
-        for item in json_data:
-            user = item['user']
-            token = item['token']
-            endpoint_1 = item['endpoint_1']
-            endpoint_2 = item['endpoint_2']
+        user = json_data['user']
+        token = json_data['token']
+        endpoint_1 = json_data['endpoint_1']
+        endpoint_2 = json_data['endpoint_2']
+        
+        # create the client
+        self.args = ['transfer.py']
+        self.args.append(user)
+        self.args.append('-g')
+        self.args.append(token)
+
+        api, _ = api_client.create_client_from_args(self.args)
+        
+        # check information about endpoints
+        code, reason, data = api.endpoint(endpoint_1)
+        code, reason, data = api.endpoint(endpoint_2)
+        
+        # activate endpoint
+        code, reason, result = api.endpoint_autoactivate(endpoint_1, if_expires_in=600)
+        code, reason, result = api.endpoint_autoactivate(endpoint_2, if_expires_in=600)
+        
+        # look at contents of endpoint
+        code, reason, data = api.endpoint_ls(endpoint_1, '/')
+        code, reason, data = api.endpoint_ls(endpoint_2, '/')
+        
+        # start transfer
+        code, message, data = api.transfer_submission_id()
+        t = api_client.Transfer(data['value'], endpoint_1, endpoint_2, datetime.utcnow() + timedelta(minutes=10))
+        
+        files = json_data['files']
+        for item in files:
             file_from = item['file_from']
             file_to = item['file_to']
-            
-            # create the client
-            self.args = ['transfer.py']
-            self.args.append(user)
-            self.args.append('-g')
-            self.args.append(token)
-            api, _ = api_client.create_client_from_args(self.args)
-            
-            # check information about endpoints
-            code, reason, data = api.endpoint(endpoint_1)
-            code, reason, data = api.endpoint(endpoint_2)
-            
-            # activate endpoint
-            code, reason, result = api.endpoint_autoactivate(endpoint_1, if_expires_in=600)
-            code, reason, result = api.endpoint_autoactivate(endpoint_2, if_expires_in=600)
-            
-            # look at contents of endpoint
-            code, reason, data = api.endpoint_ls(endpoint_1, '/')
-            code, reason, data = api.endpoint_ls(endpoint_2, '/')
-            
-            # start transfer
-            code, message, data = api.transfer_submission_id()
-            t = api_client.Transfer(data['value'], endpoint_1, endpoint_2, datetime.utcnow() + timedelta(minutes=10))
             t.add_item(file_from, file_to)
-            code, reason, data = api.transfer(t)
-            task_id = data['task_id']
-            res = {}
-            res['task_id'] = task_id
-            response.append(res)
+            
+        code, reason, data = api.transfer(t)
+        task_id = data['task_id']
+        res = {}
+        res['task_id'] = task_id
+        response.append(res)
         return json.dumps(response)
+    
     

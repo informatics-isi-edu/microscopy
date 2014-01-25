@@ -7,28 +7,12 @@ Array.prototype.contains = function (elem) {
 
 var selectedEndpoint = null;
 var endpointsList = [
-                     'alsuser#bl832data',
-                     'anugrah007#loginservice',
-                     'bmnitsche#tibglobServiceXS',
-                     'cats#astroserver',
-                     'ec2user#NGSrepo',
-                     'egitestuser01#gw13dtn',
-                     'egitestuser01#joe',
-                     'its#UChicagoITServicesGCMU',
-                     'jamieross#iMac-devserver',
-                     'kochmedia#server01',
-                     'meuser#maria-cmu',
-                     'rdsiuser#RDSI-Node-WA',
-                     'rkarsten#Karstens_Imac_server',
-                     'rkawa#server',
-                     'rtudoran#serv',
-                     'tlevshina#desusers_gridftp',
-                     'tmerritt#service0',
+                     'serban#aspc',
                      'uchicago#ITServices'
                  ];
 
-var ENDPOINT_SOURCE='cirm#cirm';
-var TILES_DIR='/home/cirm/tiles/';
+var ENDPOINT_SOURCE='serban#cirm-files';
+var TILES_DIR='/';
 var CXI_RET='Return value';
 var CXI_MSG='Return Message';
 var GUEST_USER = '********';
@@ -1817,9 +1801,8 @@ function cancel(item) {
 }
 
 function transferImage(image) {
-	//var czi = 'http://lonestar.isi.edu/~schuler/' + image['filename'];
-	// var czi = DOWNLOAD_HOME + image['filename'];
-	var czi = 'http://cirm-dev.misd.isi.edu/cirm-files/' + image['filename'];
+	//var czi = 'http://cirm-dev.misd.isi.edu/cirm-files/' + image['tilesdir'] + image['filename'];
+	var czi = DOWNLOAD_HOME + image['tilesdir'] + image['filename'];
 	window.open(
 	  czi,
 	  '_blank' // <- This is what makes it open in a new window.
@@ -1956,6 +1939,7 @@ function createSlide() {
 	tr.append(td);
 	var input = $('<input>');
 	input.attr({'id': 'slideSequenceNumber',
+		'maxlength': '3',
 		'type': 'text'});
 	td.append(input);
 	input.keyup(function(event) {checkSlideSaveButton();});
@@ -1971,6 +1955,7 @@ function createSlide() {
 	tr.append(td);
 	var input = $('<input>');
 	input.attr({'id': 'slideRevision',
+		'maxlength': '3',
 		'type': 'text'});
 	td.append(input);
 	input.keyup(function(event) {checkSlideSaveButton();});
@@ -2812,11 +2797,12 @@ function globusFileTransfer() {
 		arr.push(item);
 	});
 	obj['files'] = arr;
-	cirmAJAX.PUT(url, 'application/json', false, obj, true, postGlobusFileTransfer, null, null, 0);
+	cirmAJAX.POST(url, 'application/json', false, obj, true, postGlobusFileTransfer, null, null, 0);
 }
 
 function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
-	alert('Result: ' + JSON.stringify(data));
+	data = $.parseJSON(data)[0];
+	alert('A request with the task id "' + data['task_id'] + '" was sent to Globus Files Transfer. You will receive an email notification with the result status.');
 	$('#backButton').click();
 }
 

@@ -6,10 +6,8 @@ Array.prototype.contains = function (elem) {
 };
 
 var selectedEndpoint = null;
-var endpointsList = [
-                     'serban#aspc',
-                     'uchicago#ITServices'
-                 ];
+var endpointsList = [];
+var autoCompleteIsInitialized = false;
 
 var ENDPOINT_SOURCE='serban#cirm-files';
 var TILES_DIR='/';
@@ -33,6 +31,7 @@ var PRINT_CONTROL_HOME = '/ermrest/printer/';
 var GLOBUS_TRANSFER_HOME = '/ermrest/transfer';
 var ZOOMIFY_HOME = '/ermrest/zoomify/';
 var DOWNLOAD_HOME = '/cirm-files/';
+var SERVICE_TRANSFER_HOME = '/service/transfer/';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
 var CIRM_START_INFO = '<p class="intro">Choose an entity from the left sidebar or use the search box to find relevant images.</p>';
@@ -583,6 +582,7 @@ function renderLogin() {
 	GLOBUS_TRANSFER_HOME = HOME + GLOBUS_TRANSFER_HOME;
 	ZOOMIFY_HOME = HOME + ZOOMIFY_HOME;
 	DOWNLOAD_HOME = HOME + DOWNLOAD_HOME;
+	SERVICE_TRANSFER_HOME = HOME + SERVICE_TRANSFER_HOME;
 	if (isMobileSearch()) {
 		submitMobileLogin();
 		return;
@@ -761,6 +761,35 @@ function postSubmitLogin(data, textStatus, jqXHR, param) {
 		return;
 	}
 	initCIRM();
+}
+
+function getEndpointsList() {
+	var endpoint = encodeSafeURIComponent($('#destinationEnpointInput').val());
+	var url = SERVICE_TRANSFER_HOME + 'endpoint_list?filter=canonical_name:~'+endpoint+'*&fields=canonical_name';
+	var params = {};
+	cirmAJAX.GET(url, 'application/json', false, postGetEndpointsList, params, null, MAX_RETRIES+1);
+}
+
+function postGetEndpointsList(data, textStatus, jqXHR, param) {
+	endpointsList = getEndpoints(data);
+	if (autoCompleteIsInitialized) {
+		$('#destinationEnpointInput').autocomplete('destroy');
+	}
+	$('#destinationEnpointInput').autocomplete({
+		source: endpointsList,
+		select: function(event, ui) {setSelectedEndpoint(ui.item.value);}
+	});
+	$('#destinationEnpointInput').autocomplete('search', $('#destinationEnpointInput').val());
+	autoCompleteIsInitialized = true;
+}
+
+function getEndpoints(data) {
+	var ret = [];
+	var data = data['DATA'];
+	$.each(data, function(i, item) {
+		ret.push(item['canonical_name']);
+	});
+	return ret;
 }
 
 function drawPanels() {
@@ -2001,6 +2030,15 @@ function createSlide() {
 	$('#globusTransferButton').hide();
 }
 
+function checkSubmitGetEndpoints(event) {
+	checkFilesTransferButton();
+	if (event.which == 13 && $('#destinationEnpointInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
+		getEndpointsList();
+	} else {
+		endpointsList = [];
+	}
+}
+
 function renderTransferFiles(files) {
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('<p class="intro">Transfer Files</p>');
@@ -2024,11 +2062,9 @@ function renderTransferFiles(files) {
 	input.attr({'id': 'destinationEnpointInput',
 		'size': 30});
 	td.append(input);
-	$('#destinationEnpointInput').autocomplete({
-		source: endpointsList,
-		select: function(event, ui) {setSelectedEndpoint(ui.item.value);}
-	});
-
+	input.keyup(function(event) {checkSubmitGetEndpoints(event);});
+	input.val('');
+	autoCompleteIsInitialized = false;
 	var tr = $('<tr>');
 	table.append(tr);
 	var td = $('<td>');

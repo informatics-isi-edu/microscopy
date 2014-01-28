@@ -8,6 +8,7 @@ Array.prototype.contains = function (elem) {
 var selectedEndpoint = null;
 var endpointsList = [];
 var autoCompleteIsInitialized = false;
+var endpointPath = [];
 
 var ENDPOINT_SOURCE='serban#cirm-files';
 var TILES_DIR='/';
@@ -783,6 +784,93 @@ function postGetEndpointsList(data, textStatus, jqXHR, param) {
 	autoCompleteIsInitialized = true;
 }
 
+function getEndpointData() {
+	var endpoint = encodeSafeURIComponent(selectedEndpoint);
+	var pathes = [];
+	$.each(endpointPath, function(i, path) {
+		pathes.push((i==0) ? path : encodeSafeURIComponent(path));
+	});
+	var path = '/' + pathes.join('/') + '/';
+	var url = SERVICE_TRANSFER_HOME + 'endpoint/' + endpoint + '/ls?path='+path+'&orderby=type,name&fields=name,type,size';
+	var params = {};
+	cirmAJAX.GET(url, 'application/json', false, postGetEndpointData, params, null, MAX_RETRIES+1);
+}
+
+function postGetEndpointData(data, textStatus, jqXHR, param) {
+	var div = $('#dirDiv');
+	div.html('');
+	div.hide();
+	var table = $('<table>');
+	div.append(table);
+	var tbody = $('<tbody>');
+	table.append(tbody);
+	if (endpointPath.length > 1) {
+		appendData(tbody, '..', 'dir', 4096);
+	}
+	var pathes = getPathes(data);
+	$.each(pathes, function(i, path) {
+		appendData(tbody, path['name'], path['type'], path['size']);
+	});
+	div.show();
+	$('#destinationDirectoryInput').val('/' + endpointPath.join('/') + '/');
+}
+
+function appendData(tbody, name, type, size) {
+	var tr = $('<tr>');
+	tbody.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	var img = $('<img>');
+	img.attr({'alt': 'Undefined',
+		'title': name,
+		'src': 'images/' + (type == 'dir' ? 'folder.jpeg' : 'file.jpeg'),
+		'width': 15,
+		'height': 15
+		});
+	
+	td.append(img);
+	var td = $('<td>');
+	tr.append(td);
+	if (name == '..') {
+		var span = '<span class="ui-icon ui-icon-arrowreturnthick-1-w"></span>';
+		td.append(span);
+	} else {
+		td.html(name);
+	}
+	td.attr('dirname', name);
+	if (type == 'dir') {
+		tr.hover(
+				function(event) {document.body.style.cursor = 'pointer';}, 
+				function(){document.body.style.cursor = 'default';});
+		tr.click(function(event) {setDestinationFolder($(this));});
+		tr.dblclick(function(event) {getSubFolder($(this));});
+	}
+	var td = $('<td>');
+	td.addClass('italic');
+	tr.append(td);
+	td.html(getSize(type, size));
+}
+
+function getSize(type, size) {
+	var ret = 'Folder';
+	if (type == 'file') {
+		var unit = 'b';
+		if (size >= 1000000000) {
+			unit = 'GB';
+			size /= 1000000000;
+		} else if (size >= 1000000) {
+			unit = 'MB';
+			size /= 1000000;
+		} else if (size >= 1000) {
+			unit = 'KB';
+			size /= 1000;
+		}
+		size = Math.round(size*100)/100;
+		ret = '' + size + ' ' + unit;
+	}
+	return ret;
+}
+
 function getEndpoints(data) {
 	var ret = [];
 	var data = data['DATA'];
@@ -790,6 +878,40 @@ function getEndpoints(data) {
 		ret.push(item['canonical_name']);
 	});
 	return ret;
+}
+
+function getPathes(data) {
+	var ret = [];
+	var data = data['DATA'];
+	$.each(data, function(i, item) {
+		ret.push(item);
+	});
+	ret.sort(compareFiles);
+	return ret;
+}
+
+function setDestinationFolder(tr) {
+	$('.selected').removeClass('selected');
+	tr.addClass('selected');
+	var td = $('td', tr)[1];
+	var values = [];
+	$.each(endpointPath, function(i, path) {
+		values.push(path);
+	});
+	values.push($(td).attr('dirname'));
+	var path = '/' + values.join('/') + '/';
+	$('#destinationDirectoryInput').val(path);
+}
+
+function getSubFolder(tr) {
+	var td = $('td', tr)[1];
+	var val = $(td).attr('dirname');
+	if (val == '..') {
+		endpointPath.pop();		
+	} else {
+		endpointPath.push(val);	
+	}
+	getEndpointData();
 }
 
 function drawPanels() {
@@ -1880,6 +2002,14 @@ function compareIds(item1, item2) {
 	return compareIgnoreCase(val1, val2);
 }
 
+function compareFiles(item1, item2) {
+	var ret = compareIgnoreCase(item1['type'], item2['type']);
+	if (ret == 0) {
+		ret = compareIgnoreCase(item1['name'], item2['name']);
+	}
+	return ret;
+}
+
 function valueToString(val) {
 	if ($.isArray(val)) {
 		return arrayToString(val);
@@ -2043,46 +2173,31 @@ function renderTransferFiles(files) {
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('<p class="intro">Transfer Files</p>');
 	centerPanel.show();
-	var table = $('<table>');
-	centerPanel.append(table);
-	table.addClass('radio_entity');
-
-	var tr = $('<tr>');
-	table.append(tr);
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Destination Endpoint:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'destinationEnpointInput',
-		'size': 30});
-	td.append(input);
-	input.keyup(function(event) {checkSubmitGetEndpoints(event);});
-	input.val('');
-	autoCompleteIsInitialized = false;
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
-	td.html('Destination Directory:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'destinationDirectoryInput',
-		'type': 'text',
-		'size': 30});
-	td.append(input);
-	input.keyup(function(event) {checkFilesTransferButton();});
-	input.val('');
-
+	var globusTable = $('<table>');
+	globusTable.attr('id', 'globusTransferTable');
+	centerPanel.append(globusTable);
+	var thead = $('<thead>');
+	globusTable.append(thead);
+	var globusTr = $('<tr>');
+	thead.append(globusTr);
+	var th = $('<th>');
+	globusTr.append(th);
+	th.html('Files');
+	var th = $('<th>');
+	globusTr.append(th);
+	th.html('Destination');
+	var tbody = $('<tbody>');
+	globusTable.append(tbody);
+	var globusTr = $('<tr>');
+	tbody.append(globusTr);
+	var globusFilesTd = $('<td>');
+	globusFilesTd.addClass('files_panel');
+	globusTr.append(globusFilesTd);
+	var globusDirsTd = $('<td>');
+	globusDirsTd.addClass('dirs_panel');
+	globusTr.append(globusDirsTd);
 	var table1 = $('<table>');
-	centerPanel.append(table1);
+	globusFilesTd.append(table1);
 	table1.attr('id', 'filesTable');
 	var tr = $('<tr>');
 	table1.append(tr);
@@ -2122,6 +2237,48 @@ function renderTransferFiles(files) {
 			}
 		});
 	});
+	
+	var table = $('<table>');
+	globusDirsTd.append(table);
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Endpoint');
+	var td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'id': 'destinationEnpointInput',
+		'size': 30});
+	td.append(input);
+	input.keyup(function(event) {checkSubmitGetEndpoints(event);});
+	input.val('');
+	autoCompleteIsInitialized = false;
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Path');
+	var td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'id': 'destinationDirectoryInput',
+		'type': 'text',
+		//'disabled': 'disabled',
+		'size': 30});
+	td.append(input);
+	input.keyup(function(event) {checkFilesTransferButton();});
+	input.val('');
+	
+	globusDirsTd.append('<br>');
+	var div = $('<div>');
+	div.addClass('globus_destination');
+	div.attr('id', 'dirDiv');
+	globusDirsTd.append(div);
+	div.hide();
+
 	$('button', $('#centerPanelBottom')).hide();
 	$('#submitButton').attr('disabled', 'disabled');
 	$('#submitButton').show();
@@ -2137,6 +2294,8 @@ function renderTransferFiles(files) {
 function setSelectedEndpoint(value) {
 	selectedEndpoint = value;
 	checkFilesTransferButton();
+	endpointPath = ['~'];
+	setTimeout('getEndpointData()', 1);
 }
 
 function checkFilesTransferButton() {

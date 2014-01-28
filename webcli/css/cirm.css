@@ -149,6 +149,17 @@ table.radio_entity {
 	margin-top: 20px;
 }
 
+table.globus_destination {
+	font-weight: bold;
+}
+
+#dirDiv {
+	overflow:auto;
+	max-height: 500px;
+	border: 1px solid blue;
+	margin: 15px;
+}
+
 td.tag {
     text-align: right;
 }
@@ -272,6 +283,27 @@ margin-right: 5px;
     margin-right:10%; */
 }
 
+#globusTransferTable {
+	font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+	border-spacing: 15px 0px;
+	width:100%;
+}
+
+#globusTransferTable td.dirs_panel {
+	width:50%;
+	vertical-align:top;
+	border: 1px solid black;
+    /* margin-left:10%; 
+    margin-right:10%; */
+}
+
+#globusTransferTable td.files_panel {
+	width:50%;
+	vertical-align:top;
+    /* margin-left:10%; 
+    margin-right:10%; */
+}
+
 #slidesTable td, #slidesTable th, #unassignedSlidesTable td, #unassignedSlidesTable th, #filesTable td, #filesTable th 
 {
 	font-size:1em;
@@ -335,4 +367,12 @@ img.center {
 td.center, p.center 
 {
 	text-align:center;
+}
+
+tr.selected {
+	background-color: #BDD7DB;
+}
+
+td.italic {
+	font-style:italic;
 }

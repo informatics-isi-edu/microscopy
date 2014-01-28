@@ -803,6 +803,7 @@ function postGetEndpointData(data, textStatus, jqXHR, param) {
 	var table = $('<table>');
 	div.append(table);
 	var tbody = $('<tbody>');
+	table.addClass('files_table');
 	table.append(tbody);
 	if (endpointPath.length > 1) {
 		appendData(tbody, '..', 'dir', 4096);
@@ -813,12 +814,14 @@ function postGetEndpointData(data, textStatus, jqXHR, param) {
 	});
 	div.show();
 	$('#destinationDirectoryInput').val('/' + endpointPath.join('/') + '/');
+	checkFilesTransferButton();
 }
 
 function appendData(tbody, name, type, size) {
 	var tr = $('<tr>');
 	tbody.append(tr);
 	var td = $('<td>');
+	td.addClass('file_name');
 	tr.append(td);
 	var img = $('<img>');
 	img.attr({'alt': 'Undefined',
@@ -830,6 +833,7 @@ function appendData(tbody, name, type, size) {
 	
 	td.append(img);
 	var td = $('<td>');
+	td.addClass('file_name');
 	tr.append(td);
 	if (name == '..') {
 		var span = '<span class="ui-icon ui-icon-arrowreturnthick-1-w"></span>';
@@ -846,7 +850,7 @@ function appendData(tbody, name, type, size) {
 		tr.dblclick(function(event) {getSubFolder($(this));});
 	}
 	var td = $('<td>');
-	td.addClass('italic');
+	td.addClass('file_info');
 	tr.append(td);
 	td.html(getSize(type, size));
 }
@@ -901,6 +905,7 @@ function setDestinationFolder(tr) {
 	values.push($(td).attr('dirname'));
 	var path = '/' + values.join('/') + '/';
 	$('#destinationDirectoryInput').val(path);
+	checkFilesTransferButton();
 }
 
 function getSubFolder(tr) {

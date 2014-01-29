@@ -14,6 +14,7 @@ var ENDPOINT_SOURCE='serban#cirm-files';
 var TILES_DIR='/';
 var CXI_RET='Return value';
 var CXI_MSG='Return Message';
+var MOBILE_AUTHENTICATE = true;
 var GUEST_USER = '********';
 var GUEST_PASSWORD = '********';
 var GLOBUS_AUTHN = true;
@@ -584,7 +585,7 @@ function renderLogin() {
 	ZOOMIFY_HOME = HOME + ZOOMIFY_HOME;
 	DOWNLOAD_HOME = HOME + DOWNLOAD_HOME;
 	SERVICE_TRANSFER_HOME = HOME + SERVICE_TRANSFER_HOME;
-	if (isMobileSearch()) {
+	if (isMobileSearch() && !MOBILE_AUTHENTICATE) {
 		submitMobileLogin();
 		return;
 	}

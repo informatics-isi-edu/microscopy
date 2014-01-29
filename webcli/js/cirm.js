@@ -785,6 +785,9 @@ function postGetEndpointsList(data, textStatus, jqXHR, param) {
 }
 
 function getEndpointData() {
+	var div = $('#dirDiv');
+	div.html('');
+	div.hide();
 	var endpoint = encodeSafeURIComponent(selectedEndpoint);
 	var pathes = [];
 	$.each(endpointPath, function(i, path) {
@@ -798,8 +801,6 @@ function getEndpointData() {
 
 function postGetEndpointData(data, textStatus, jqXHR, param) {
 	var div = $('#dirDiv');
-	div.html('');
-	div.hide();
 	var table = $('<table>');
 	div.append(table);
 	var tbody = $('<tbody>');
@@ -813,7 +814,14 @@ function postGetEndpointData(data, textStatus, jqXHR, param) {
 		appendData(tbody, path['name'], path['type'], path['size']);
 	});
 	div.show();
-	$('#destinationDirectoryInput').val('/' + endpointPath.join('/') + '/');
+	var value = endpointPath.join('/');
+	if (value[0] != '/') {
+		value = '/' + value
+	}
+	if (value[value.length-1] != '/') {
+		value += '/'
+	}
+	$('#destinationDirectoryInput').val(value);
 	checkFilesTransferButton();
 }
 
@@ -903,7 +911,10 @@ function setDestinationFolder(tr) {
 		values.push(path);
 	});
 	values.push($(td).attr('dirname'));
-	var path = '/' + values.join('/') + '/';
+	var path = values.join('/') + '/';
+	if (values[0] != '') {
+		path = '/' + path;
+	}
 	$('#destinationDirectoryInput').val(path);
 	checkFilesTransferButton();
 }
@@ -2174,6 +2185,24 @@ function checkSubmitGetEndpoints(event) {
 	}
 }
 
+function checkSubmitGetEndpointData(event) {
+	checkFilesTransferButton();
+	if (event.which == 13 && 
+			$('#destinationEnpointInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+			$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
+		var path = $('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "");
+		var length = path.length;
+		if (path[length-1] == '/') {
+			path = path.substr(0, length-1);
+		}
+		if (path.length > 0 && path[0] == '/') {
+			path = path.substring(1);
+		}
+		endpointPath = [path];
+		getEndpointData();
+	}
+}
+
 function renderTransferFiles(files) {
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('<p class="intro">Transfer Files</p>');
@@ -2274,7 +2303,7 @@ function renderTransferFiles(files) {
 		//'disabled': 'disabled',
 		'size': 30});
 	td.append(input);
-	input.keyup(function(event) {checkFilesTransferButton();});
+	input.keyup(function(event) {checkSubmitGetEndpointData(event);});
 	input.val('');
 	
 	globusDirsTd.append('<br>');

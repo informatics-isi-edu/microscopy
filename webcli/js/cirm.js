@@ -6,8 +6,6 @@ Array.prototype.contains = function (elem) {
 };
 
 var selectedEndpoint = null;
-var endpointsList = [];
-var autoCompleteIsInitialized = false;
 var endpointPath = [];
 
 var ENDPOINT_SOURCE='serban#cirm-files';
@@ -763,26 +761,6 @@ function postSubmitLogin(data, textStatus, jqXHR, param) {
 		return;
 	}
 	initCIRM();
-}
-
-function getEndpointsList() {
-	var endpoint = encodeSafeURIComponent($('#destinationEnpointInput').val());
-	var url = SERVICE_TRANSFER_HOME + 'endpoint_list?filter=canonical_name:~'+endpoint+'*&fields=canonical_name';
-	var params = {};
-	cirmAJAX.GET(url, 'application/json', false, postGetEndpointsList, params, null, MAX_RETRIES+1);
-}
-
-function postGetEndpointsList(data, textStatus, jqXHR, param) {
-	endpointsList = getEndpoints(data);
-	if (autoCompleteIsInitialized) {
-		$('#destinationEnpointInput').autocomplete('destroy');
-	}
-	$('#destinationEnpointInput').autocomplete({
-		source: endpointsList,
-		select: function(event, ui) {setSelectedEndpoint(ui.item.value);}
-	});
-	$('#destinationEnpointInput').autocomplete('search', $('#destinationEnpointInput').val());
-	autoCompleteIsInitialized = true;
 }
 
 function getEndpointData() {
@@ -2183,15 +2161,6 @@ function createSlide() {
 	$('#globusTransferButton').hide();
 }
 
-function checkSubmitGetEndpoints(event) {
-	checkFilesTransferButton();
-	if (event.which == 13 && $('#destinationEnpointInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
-		getEndpointsList();
-	} else {
-		endpointsList = [];
-	}
-}
-
 function checkSubmitGetEndpointData(event) {
 	checkFilesTransferButton();
 	if (event.which == 13 && 
@@ -2293,9 +2262,31 @@ function renderTransferFiles(files) {
 	input.attr({'id': 'destinationEnpointInput',
 		'size': 30});
 	td.append(input);
-	input.keyup(function(event) {checkSubmitGetEndpoints(event);});
 	input.val('');
-	autoCompleteIsInitialized = false;
+	input.autocomplete({
+		source: function(request, response) {
+			var endpoint = encodeSafeURIComponent(request.term);
+			var url = SERVICE_TRANSFER_HOME + 'endpoint_list?filter=canonical_name:~'+endpoint+'*&fields=canonical_name';
+			$.ajax({
+				url: url,
+				contentType: 'application/json',
+				headers: make_headers(),
+				timeout: AJAX_TIMEOUT,
+				async: true,
+				accepts: {text: 'application/json'},
+				processData: true,
+				data: [],
+				dataType: 'json',
+				success: function( data ) {
+					response(getEndpoints(data));
+				},
+				error: function(jqXHR, textStatus, errorThrown) {
+					handleError(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, url, 'application/json', true, null, true, null, null, null,  MAX_RETRIES+1);
+				}
+			});
+		},
+		select: function(event, ui) {setSelectedEndpoint(ui.item.value);}
+	});
 	var tr = $('<tr>');
 	table.append(tr);
 	var td = $('<td>');

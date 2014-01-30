@@ -790,6 +790,12 @@ function getEndpointData() {
 	div.html('');
 	div.hide();
 	var endpoint = encodeSafeURIComponent(selectedEndpoint);
+	var url = SERVICE_TRANSFER_HOME + 'endpoint/' + endpoint + '/autoactivate';
+	cirmAJAX.POST(url, 'application/json', false, {}, true, postAutoActivateEndpoint, null, null, 0);
+}
+
+function postAutoActivateEndpoint(data, textStatus, jqXHR, param) {
+	var endpoint = encodeSafeURIComponent(selectedEndpoint);
 	var pathes = [];
 	$.each(endpointPath, function(i, path) {
 		pathes.push((i==0) ? path : encodeSafeURIComponent(path));

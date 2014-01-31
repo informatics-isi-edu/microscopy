@@ -1640,7 +1640,10 @@ function displayEntity(itemType, item) {
 	$('#editButton').show();
 	$('#cancelButton').hide();
 	$('#saveButton').hide();
+	displayItem(cols, displayCols, item);
+}
 
+function displayItem(cols, displayCols, item) {
 	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
 
@@ -2607,8 +2610,23 @@ function postManagePrinter(data, textStatus, jqXHR, param) {
 	if (data[CXI_RET] <= 0) {
 		alert('An error was reported in sending the request for "' + param['param'] + '".\nReason: '+data[CXI_MSG]);
 	} else {
-		alert('The request for "' + param['param'] + '" was send successfully.\nResult: '+JSON.stringify(data[CXI_MSG]));
+		if (param['param'] == 'getConfiguration') {
+			displayPrinterConfiguration(data[CXI_MSG]);
+		} else {
+			alert('The request for "' + param['param'] + '" was send successfully.\nResult: '+JSON.stringify(data[CXI_MSG]));
+		}
 	}
+}
+
+function displayPrinterConfiguration(item) {
+	var cols = [];
+	var displayCols = {};
+	$.each(item, function(col, value) {
+		cols.push(col);
+		displayCols[col] = col;
+	});
+	cols.sort(compareIgnoreCase);
+	displayItem(cols, displayCols, item);
 }
 
 function createExperiment() {

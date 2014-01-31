@@ -26,8 +26,7 @@ var HOME;
 var USER;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
-var PRINT_JOB_HOME = '/ermrest/printer/';
-var PRINT_CONTROL_HOME = '/ermrest/printer/';
+var PRINTER_HOME = '/ermrest/printer/';
 var GLOBUS_TRANSFER_HOME = '/ermrest/transfer';
 var ZOOMIFY_HOME = '/ermrest/zoomify/';
 var DOWNLOAD_HOME = '/cirm-files/';
@@ -577,8 +576,7 @@ function renderLogin() {
 	HOME = HOME.substring(0, index);
 	ERMREST_HOME = HOME + ERMREST_HOME;
 	WEBAUTHN_HOME = HOME + WEBAUTHN_HOME;
-	PRINT_JOB_HOME = HOME + PRINT_JOB_HOME;
-	PRINT_CONTROL_HOME = HOME + PRINT_CONTROL_HOME;
+	PRINTER_HOME = HOME + PRINTER_HOME;
 	GLOBUS_TRANSFER_HOME = HOME + GLOBUS_TRANSFER_HOME;
 	ZOOMIFY_HOME = HOME + ZOOMIFY_HOME;
 	DOWNLOAD_HOME = HOME + DOWNLOAD_HOME;
@@ -2591,7 +2589,7 @@ function cancelPrinterSettings() {
 }
 
 function managePrinter(param) {
-	var url = PRINT_CONTROL_HOME + 'id/control/' + encodeSafeURIComponent(param) + '/';
+	var url = PRINTER_HOME + (isSlidePrinter ? 'slide' : 'box') + '/control/' + encodeSafeURIComponent(param) + '/';
 	var arr = [];
 	var obj = new Object();
 	obj['printer_id'] = PRINTER_ADDR;
@@ -3034,7 +3032,7 @@ function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
 }
 
 function submitPrintSlide() {
-	var url = PRINT_JOB_HOME + 'slide/job';
+	var url = PRINTER_HOME + 'slide/job';
 	var arr = [];
 	$.each($('td', $('#slidesTable')).find('input:checked'), function(i, checkbox) {
 		var slide = slidesDict[$(checkbox).attr('slideId')];
@@ -3066,7 +3064,7 @@ function postSubmitPrintSlide(data, textStatus, jqXHR, param) {
 }
 
 function submitPrintBox() {
-	var url = PRINT_JOB_HOME + 'box/job';
+	var url = PRINTER_HOME + 'box/job';
 	var arr = [];
 	var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).html()];
 	var obj = {};

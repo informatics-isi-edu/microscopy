@@ -98,6 +98,8 @@ var scansList = [];
 var searchList = [];
 var isSlidePrinter = false;
 
+var entityStack = [];
+
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 			document.body.style.cursor = 'wait';
@@ -1474,6 +1476,7 @@ function postGetBoxSearchSlides(data, textStatus, jqXHR, param) {
 		slidesList.push(item);
 	});
 	slidesList.sort(compareIds);
+	entityStack = [];
 	appendSlides('search');
 }
 
@@ -1581,7 +1584,7 @@ function appendImage(images) {
 	});
 	$('button', $('#centerPanelBottom')).hide();
 	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides(item);});
+	$('#backButton').click(function(event) {entityStack.pop(); backupRightPanel(); appendSlides(getSlidesType());});
 	$('#backButton').show();
 	$('#printBoxButton').hide();
 	$('#refreshButton').show();
@@ -1671,8 +1674,10 @@ function displayItem(cols, displayCols, item) {
 
 function displayScan(img, image) {
 	displayEntity('scan', image);
+	entityStack.push({'itemType': 'scan',
+		'item': image});
 	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides('box');});
+	$('#backButton').click(function(event) {entityStack.pop(); entityStack.pop(); backupRightPanel(); appendSlides(getSlidesType());});
 	$('#backButton').show();
 	$('#transferButton').unbind('click');
 	$('#transferButton').click(function(event) {transferImage(image);});
@@ -1683,6 +1688,16 @@ function displayScan(img, image) {
 
 	$('img', $('#centerPanelTop')).removeClass('highlighted');
 	img.addClass('highlighted');
+}
+
+function backupRightPanel() {
+	var rightPanel = $('#rightPanelTop');
+	rightPanel.html('');
+	if (entityStack.length > 0) {
+		var entity = entityStack.pop();
+		displayEntity(entity['itemType'], entity['item']);
+		entityStack.push(entity);
+	}
 }
 
 function initRightPanelButtons() {
@@ -2155,7 +2170,7 @@ function createSlide() {
 	$('#createButton').click(function(event) {saveSlide();});
 	$('#createButton').show();
 	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides('box');});
+	$('#backButton').click(function(event) {backupRightPanel(); appendSlides('box');});
 	$('#backButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
@@ -2742,6 +2757,8 @@ function displaySlide(id) {
 		item = unassignedSlidesDict[id];
 	}
 	displayEntity('slide', item);
+	entityStack.push({'itemType': 'slide',
+		'item': item});
 	getScans(id);
 }
 
@@ -2752,6 +2769,9 @@ function displayBox(ul, li) {
 	$('#centerPanelTop').html('');
 	$('#centerPanelBottom').hide();
 	displayEntity('box', boxesDict[li.html()]);
+	entityStack = [];
+	entityStack.push({'itemType': 'box',
+		'item': boxesDict[li.html()]});
 	getSlides(li.html());
 }
 
@@ -2762,6 +2782,9 @@ function displayExperiment(ul, li) {
 	$('#centerPanelTop').html('');
 	$('#centerPanelBottom').hide();
 	displayEntity('experiment', experimentsDict[li.html()]);
+	entityStack = [];
+	entityStack.push({'itemType': 'experiment',
+		'item': experimentsDict[li.html()]});
 	getExperimentSlides(li.html());
 }
 
@@ -2773,7 +2796,9 @@ function displaySearch(ul, li) {
 	$('#centerPanelTop').html('');
 	$('#centerPanelBottom').show();
 	$('#printBoxButton').hide();
+	$('#editButton').hide();
 	$('button', $('#centerPanelBottom')).hide();
+	entityStack = [];
 	getSearchSlides(getSearchExpression(li.html(), '&'), li.html());
 }
 
@@ -2985,7 +3010,7 @@ function postSaveSlide(data, textStatus, jqXHR, param) {
 		slidesList.push(item);
 		slidesDict[item['id']] = item;
 	});
-	appendSlides('box');
+	appendSlides(getSlidesType());
 	$('#centerPanelBottom').show();
 }
 

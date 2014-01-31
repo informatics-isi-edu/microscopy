@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-import printjob
-import printcontrol
+import printer
 import zoomify
 import transfer

@@ -18,9 +18,6 @@ import cStringIO
 import web
 import json
 import cxi
-from ermrest.ermrest_apis import global_env
-
-printers = global_env.get('printers')
 
 class Printer:
     def __init__(self):
@@ -30,11 +27,11 @@ class Printer:
         
     def setPrinter(self, id, printer):
         self.printer_id, self.printer_port = printer
-        if printers != None:
+        if self.printers != None:
             if id=='box':
-                self.printer_id, self.printer_port = (printers['box_addr'], printers['box_port'])
+                self.printer_id, self.printer_port = (self.printers['box_addr'], self.printers['box_port'])
             elif id=='slide':
-                self.printer_id, self.printer_port = (printers['slide_addr'], printers['slide_port'])
+                self.printer_id, self.printer_port = (self.printers['slide_addr'], self.printers['slide_port'])
         if printer != (self.printer_id, self.printer_port):
             self.printer_id, self.printer_port = printer
         

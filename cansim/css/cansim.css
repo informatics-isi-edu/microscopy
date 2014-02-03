@@ -294,12 +294,12 @@ margin-right: 5px;
 }
 
 .itemTable a.link-style:link {
-	text-decoration:none;
+	text-decoration:underline;
 	color: #024A68;
 }
 
 .itemTable a.link-style:visited {
-	text-decoration:none;
+	text-decoration:underline;
 	color: #800000;
 }
 

@@ -19,6 +19,8 @@ import web
 from globusonline.transfer import api_client
 from datetime import datetime, timedelta
 import json
+import sys
+import traceback
 
 class GlobusClient:
 
@@ -41,34 +43,41 @@ class GlobusClient:
         self.args.append('-g')
         self.args.append(token)
 
-        api, _ = api_client.create_client_from_args(self.args)
-        
-        # check information about endpoints
-        code, reason, data = api.endpoint(endpoint_1)
-        code, reason, data = api.endpoint(endpoint_2)
-        
-        # activate endpoint
-        code, reason, result = api.endpoint_autoactivate(endpoint_1, if_expires_in=600)
-        code, reason, result = api.endpoint_autoactivate(endpoint_2, if_expires_in=600)
-        
-        # look at contents of endpoint
-        code, reason, data = api.endpoint_ls(endpoint_1, '/')
-        code, reason, data = api.endpoint_ls(endpoint_2, '/')
-        
-        # start transfer
-        code, message, data = api.transfer_submission_id()
-        t = api_client.Transfer(data['value'], endpoint_1, endpoint_2, datetime.utcnow() + timedelta(minutes=10))
-        
-        files = json_data['files']
-        for item in files:
-            file_from = item['file_from']
-            file_to = item['file_to']
-            t.add_item(file_from, file_to)
+        try:
+            api, _ = api_client.create_client_from_args(self.args)
             
-        code, reason, data = api.transfer(t)
-        task_id = data['task_id']
-        res = {}
-        res['task_id'] = task_id
+            # check information about endpoints
+            code, reason, data = api.endpoint(endpoint_1)
+            code, reason, data = api.endpoint(endpoint_2)
+            
+            # activate endpoint
+            code, reason, result = api.endpoint_autoactivate(endpoint_1, if_expires_in=600)
+            code, reason, result = api.endpoint_autoactivate(endpoint_2, if_expires_in=600)
+            
+            # look at contents of endpoint
+            code, reason, data = api.endpoint_ls(endpoint_1, '/')
+            code, reason, data = api.endpoint_ls(endpoint_2, '/')
+            
+            # start transfer
+            code, message, data = api.transfer_submission_id()
+            t = api_client.Transfer(data['value'], endpoint_1, endpoint_2, datetime.utcnow() + timedelta(minutes=10))
+            
+            files = json_data['files']
+            for item in files:
+                file_from = item['file_from']
+                file_to = item['file_to']
+                t.add_item(file_from, file_to)
+                
+            code, reason, data = api.transfer(t)
+            task_id = data['task_id']
+            res = {}
+            res['task_id'] = task_id
+        except Exception, e:
+            et, ev, tb = sys.exc_info()
+            web.debug('got transfer exception "%s"' % str(ev), traceback.format_exception(et, ev, tb))
+            res = {}
+            res['error'] = e.message
+            
         response.append(res)
         return json.dumps(response)
     

@@ -3085,8 +3085,12 @@ function globusFileTransfer() {
 
 function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data)[0];
-	alert('A request with the task id "' + data['task_id'] + '" was sent to Globus Files Transfer. You will receive an email notification with the result status.');
-	$('#backButton').click();
+	if (data['task_id'] != null) {
+		alert('A request with the task id "' + data['task_id'] + '" was sent to Globus Files Transfer. You will receive an email notification with the result status.');
+		$('#backButton').click();
+	} else {
+		alert(data['error']);
+	}
 }
 
 function submitPrintSlide() {

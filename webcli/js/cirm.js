@@ -5,6 +5,7 @@ Array.prototype.contains = function (elem) {
 	return false;
 };
 
+var debug = false;
 var selectedEndpoint = null;
 var endpointPath = [];
 
@@ -258,21 +259,35 @@ function handleError(jqXHR, textStatus, errorThrown, retryCallback, url, content
 	
 	if (!retry) {
 		var msg = '';
-		var err = jqXHR.status;
-		if (err != null) {
-			msg += 'Status: ' + err + '\n';
+		var responseText = jqXHR.responseText;
+		if (!debug && responseText != null) {
+			try {
+				responseText = $.parseJSON(responseText);
+				if (responseText['message'] != null) {
+					msg = responseText['message'];
+				} else {
+					msg = jqXHR.responseText;
+				}
+			} catch (err) {
+				msg = jqXHR.responseText;
+			}
+		} else {
+			var err = jqXHR.status;
+			if (err != null) {
+				msg += 'Status: ' + err + '\n';
+			}
+			err = jqXHR.responseText;
+			if (err != null) {
+				msg += 'ResponseText: ' + err + '\n';
+			}
+			if (textStatus != null) {
+				msg += 'TextStatus: ' + textStatus + '\n';
+			}
+			if (errorThrown != null) {
+				msg += 'ErrorThrown: ' + errorThrown + '\n';
+			}
+			msg += 'URL: ' + url + '\n';
 		}
-		err = jqXHR.responseText;
-		if (err != null) {
-			msg += 'ResponseText: ' + err + '\n';
-		}
-		if (textStatus != null) {
-			msg += 'TextStatus: ' + textStatus + '\n';
-		}
-		if (errorThrown != null) {
-			msg += 'ErrorThrown: ' + errorThrown + '\n';
-		}
-		msg += 'URL: ' + url + '\n';
 		document.body.style.cursor = 'default';
 		alert(msg);
 	} else {

@@ -2316,6 +2316,7 @@ function renderTransferFiles(files) {
 				}
 			});
 		},
+		open: function(event, ui) {setEndpoint();},
 		select: function(event, ui) {setSelectedEndpoint(ui.item.value);}
 	});
 	var tr = $('<tr>');
@@ -2354,6 +2355,11 @@ function renderTransferFiles(files) {
 	selectedEndpoint = null;
 }
 
+function setEndpoint() {
+	selectedEndpoint = $('#destinationEnpointInput').val().replace(/\s*$/, "");
+	checkFilesTransferButton();
+}
+
 function setSelectedEndpoint(value) {
 	selectedEndpoint = value;
 	checkFilesTransferButton();
@@ -2366,6 +2372,7 @@ function checkFilesTransferButton() {
 			$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 			$('td', $('#filesTable')).find('input:checked').length > 0) {
 			$('#submitButton').removeAttr('disabled');
+			endpointPath = [$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "")];
 		} else {
 			$('#submitButton').attr('disabled', 'disabled');
 		}
@@ -3054,6 +3061,12 @@ function postSubmitTransfer(data, textStatus, jqXHR, param) {
 }
 
 function globusFileTransfer() {
+	if ($('#destinationEnpointInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length == 0 ||
+			$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length == 0 ||
+			$('td', $('#filesTable')).find('input:checked').length == 0) {
+		$('#submitButton').attr('disabled', 'disabled');
+		return;
+	}
 	var endpoint_2 = $('#destinationEnpointInput').val();
 	var files = [];
 	$.each($('td', $('#filesTable')).find('input:checked'), function(i, checkbox) {

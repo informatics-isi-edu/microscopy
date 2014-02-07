@@ -104,6 +104,7 @@ var searchList = [];
 var isSlidePrinter = false;
 
 var entityStack = [];
+var timestampsColumns = ['completion_time', 'deadline', 'request_time']
 
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
@@ -1830,7 +1831,7 @@ function initCenterPanelButtons() {
 	panel.append(button);
 	button.attr('id', 'globusRefreshButton');
 	button.html('Refresh');
-	button.button({icons: {primary: 'ui-icon-refresh'}}).click(function(event) {globusTasks();});
+	button.button({icons: {primary: 'ui-icon-refresh'}}).click(function(event) {globusTasks(true);});
 
 	$('button', panel).hide();
 }
@@ -1865,7 +1866,7 @@ function initBottomPanel(panel) {
 	panel.append(button);
 	button.attr('id', 'globusButton');
 	button.html('Globus');
-	button.button({icons: {primary: 'ui-icon-gear'}}).click(function(event) {globusTasks();});
+	button.button({icons: {primary: 'ui-icon-gear'}}).click(function(event) {globusTasks(false);});
 
 	button = $('<button>');
 	panel.append(button);
@@ -2325,6 +2326,7 @@ function renderTransferFiles(files) {
 	tr.append(td);
 	var input = $('<input>');
 	input.attr({'id': 'destinationEnpointInput',
+		'placeholder': 'enter endpoint name',
 		'size': 30});
 	td.append(input);
 	input.val('');
@@ -2429,6 +2431,8 @@ function renderGlobusTasks(tasks) {
 			tr.append(td);
 			if (globusTasksDisplayValue[col] != null) {
 				globusTasksDisplayValue[col](td, task[col]);
+			} else if (timestampsColumns.contains(col)) {
+				td.html(getLocaleTimestamp(task[col]));
 			} else {
 				td.html(task[col]);
 			}
@@ -2469,9 +2473,11 @@ function getSlidesType() {
 	return ret;
 }
 
-function globusTasks() {
+function globusTasks(fromRefresh) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
-	$('#rightPanelTop').html('');
+	if (!fromRefresh) {
+		$('#rightPanelTop').html('');
+	}
 	$('button', $('#rightPanelBottom')).hide();
 	$('button', $('#centerPanelBottom')).hide();
 	$('#globusRefreshButton').show();
@@ -2755,7 +2761,11 @@ function displayData(item) {
 		if (value != null && !$.isPlainObject(value)) {
 			cols.push(col);
 			displayCols[col] = col;
-			item[col] = JSON.stringify(item[col]);
+			if (timestampsColumns.contains(col)) {
+				item[col] = getLocaleTimestamp(item[col]);
+			} else {
+				item[col] = JSON.stringify(item[col]);
+			}
 		}
 	});
 	cols.sort(compareIgnoreCase);
@@ -3258,5 +3268,67 @@ function postSubmitPrintBox(data, textStatus, jqXHR, param) {
 	} else {
 		alert('The request for printing the box label was submitted successfully.');
 	}
+}
+
+/**
+ * Returns the locale string of a timestamp having the format '2014-02-07 18:51:21+00:00' or 'yyyy-mm-dd hh:mm:ss[.llllll]{+|-}HH:MM'.
+ * .llllll represents microseconds and is optional
+ * the last part represents the timezone offset and it has the + or - sign followed by the number of hours and minutes
+ * Example: '2011-12-02 09:33:34.784133-08:00'
+ */
+function getLocaleTimestamp(s) {
+	var values = s.split(' ');
+	var localValues = values[0].split('-');
+	var date = (new Date(parseInt(localValues[0], 10), parseInt(localValues[1], 10) - 1, parseInt(localValues[2], 10))).getTime();
+	var utc = '00';
+	var utcSign = '-';
+	var time = values[1].split('-');
+	if (time.length == 1) {
+		time = values[1].split('+');
+		utcSign = '+';
+	}
+	if (time.length == 1) {
+		time = time[0];
+	} else {
+		utc = utcSign + time[1];
+		time = time[0];
+	}
+	var timeValues = time.split('.');
+	var ms = 0;
+	var msText = '';
+	if (timeValues.length > 1) {
+		msText = '.' + timeValues[1];
+		ms = Math.floor(parseInt(timeValues[1]) / 1000, 10);
+	}
+	var hms = timeValues[0].split(':');
+	var hours = parseInt(hms[0], 10);
+	var minutes = parseInt(hms[1], 10);
+	var seconds = parseInt(hms[2], 10);
+	var utcValues = utc.split(':');
+	if (utcValues.length == 1) {
+		utcValues.push('00');
+	}
+	var utcDelta = (new Date()).getTimezoneOffset() + parseInt(utcValues[0], 10) * 60 + parseInt(utcValues[1], 10);
+	date += hours * 60 * 60 * 1000 +
+			(minutes - utcDelta) * 60 * 1000 +
+			seconds * 1000 +
+			ms;
+	var newDate = new Date(date);
+	var hour = newDate.getHours();
+	var am_pm = ' am';
+	if (hour > 12) {
+		hour -= 12;
+		am_pm = ' pm';
+	}
+	var ret = 	newDate.getFullYear() + '-' +
+				('0' + (newDate.getMonth() + 1)).slice(-2) + '-' +
+				('0' + newDate.getDate()).slice(-2) + ' ' +
+				('0' + hour).slice(-2) + ':' +
+				('0' + newDate.getMinutes()).slice(-2) + ':' +
+				('0' + newDate.getSeconds()).slice(-2) +
+				msText +
+				am_pm;
+	return ret;
+	
 }
 

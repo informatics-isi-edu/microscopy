@@ -53,6 +53,10 @@ var token = null;
 
 var URL_ESCAPE = new String("~!()'");
 
+var globusTasksTableColumns = ['label', 'task_id', 'status', 'source_endpoint', 'destination_endpoint', 'request_time', 'completion_time', 'bytes_transferred'];
+var globusTasksTableDisplayColumns = {'label': 'Label', 'task_id': 'Task ID', 'status': 'Status', 'source_endpoint': 'Source', 'destination_endpoint': 'Destination', 'request_time': 'Requested', 'completion_time': 'Completed', 'bytes_transferred': 'Bytes Transferred'};
+var globusTasksDisplayValue = {'task_id': getTaskIdValues};
+
 var filesTableColumns = ['thumbnail', 'filename', 'tilesdir'];
 var filesTableDisplayColumns = {'thumbnail': 'Thumbnail', 'filename': 'File Name', 'tilesdir': 'Tiles Directory'};
 var fileDisplayValue = {'thumbnail': getFileThumbnail};
@@ -787,6 +791,15 @@ function getEndpointData() {
 	cirmAJAX.POST(url, 'application/json', false, {}, true, postAutoActivateEndpoint, null, null, 0);
 }
 
+function getTaskStatus(task_id) {
+	var url = SERVICE_TRANSFER_HOME + 'task/' + encodeSafeURIComponent(task_id);
+	cirmAJAX.GET(url, 'application/json', false, postGetTaskStatus, null, null, MAX_RETRIES+1);
+}
+
+function postGetTaskStatus(data, textStatus, jqXHR, param) {
+	displayData(data);
+}
+
 function postAutoActivateEndpoint(data, textStatus, jqXHR, param) {
 	var endpoint = encodeSafeURIComponent(selectedEndpoint);
 	var pathes = [];
@@ -1079,6 +1092,14 @@ function initPanels() {
 	}
 	var bottomPanel = $('#bottomPanel');
 	initBottomPanel(bottomPanel);
+}
+
+function getTaskIdValues(td, val) {
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:getTaskStatus("' + val + '")');
+	a.html(val);
+	td.append(a);
 }
 
 function getSlideIdValue(slide, td, val, index) {
@@ -1652,6 +1673,7 @@ function displayEntity(itemType, item) {
 	$('#saveButton').click(function(event) {updateEntity(itemType);});
 	$('#saveButton').removeAttr('disabled');
 	$('#printerButton').show();
+	$('#globusButton').show();
 	if (itemType == 'scan' || itemType == 'slide') {
 		$('#refreshButton').show();
 	}
@@ -1804,6 +1826,12 @@ function initCenterPanelButtons() {
 	button.html('Transfer');
 	button.button({icons: {primary: 'ui-icon-transferthick-e-w'}}).click(function(event) {submitTransfer();});
 
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'globusRefreshButton');
+	button.html('Refresh');
+	button.button({icons: {primary: 'ui-icon-refresh'}}).click(function(event) {globusTasks();});
+
 	$('button', panel).hide();
 }
 
@@ -1832,6 +1860,12 @@ function initBottomPanel(panel) {
 	button.attr('id', 'clearButton');
 	button.html('Clear');
 	button.button({icons: {primary: 'ui-icon-arrowrefresh-1-n'}}).click(function(event) {clear();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'globusButton');
+	button.html('Globus');
+	button.button({icons: {primary: 'ui-icon-gear'}}).click(function(event) {globusTasks();});
 
 	button = $('<button>');
 	panel.append(button);
@@ -2316,7 +2350,6 @@ function renderTransferFiles(files) {
 				}
 			});
 		},
-		open: function(event, ui) {setEndpoint();},
 		select: function(event, ui) {setSelectedEndpoint(ui.item.value);}
 	});
 	var tr = $('<tr>');
@@ -2334,6 +2367,21 @@ function renderTransferFiles(files) {
 		'size': 30});
 	td.append(input);
 	input.keyup(function(event) {checkSubmitGetEndpointData(event);});
+	input.val('');
+	
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Label This Transfer');
+	var td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'id': 'transferLabelInput',
+		'type': 'text',
+		'size': 30});
+	td.append(input);
 	input.val('');
 	
 	globusDirsTd.append('<br>');
@@ -2355,9 +2403,41 @@ function renderTransferFiles(files) {
 	selectedEndpoint = null;
 }
 
-function setEndpoint() {
-	selectedEndpoint = $('#destinationEnpointInput').val().replace(/\s*$/, "");
-	checkFilesTransferButton();
+function renderGlobusTasks(tasks) {
+	var centerPanel = $('#centerPanelTop');
+	centerPanel.html('<p class="intro">Globus Activity</p>');
+	centerPanel.show();
+	var globusTable = $('<table>');
+	globusTable.attr('id', 'globusActivityTable');
+	globusTable.addClass('itemTable');
+	centerPanel.append(globusTable);
+	var tr = $('<tr>');
+	globusTable.append(tr);
+	$.each(globusTasksTableColumns, function(i, col) {
+		var th = $('<th>');
+		tr.append(th);
+		th.html(globusTasksTableDisplayColumns[col]);
+	});
+	$.each(tasks, function(i, task) {
+		var tr = $('<tr>');
+		globusTable.append(tr);
+		if (i%2 == 1) {
+			tr.addClass('odd');
+		}
+		$.each(globusTasksTableColumns, function(j, col) {
+			var td = $('<td>');
+			tr.append(td);
+			if (globusTasksDisplayValue[col] != null) {
+				globusTasksDisplayValue[col](td, task[col]);
+			} else {
+				td.html(task[col]);
+			}
+		});
+	});
+	
+	$('button', $('#centerPanelBottom')).hide();
+	$('#globusRefreshButton').show();
+	selectedEndpoint = null;
 }
 
 function setSelectedEndpoint(value) {
@@ -2372,7 +2452,6 @@ function checkFilesTransferButton() {
 			$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 			$('td', $('#filesTable')).find('input:checked').length > 0) {
 			$('#submitButton').removeAttr('disabled');
-			endpointPath = [$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "")];
 		} else {
 			$('#submitButton').attr('disabled', 'disabled');
 		}
@@ -2388,6 +2467,20 @@ function getSlidesType() {
 		ret = 'search';
 	}
 	return ret;
+}
+
+function globusTasks() {
+	$('li', $('#leftPanel')).removeClass('highlighted');
+	$('#rightPanelTop').html('');
+	$('button', $('#rightPanelBottom')).hide();
+	$('button', $('#centerPanelBottom')).hide();
+	$('#globusRefreshButton').show();
+	var url = SERVICE_TRANSFER_HOME + 'task_list?fields=task_id,request_time,completion_time,destination_endpoint,bytes_transferred,label,status,source_endpoint&orderby=request_time desc';
+	cirmAJAX.GET(url, 'application/json', false, postGlobusTasks, null, null, MAX_RETRIES+1);
+}
+
+function postGlobusTasks(data, textStatus, jqXHR, param) {
+	renderGlobusTasks(data['DATA']);
 }
 
 function printersManaging() {
@@ -2648,19 +2741,22 @@ function postManagePrinter(data, textStatus, jqXHR, param) {
 		alert('An error was reported in sending the request for "' + param['param'] + '".\nReason: '+data[CXI_MSG]);
 	} else {
 		if (param['param'] == 'getConfiguration') {
-			displayPrinterConfiguration(data[CXI_MSG]);
+			displayData(data[CXI_MSG]);
 		} else {
 			alert('The request for "' + param['param'] + '" was send successfully.\nResult: '+JSON.stringify(data[CXI_MSG]));
 		}
 	}
 }
 
-function displayPrinterConfiguration(item) {
+function displayData(item) {
 	var cols = [];
 	var displayCols = {};
 	$.each(item, function(col, value) {
-		cols.push(col);
-		displayCols[col] = col;
+		if (value != null && !$.isPlainObject(value)) {
+			cols.push(col);
+			displayCols[col] = col;
+			item[col] = JSON.stringify(item[col]);
+		}
 	});
 	cols.sort(compareIgnoreCase);
 	displayItem(cols, displayCols, item);
@@ -3083,6 +3179,9 @@ function globusFileTransfer() {
 	obj['token'] = token;
 	obj['endpoint_1'] = ENDPOINT_SOURCE;
 	obj['endpoint_2'] = endpoint_2;
+	if ($('#transferLabelInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
+		obj['label'] = $('#transferLabelInput').val().replace(/^\s*/, "").replace(/\s*$/, "");
+	}
 	obj['files'] = files;
 	var arr = [];
 	$.each(files, function(i, file) {
@@ -3099,8 +3198,8 @@ function globusFileTransfer() {
 function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data)[0];
 	if (data['task_id'] != null) {
-		alert('A request with the task id "' + data['task_id'] + '" was sent to Globus Files Transfer. You will receive an email notification with the result status.');
-		$('#backButton').click();
+		$('#globusButton').click();
+		getTaskStatus(data['task_id']);
 	} else {
 		alert(data['error']);
 	}

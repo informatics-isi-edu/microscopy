@@ -2431,7 +2431,7 @@ function renderGlobusTasks(tasks) {
 			tr.append(td);
 			if (globusTasksDisplayValue[col] != null) {
 				globusTasksDisplayValue[col](td, task[col]);
-			} else if (timestampsColumns.contains(col)) {
+			} else if (task[col] != null && timestampsColumns.contains(col)) {
 				td.html(getLocaleTimestamp(task[col]));
 			} else {
 				td.html(task[col]);

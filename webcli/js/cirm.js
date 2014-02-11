@@ -106,6 +106,8 @@ var isSlidePrinter = false;
 var entityStack = [];
 var timestampsColumns = ['completion_time', 'deadline', 'request_time']
 
+var viewsList = ['Globus Activity', 'Printers'];
+
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 			document.body.style.cursor = 'wait';
@@ -1029,7 +1031,7 @@ function selectNewSearch() {
 function selectSearch(keywords) {
 	$.each($('li', $('#SearchUL')), function(i, li) {
 		if ($(li).html() == keywords) {
-			$('#leftPanel').accordion( "option", "active", 2 );
+			$('#leftPanel').accordion( "option", "active", 3 );
 			$(li).click();
 			return false;
 		}
@@ -1057,11 +1059,11 @@ function getEntityContent(entityList, displayName, entityName, clickFunction, cr
 	obj['Create'] = createFunction;
 	var values = [];
 	var arr = [].concat(entityList);
-	if (entityName != 'Search') {
+	if (entityName != 'Search' && entityName != 'View') {
 		arr.sort(compareIds);
 	}
 	$.each(arr, function(i, item) {
-		if (entityName != 'Search') {
+		if (entityName != 'Search' && entityName != 'View') {
 			values.push(item['id']);
 		} else {
 			values.push(item);
@@ -1076,13 +1078,15 @@ function initPanels() {
 	initTopPanel();
 	var leftPanel = $('#leftPanel');
 	leftPanel.html('');
+	var viewsContent = getEntityContent(viewsList, 'Views', 'View', displayView, null);
+	loadLeftPanel(leftPanel, viewsContent);
 	var boxesContent = getEntityContent(boxesList, 'Boxes', 'Box', displayBox, createBox);
 	loadLeftPanel(leftPanel, boxesContent);
 	var experimentsContent = getEntityContent(experimentsList, 'Experiments', 'Experiment', displayExperiment, createExperiment);
 	loadLeftPanel(leftPanel, experimentsContent);
 	var searchContent = getEntityContent(searchList, 'Search History', 'Search', displaySearch, null);
 	loadLeftPanel(leftPanel, searchContent);
-	var active = (newSearchKeywords != null) ? 2 : ((newExperimentId == null) ? 0 : 1);
+	var active = (newSearchKeywords != null) ? 3 : ((newExperimentId == null) ? 1 : 2);
 	leftPanel.accordion({ 'header': 'h4',
 		'heightStyle': 'content',
 		'active': active});
@@ -1624,7 +1628,7 @@ function appendImage(images) {
 	$('#backButton').click(function(event) {entityStack.pop(); backupRightPanel(); appendSlides(getSlidesType());});
 	$('#backButton').show();
 	$('#printBoxButton').hide();
-	$('#refreshButton').show();
+	$('#refreshButton').hide();
 	$('#editButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
@@ -1673,8 +1677,6 @@ function displayEntity(itemType, item) {
 	$('#saveButton').unbind('click');
 	$('#saveButton').click(function(event) {updateEntity(itemType);});
 	$('#saveButton').removeAttr('disabled');
-	$('#printerButton').show();
-	$('#globusButton').show();
 	if (itemType == 'scan' || itemType == 'slide') {
 		$('#refreshButton').show();
 	}
@@ -1723,6 +1725,7 @@ function displayScan(img, image) {
 	$('#enlargeButton').unbind('click');
 	$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
 	$('#enlargeButton').show();
+	$('#refreshButton').hide();
 
 	$('img', $('#centerPanelTop')).removeClass('highlighted');
 	img.addClass('highlighted');
@@ -1864,24 +1867,13 @@ function initBottomPanel(panel) {
 
 	button = $('<button>');
 	panel.append(button);
-	button.attr('id', 'globusButton');
-	button.html('Globus');
-	button.button({icons: {primary: 'ui-icon-gear'}}).click(function(event) {globusTasks(false);});
-
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'printerButton');
-	button.html('Printers');
-	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printersManaging();});
-
-	button = $('<button>');
-	panel.append(button);
 	button.attr('id', 'logoutButton');
 	button.html('Logout');
 	button.button({icons: {primary: 'ui-icon-home'}}).click(function(event) {submitLogout();});
 
 	$('#printBoxButton').hide();
 	$('#refreshButton').hide();
+	$('#clearButton').hide();
 }
 
 function editEntity(item) {
@@ -1987,6 +1979,7 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	if (item == 'scan') {
 		$('#transferButton').show();
 		$('#enlargeButton').show();
+		$('#refreshButton').hide();
 	} else if (item == 'box') {
 		$('#printBoxButton').show();
 	}
@@ -2033,6 +2026,7 @@ function clear() {
 	$('#centerPanelTop').html(CIRM_START_INFO);
 	$('#printBoxButton').hide();
 	$('#refreshButton').hide();
+	$('#clearButton').hide();
 	$('button', $('#centerPanelBottom')).hide();
 	$('button', $('#rightPanelBottom')).hide();
 	$('#search').val('');
@@ -2474,11 +2468,15 @@ function getSlidesType() {
 }
 
 function globusTasks(fromRefresh) {
-	$('li', $('#leftPanel')).removeClass('highlighted');
 	if (!fromRefresh) {
 		$('#rightPanelTop').html('');
+		$('#clearButton').hide();
+		$('#printBoxButton').hide();
+		$('#refreshButton').hide();
 	}
 	$('button', $('#rightPanelBottom')).hide();
+	$('button', $('#centerPanelBottom')).hide();
+	$('#centerPanelBottom').show();
 	$('button', $('#centerPanelBottom')).hide();
 	$('#globusRefreshButton').show();
 	var url = SERVICE_TRANSFER_HOME + 'task_list?fields=task_id,request_time,completion_time,destination_endpoint,bytes_transferred,label,status,source_endpoint&orderby=request_time desc';
@@ -2490,10 +2488,13 @@ function postGlobusTasks(data, textStatus, jqXHR, param) {
 }
 
 function printersManaging() {
-	$('li', $('#leftPanel')).removeClass('highlighted');
 	$('#rightPanelTop').html('');
 	$('button', $('#rightPanelBottom')).hide();
+	$('#centerPanelBottom').show();
 	$('button', $('#centerPanelBottom')).hide();
+	$('#clearButton').hide();
+	$('#printBoxButton').hide();
+	$('#refreshButton').hide();
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('<p class="intro">Printers</p>');
 	var p = $('<p>');
@@ -2890,6 +2891,19 @@ function displaySlide(id) {
 	getScans(id);
 }
 
+function displayView(ul, li) {
+	$('li', $('#leftPanel')).removeClass('highlighted');
+	li.addClass('highlighted');
+	$('#clearButton').show();
+	$('#centerPanelTop').html('');
+	$('#centerPanelBottom').hide();
+	if (li.html() == 'Globus Activity') {
+		globusTasks(false);
+	} else if (li.html() == 'Printers') {
+		printersManaging();
+	}
+}
+
 function displayBox(ul, li) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	li.addClass('highlighted');
@@ -3208,7 +3222,13 @@ function globusFileTransfer() {
 function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data)[0];
 	if (data['task_id'] != null) {
-		$('#globusButton').click();
+		$.each($('li', $('#ViewUL')), function(i, li) {
+			if ($(li).html() == 'Globus Activity') {
+				$('#leftPanel').accordion( "option", "active", 0 );
+				$(li).click();
+				return false;
+			}
+		});
 		getTaskStatus(data['task_id']);
 	} else {
 		alert(data['error']);

@@ -1856,7 +1856,7 @@ function displayItem(cols, displayCols, item, itemType) {
 		input.keyup(function(event) {checkSaveButton(event, itemType);});
 		div.append(input);
 		
-		if (item[col] == null || item[col] == '') {
+		if (editColumns.contains(col) && (item[col] == null || item[col] === '')) {
 			label.hide();
 			input.show();
 			showButtons = true;

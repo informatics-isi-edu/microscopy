@@ -100,6 +100,7 @@ img.highlighted {
 
 dt.info, div.info {
 	font-weight: bold;
+	margin-left: 5px;
 }
 
 p.intro {

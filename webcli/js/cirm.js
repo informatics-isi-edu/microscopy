@@ -907,6 +907,7 @@ function insertNewFolder() {
 	button.html('Create');
 	button.button().click(function(event) {createNewFolderRequest();});
 	button.attr('disabled', 'disabled');
+	button.addClass('disabledButton');
 	var td = $('<td>');
 	tr.append(td);
 	var span = $('<span>');
@@ -1282,11 +1283,13 @@ function checkUncheckAll(tableId, thId, buttons) {
 		$('td', $('#' + tableId)).find('input:disabled').prop('checked', false);
 		$.each(buttons, function(i, buttonId) {
 			$('#'+ buttonId).removeAttr('disabled');
+			$('#'+ buttonId).removeClass('disabledButton');
 		});
 	} else {
 		$('td', $('#' + tableId)).find('input:checked').prop('checked', false);
 		$.each(buttons, function(i, buttonId) {
 			$('#'+ buttonId).attr('disabled', 'disabled');
+			$('#'+ buttonId).addClass('disabledButton');
 		});
 	}
 }
@@ -1297,10 +1300,12 @@ function checkAvailableSlides(tableId, thId, buttons) {
 		$('#' + thId).prop('checked', false);
 		$.each(buttons, function(i, buttonId) {
 			$('#'+ buttonId).attr('disabled', 'disabled');
+			$('#'+ buttonId).addClass('disabledButton');
 		});
 	} else {
 		$.each(buttons, function(i, buttonId) {
 			$('#'+ buttonId).removeAttr('disabled');
+			$('#'+ buttonId).removeClass('disabledButton');
 		});
 		if ($('td', $('#' + tableId)).find('input:not(:checked)').length == $('td', $('#' + tableId)).find('input:disabled').length) {
 			$('#' + thId).prop('checked', true);
@@ -1382,6 +1387,7 @@ function displayUnassignedSlides() {
 	$('#backButton').show();
 	$('#addButton').show();
 	$('#addButton').attr('disabled', 'disabled');
+	$('#addButton').addClass('disabledButton');
 	$('#addSlidesButton').hide();
 	$('#printSlideButton').hide();
 	$('#globusTransferButton').hide();
@@ -1448,6 +1454,7 @@ function appendSlides(item) {
 			td.append(input);
 			if (row['experiment_id'] == null) {
 				input.attr('disabled', 'disabled');
+				input.addClass('disabledButton');
 			}
 			$.each(slideTableColumns, function(j, col) {
 				if (!slideNoDisplayColumns.contains(col)) {
@@ -1472,6 +1479,7 @@ function appendSlides(item) {
 	if (arr.length > 0 && item == 'experiment') {
 		$('#printSlideButton').show();
 		$('#printSlideButton').attr('disabled', 'disabled');
+		$('#printSlideButton').addClass('disabledButton');
 	}
 	$('#refreshButton').show();
 	$('button[context="centerPanelBottom"]').hide();
@@ -1493,6 +1501,7 @@ function appendSlides(item) {
 	if (arr.length > 0) {
 		$('#globusTransferButton').show();
 		$('#globusTransferButton').attr('disabled', 'disabled');
+		$('#globusTransferButton').addClass('disabledButton');
 	}
 }
 
@@ -1556,11 +1565,13 @@ function getSearchExpression(originalValue, delimiter) {
 function checkCreateFolder(event) {
 	if ($('#newDirName').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#createNewFolderButton').removeAttr('disabled');
+		$('#createNewFolderButton').removeClass('disabledButton');
 		if (event.which == 13) {
 			createNewFolderRequest();
 		}
 	} else {
 		$('#createNewFolderButton').attr('disabled', 'disabled');
+		$('#createNewFolderButton').addClass('disabledButton');
 	}
 }
 
@@ -1695,8 +1706,10 @@ function checkSlideSaveButton() {
 		$('#slideSequenceNumber').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#slidesCount').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#createButton').removeAttr('disabled');
+		$('#createButton').removeClass('disabledButton');
 	} else {
 		$('#createButton').attr('disabled', 'disabled');
+		$('#createButton').addClass('disabledButton');
 	}
 }
 
@@ -1706,8 +1719,10 @@ function checkExperimentSaveButton() {
 		$('#experimentDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentDescription').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#createButton').removeAttr('disabled');
+		$('#createButton').removeClass('disabledButton');
 	} else {
 		$('#createButton').attr('disabled', 'disabled');
+		$('#createButton').addClass('disabledButton');
 	}
 }
 
@@ -1800,6 +1815,7 @@ function displayEntity(itemType, item) {
 	$('#saveButton').unbind('click');
 	$('#saveButton').click(function(event) {updateEntity(itemType);});
 	$('#saveButton').removeAttr('disabled');
+	$('#saveButton').removeClass('disabledButton');
 	if (itemType == 'scan' || itemType == 'slide') {
 		$('#refreshButton').show();
 	}
@@ -2569,6 +2585,7 @@ function renderTransferFiles(files) {
 
 	$('button[context="centerPanelBottom"]').hide();
 	$('#submitButton').attr('disabled', 'disabled');
+	$('#submitButton').addClass('disabledButton');
 	$('#submitButton').show();
 	$('#backButton').unbind('click');
 	$('#backButton').click(function(event) {backupRightPanel(); appendSlides(getSlidesType());});
@@ -2577,6 +2594,7 @@ function renderTransferFiles(files) {
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
 	$('#refreshActivityButton').attr('disabled', 'disabled');
+	$('#refreshActivityButton').addClass('disabledButton');
 	$('#refreshActivityButton').show();
 	$('#printBoxButton').hide();
 	selectedEndpoint = null;
@@ -2633,8 +2651,10 @@ function checkFilesTransferButton() {
 			$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 			$('td', $('#filesTable')).find('input:checked').length > 0) {
 			$('#submitButton').removeAttr('disabled');
+			$('#submitButton').removeClass('disabledButton');
 		} else {
 			$('#submitButton').attr('disabled', 'disabled');
+			$('#submitButton').addClass('disabledButton');
 		}
 }
 
@@ -2878,6 +2898,7 @@ function printerSettings() {
 	$('#saveButton').unbind('click');
 	$('#saveButton').click(function(event) {updatePrinterSettings();});
 	$('#saveButton').removeAttr('disabled');
+	$('#saveButton').removeClass('disabledButton');
 	$('#cancelButton').show();
 	$('#saveButton').show();
 	$('#printBoxButton').hide();
@@ -3047,6 +3068,7 @@ function createExperiment() {
 	$('#createButton').click(function(event) {saveExperiment();});
 	$('#createButton').show();
 	$('#createButton').attr('disabled', 'disabled');
+	$('#createButton').addClass('disabledButton');
 	$('#backButton').unbind('click');
 	$('#backButton').click(function(event) {clear();});
 	$('#backButton').show();
@@ -3122,8 +3144,10 @@ function checkBoxSaveButton() {
 		$('#boxRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#boxDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#createButton').removeAttr('disabled');
+		$('#createButton').removeClass('disabledButton');
 	} else {
 		$('#createButton').attr('disabled', 'disabled');
+		$('#createButton').addClass('disabledButton');
 	}
 }
 
@@ -3228,6 +3252,7 @@ function createBox() {
 	$('#createButton').click(function(event) {saveBox();});
 	$('#createButton').show();
 	$('#createButton').attr('disabled', 'disabled');
+	$('#createButton').addClass('disabledButton');
 	$('#printBoxButton').hide();
 	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
@@ -3359,6 +3384,7 @@ function globusFileTransfer() {
 			$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length == 0 ||
 			$('td', $('#filesTable')).find('input:checked').length == 0) {
 		$('#submitButton').attr('disabled', 'disabled');
+		$('#submitButton').addClass('disabledButton');
 		return;
 	}
 	var endpoint_2 = $('#destinationEnpointInput').val();
@@ -3397,6 +3423,7 @@ function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data)[0];
 	if (data['task_id'] != null) {
 		$('#refreshActivityButton').removeAttr('disabled');
+		$('#refreshActivityButton').removeClass('disabledButton');
 		$('#refreshActivityButton').unbind('click');
 		$('#refreshActivityButton').click(function(event) {getTaskStatus(data['task_id']);});
 		getTaskStatus(data['task_id']);

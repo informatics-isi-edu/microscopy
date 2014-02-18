@@ -454,3 +454,6 @@ div.attributes {
 	 margin-bottom: 20px;
 }
 
+.disabledButton {
+	background:#C0C0C0;
+}

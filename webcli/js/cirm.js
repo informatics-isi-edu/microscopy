@@ -108,6 +108,8 @@ var timestampsColumns = ['completion_time', 'deadline', 'request_time']
 
 var viewsList = ['Globus Activity', 'Printers'];
 
+var containerLayout = null;
+
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 			document.body.style.cursor = 'wait';
@@ -1028,6 +1030,12 @@ function getSubFolder(tr) {
 }
 
 function drawPanels() {
+	var eastSize = 350;
+	var westSize = 350;
+	if (containerLayout != null) {
+		westSize = containerLayout.state.west.size;
+		eastSize = containerLayout.state.east.size;
+	}
 	var cirm = $('#cirm');
 	cirm.html('');
 	var container = $('<div>');
@@ -1067,9 +1075,9 @@ function drawPanels() {
 	div.attr('id', 'bottomPanel');
 	div.addClass('pane ui-layout-south right');
 	initPanels();
-	container.layout({
-		east: {size: 350},
-		west: {size: 350},
+	containerLayout = container.layout({
+		east: {size: eastSize},
+		west: {size: westSize},
 		north: {resizable: false},
 		south: {resizable: false}});
 	selectNewBox();

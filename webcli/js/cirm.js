@@ -1032,7 +1032,7 @@ function getSubFolder(tr) {
 
 function drawPanels() {
 	var eastSize = 350;
-	var westSize = 350;
+	var westSize = 225;
 	if (containerLayout != null) {
 		westSize = containerLayout.state.west.size;
 		eastSize = containerLayout.state.east.size;

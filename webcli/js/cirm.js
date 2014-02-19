@@ -1317,6 +1317,7 @@ function checkAvailableSlides(tableId, thId, buttons) {
 
 function displayUnassignedSlides() {
 	var centerPanel = $('#centerPanelMiddle');
+	centerPanel.show();
 	centerPanel.html('');
 	var arr = [].concat(unassignedSlidesList);
 	arr.sort(compareIds);
@@ -1327,12 +1328,22 @@ function displayUnassignedSlides() {
 		p.addClass('intro');
 		p.html('Unassigned Slides');
 		centerPanel.append(p);
+		var containerDiv = $('<div>');
+		centerPanel.append(containerDiv);
+		containerDiv.addClass('container_div');
+		var gridDiv = $('<div>');
+		containerDiv.append(gridDiv);
+		gridDiv.addClass('grid_div height_table_div');
+		gridDiv.height($('#centerPanel').height()*90/100);
 		var table = $('<table>');
-		centerPanel.append(table);
+		gridDiv.append(table);
 		table.attr('id', 'unassignedSlidesTable');
-		table.addClass('itemTable');
+		table.attr({'cellpadding': '0', 'cellspacing': '0'});
+		table.addClass('fancyTable');
+		var thead = $('<thead>');
+		table.append(thead);
 		var tr = $('<tr>');
-		table.append(tr);
+		thead.append(tr);
 		var th = $('<th>');
 		tr.append(th);
 		var input = $('<input>');
@@ -1350,12 +1361,11 @@ function displayUnassignedSlides() {
 				}
 			}
 		});
+		var tbody = $('<tbody>');
+		table.append(tbody);
 		$.each(arr, function(i, row) {
 			var tr = $('<tr>');
-			table.append(tr);
-			if (i%2 == 1) {
-				tr.addClass('odd');
-			}
+			tbody.append(tr);
 			var td = $('<td>');
 			td.addClass('center');
 			tr.append(td);
@@ -1380,8 +1390,12 @@ function displayUnassignedSlides() {
 			});
 		});
 		$('.experiment', table).hide();
+		table.fixedHeaderTable({ 
+			altClass: 'odd'
+		});
+		$('#selectAllUnassignedSlidesTh').unbind('click');
+		$('#selectAllUnassignedSlidesTh').click(function(event) {checkUncheckAll('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
 	}
-	centerPanel.show();
 	$('#backButton').unbind('click');
 	$('#backButton').click(function(event) {appendSlides('experiment');});
 	$('#backButton').show();
@@ -1397,6 +1411,8 @@ function displayUnassignedSlides() {
 }
 
 function appendSlides(item) {
+	$('#centerPanelMiddle').hide();
+	$('#centerPanelTop').show();
 	$('button[context="centerPanelBottom"]').hide();
 	var centerPanel = $('#centerPanelTop');
 	var arr = [].concat(slidesList);
@@ -1415,12 +1431,22 @@ function appendSlides(item) {
 		} else if (item == 'search') {
 			p.html('Search Slides');
 		}
+		var containerDiv = $('<div>');
+		centerPanel.append(containerDiv);
+		containerDiv.addClass('container_div');
+		var gridDiv = $('<div>');
+		containerDiv.append(gridDiv);
+		gridDiv.addClass('grid_div height_table_div');
+		gridDiv.height($('#centerPanel').height()*90/100);
 		var table = $('<table>');
-		centerPanel.append(table);
+		gridDiv.append(table);
 		table.attr('id', 'slidesTable');
-		table.addClass('itemTable');
+		table.attr({'cellpadding': '0', 'cellspacing': '0'});
+		table.addClass('fancyTable');
+		var thead = $('<thead>');
+		table.append(thead);
 		var tr = $('<tr>');
-		table.append(tr);
+		thead.append(tr);
 		var th = $('<th>');
 		tr.append(th);
 		var input = $('<input>');
@@ -1438,12 +1464,11 @@ function appendSlides(item) {
 				}
 			}
 		});
+		var tbody = $('<tbody>');
+		table.append(tbody);
 		$.each(arr, function(i, row) {
 			var tr = $('<tr>');
-			table.append(tr);
-			if (i%2 == 1) {
-				tr.addClass('odd');
-			}
+			tbody.append(tr);
 			var td = $('<td>');
 			td.addClass('center');
 			tr.append(td);
@@ -1472,9 +1497,12 @@ function appendSlides(item) {
 			});
 		});
 		$('.'+item, table).hide();
+		table.fixedHeaderTable({ 
+			altClass: 'odd'
+		});
+		$('#selectAllAssignedSlidesTh').unbind('click');
+		$('#selectAllAssignedSlidesTh').click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
 	}
-	$('#centerPanelMiddle').hide();
-	$('#centerPanelTop').show();
 	
 	if (arr.length > 0 && item == 'experiment') {
 		$('#printSlideButton').show();
@@ -2427,11 +2455,22 @@ function renderTransferFiles(files) {
 	var globusDirsTd = $('<td>');
 	globusDirsTd.addClass('dirs_panel');
 	globusTr.append(globusDirsTd);
+	var containerDiv = $('<div>');
+	globusFilesTd.append(containerDiv);
+	containerDiv.addClass('container_div');
+	var gridDiv = $('<div>');
+	containerDiv.append(gridDiv);
+	gridDiv.addClass('grid_div height_table_div');
+	gridDiv.height($('#centerPanel').height()*50/100);
 	var table1 = $('<table>');
-	globusFilesTd.append(table1);
+	gridDiv.append(table1);
 	table1.attr('id', 'filesTable');
+	table1.attr({'cellpadding': '0', 'cellspacing': '0'});
+	table1.addClass('fancyTable');
+	var thead = $('<thead>');
+	table1.append(thead);
 	var tr = $('<tr>');
-	table1.append(tr);
+	thead.append(tr);
 	var th = $('<th>');
 	tr.append(th);
 	var input = $('<input>');
@@ -2445,12 +2484,11 @@ function renderTransferFiles(files) {
 		tr.append(th);
 		th.html(filesTableDisplayColumns[col]);
 	});
+	var tbody = $('<tbody>');
+	table1.append(tbody);
 	$.each(files, function(i, file) {
 		var tr = $('<tr>');
-		table1.append(tr);
-		if (i%2 == 1) {
-			tr.addClass('odd');
-		}
+		tbody.append(tr);
 		var td = $('<td>');
 		td.addClass('center');
 		tr.append(td);
@@ -2470,6 +2508,9 @@ function renderTransferFiles(files) {
 				td.html(filesDict[file][col]);
 			}
 		});
+	});
+	table1.fixedHeaderTable({ 
+		altClass: 'odd'
 	});
 	
 	var table = $('<table>');
@@ -2604,23 +2645,32 @@ function renderGlobusTasks(tasks) {
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('');
 	centerPanel.show();
+	var containerDiv = $('<div>');
+	centerPanel.append(containerDiv);
+	containerDiv.addClass('container_div');
+	var gridDiv = $('<div>');
+	containerDiv.append(gridDiv);
+	gridDiv.addClass('grid_div height_table_div');
+	gridDiv.height($('#centerPanel').height()*90/100);
 	var globusTable = $('<table>');
+	gridDiv.append(globusTable);
 	globusTable.attr('id', 'globusActivityTable');
-	globusTable.addClass('itemTable');
-	centerPanel.append(globusTable);
+	globusTable.attr({'cellpadding': '0', 'cellspacing': '0'});
+	globusTable.addClass('fancyTable');
+	var thead = $('<thead>');
+	globusTable.append(thead);
 	var tr = $('<tr>');
-	globusTable.append(tr);
+	thead.append(tr);
 	$.each(globusTasksTableColumns, function(i, col) {
 		var th = $('<th>');
 		tr.append(th);
 		th.html(globusTasksTableDisplayColumns[col]);
 	});
+	var tbody = $('<tbody>');
+	globusTable.append(tbody);
 	$.each(tasks, function(i, task) {
 		var tr = $('<tr>');
-		globusTable.append(tr);
-		if (i%2 == 1) {
-			tr.addClass('odd');
-		}
+		tbody.append(tr);
 		$.each(globusTasksTableColumns, function(j, col) {
 			var td = $('<td>');
 			tr.append(td);
@@ -2633,7 +2683,9 @@ function renderGlobusTasks(tasks) {
 			}
 		});
 	});
-	
+	globusTable.fixedHeaderTable({ 
+		altClass: 'odd',
+	});
 	$('button[context="centerPanelBottom"]').hide();
 	$('#globusRefreshButton').show();
 	selectedEndpoint = null;

@@ -1838,15 +1838,6 @@ function displayEntity(itemType, item) {
 		displayCols = experimentDisplayColumns;
 	}
 
-	$('#cancelButton').unbind('click');
-	$('#cancelButton').click(function(event) {cancel(itemType, item);});
-	$('#saveButton').unbind('click');
-	$('#saveButton').click(function(event) {updateEntity(itemType);});
-	$('#saveButton').removeAttr('disabled');
-	$('#saveButton').removeClass('disabledButton');
-	if (itemType == 'scan' || itemType == 'slide') {
-		$('#refreshButton').show();
-	}
 	$('#cancelButton').hide();
 	$('#saveButton').hide();
 	displayItem(cols, displayCols, item, itemType);
@@ -1877,7 +1868,6 @@ function displayItem(cols, displayCols, item, itemType) {
 		p.html('Printer Attributes');
 	}
 	rightPanel.append(p);
-	var showButtons = false;
 
 	$.each(cols, function(i, col) {
 		var div = $('<div>');
@@ -1905,32 +1895,25 @@ function displayItem(cols, displayCols, item, itemType) {
 			'id': col + 'Input',
 			'placeholder': 'Add a value...',
 			'size': 30});
-		input.keyup(function(event) {checkSaveButton(event, itemType);});
+		input.keyup(function(event) {checkSaveButton(event, itemType, col);});
 		div.append(input);
 		
 		if (editColumns.contains(col) && (item[col] == null || item[col] === '')) {
 			label.hide();
 			input.show();
-			showButtons = true;
 		}
 	});
-	if (showButtons) {
-		$('#cancelButton').show();
-		$('#saveButton').show();
-	}
 }
 
-function checkSaveButton(event, itemType) {
+function checkSaveButton(event, itemType, col) {
 	if (event.which == 13) {
-		updateEntity(itemType);
+		updateEntity(itemType, col);
 	}
 }
 
 function editItem(col) {
 	$('#' + col + 'Input').val($('#' + col + 'Label').html());
 	$('#' + col + 'Input').show();
-	$('#cancelButton').show();
-	$('#saveButton').show();
 	$('#' + col + 'Label').hide();
 }
 
@@ -2115,11 +2098,9 @@ function editEntity(item) {
 
 	$('#printBoxButton').hide();
 	$('#refreshButton').show();
-	$('#cancelButton').show();
-	$('#saveButton').show();
 }
 
-function updateEntity(item) {
+function updateEntity(item, column) {
 	var cols = null;
 	var editCols = null;
 	if (item == 'scan') {
@@ -2140,7 +2121,7 @@ function updateEntity(item) {
 	var arr = [];
 	var obj = new Object();
 	$.each(cols, function(i, col) {
-		if (editCols.contains(col) && $('#' + col + 'Input').css('display') != 'none') {
+		if (col == column) {
 			obj[col] = $('#' + col + 'Input').val();
 		} else {
 			obj[col] = $('#' + col + 'Label').html();

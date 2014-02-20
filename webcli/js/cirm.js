@@ -1924,7 +1924,7 @@ function displayItem(cols, displayCols, item, itemType) {
 					tr.append(td);
 					var input = $('<input>');
 					input.attr({'type': 'text',
-						'placeholder': 'Add a value...',
+						'placeholder': 'Add a tag...',
 						'size': 30});
 					input.keyup(function(event) {updateMultiValue(event, itemType, col, col+'multiValuesTr'+i);});
 					td.append(input);
@@ -1940,7 +1940,7 @@ function displayItem(cols, displayCols, item, itemType) {
 			var input = $('<input>');
 			input.attr({'type': 'text',
 				'id': col + 'Input',
-				'placeholder': 'Add a value...',
+				'placeholder': 'Add a tag...',
 				'size': 30});
 			input.keyup(function(event) {checkMultiValueButton(event, itemType, col);});
 			div.append(input);
@@ -2015,6 +2015,10 @@ function checkMultiValueButton(event, itemType, col) {
 function checkSaveButton(event, itemType, col) {
 	if (event.which == 13) {
 		updateEntity(itemType, col, false);
+	} else if (event.which == 27) {
+		// ESCAPE character
+		$('#'+col + 'Input').hide();
+		$('#'+col + 'Label').show();
 	}
 }
 

@@ -461,3 +461,7 @@ div.attributes {
         overflow-y: auto;
 }
 
+table.multiValues td {
+	text-align: right;
+}
+

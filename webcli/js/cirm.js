@@ -9,7 +9,7 @@ var debug = false;
 var selectedEndpoint = null;
 var endpointPath = [];
 
-var ENDPOINT_SOURCE='serban#cirm-files';
+var ENDPOINT_SOURCE='isidev#cirm-files';
 var TILES_DIR='/';
 var CXI_RET='Return value';
 var CXI_MSG='Return Message';
@@ -64,6 +64,7 @@ var filesDict = {};
 
 var boxColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator', 'comment', 'tags'];
 var boxEditColumns = ['comment', 'tags'];
+var boxMultiValuesColumns = ['tags'];
 var boxDisplayColumns = {'id': 'Box ID', 'section_date': 'Section Date', 'sample_name': 'Sample Name', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment', 'tags': 'Tags'};
 var boxesDict = {};
 var boxesList = [];
@@ -71,6 +72,7 @@ var boxesList = [];
 
 var experimentColumns = ['id', 'experiment_date', 'experiment_description', 'initials', 'disambiguator', 'comment', 'tags'];
 var experimentEditColumns = ['comment', 'tags'];
+var experimentMultiValuesColumns = ['tags'];
 var experimentDisplayColumns = {'id': 'Experiment ID', 'experiment_date': 'Experiment Date', 'experiment_description': 'Experiment Description', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment', 'tags': 'Tags'};
 var experimentsDict = {};
 var experimentsList = [];
@@ -85,6 +87,7 @@ var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnVa
 var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment', 'tags'];
 var slideDisplayColumns = {'id': 'Slide ID', 'box_of_origin_id': 'Box ID', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
 var slideEditColumns = ['comment', 'tags'];
+var slideMultiValuesColumns = ['tags'];
 var slideExperimentColumn = 'experiment_id';
 var slidesDict = {};
 var slidesList = [];
@@ -95,6 +98,7 @@ var unassignedSlidesList = [];
 
 var scanColumns = ['id', 'slide_id', 'scan_num', 'filename', 'thumbnail', 'tilesdir', 'comment', 'tags'];
 var scanEditColumns = ['comment', 'tags'];
+var scanMultiValuesColumns = ['tags'];
 var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'scan_num': 'Scan Number', 'filename': 'File', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'comment': 'Comment', 'tags': 'Tags'};
 var scansDict = {};
 var scansList = [];
@@ -1846,6 +1850,7 @@ function displayEntity(itemType, item) {
 function displayItem(cols, displayCols, item, itemType) {
 	$('button', $('#rightPanelBottom')).hide();
 	var editColumns = [];
+	var multiValuesColumns = [];
 	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
 	var p = $('<p>');
@@ -1853,17 +1858,21 @@ function displayItem(cols, displayCols, item, itemType) {
 	if (itemType == 'box') {
 		p.html('Box Attributes');
 		editColumns = boxEditColumns;
+		multiValuesColumns = boxMultiValuesColumns;
 	} else if (itemType == 'experiment') {
 		p.html('Experiment Attributes');
 		editColumns = experimentEditColumns;
+		multiValuesColumns = experimentMultiValuesColumns;
 	} else if (itemType == 'scan') {
 		p.html('Scan Attributes');
 		editColumns = scanEditColumns;
+		multiValuesColumns = scanMultiValuesColumns;
 	} else if (itemType == 'activity') {
 		p.html('Activity Attributes');
 	} else if (itemType == 'slide') {
 		p.html('Slide Attributes');
 		editColumns = slideEditColumns;
+		multiValuesColumns = slideMultiValuesColumns;
 	} else if (itemType == 'printer') {
 		p.html('Printer Attributes');
 	}
@@ -1879,7 +1888,8 @@ function displayItem(cols, displayCols, item, itemType) {
 		rightPanel.append(div);
 		var label = $('<label>');
 		label.attr('id', col + 'Label');
-		if (editColumns.contains(col)) {
+		label.html(item[col]);
+		if (!multiValuesColumns.contains(col) && editColumns.contains(col)) {
 			label.attr('title', 'Click to Update');
 			label.css('color', '#800000');
 			label.hover(
@@ -1887,28 +1897,135 @@ function displayItem(cols, displayCols, item, itemType) {
 					function(){label.get(0).style.cursor = 'default';});
 			label.click(function(event) {editItem(col);});
 		}
-		label.html(item[col]);
 		div.append(label);
-		var input = $('<input>');
-		input.hide();
-		input.attr({'type': 'text',
-			'id': col + 'Input',
-			'placeholder': 'Add a value...',
-			'size': 30});
-		input.keyup(function(event) {checkSaveButton(event, itemType, col);});
-		div.append(input);
-		
-		if (editColumns.contains(col) && (item[col] == null || item[col] === '')) {
+		if (multiValuesColumns.contains(col)) {
+			if (item[col] != null && item[col] !== '') {
+				var multiValues = item[col].split(';');
+				var multiTable = $('<table>');
+				div.append(multiTable);
+				multiTable.attr('id', col + 'MultiTable');
+				multiTable.addClass('multiValues');
+				$.each(multiValues, function(i, value) {
+					var tr = $('<tr>');
+					tr.attr('id', col+'multiValuesTr'+i);
+					multiTable.append(tr);
+					var td = $('<td>');
+					tr.append(td);
+					var valLabel = $('<label>');
+					td.append(valLabel);
+					valLabel.attr('title', 'Click to Update');
+					valLabel.css('color', '#800000');
+					valLabel.hover(
+							function(event) {valLabel.get(0).style.cursor = 'pointer';}, 
+							function(){valLabel.get(0).style.cursor = 'default';});
+					valLabel.click(function(event) {editMultiValueItem(col, col+'multiValuesTr'+i);});
+					valLabel.html(value);
+					var td = $('<td>');
+					tr.append(td);
+					var input = $('<input>');
+					input.attr({'type': 'text',
+						'placeholder': 'Add a value...',
+						'size': 30});
+					input.keyup(function(event) {updateMultiValue(event, itemType, col, col+'multiValuesTr'+i);});
+					td.append(input);
+					input.hide();
+					var td = $('<td>');
+					tr.append(td);
+					var span = $('<span>');
+					td.append(span);
+					span.addClass('ui-icon ui-icon-circle-minus');
+					span.click(function(event) {removeMultiValue(event, itemType, col, col+'multiValuesTr'+i);});
+				});
+			}
+			var input = $('<input>');
+			input.attr({'type': 'text',
+				'id': col + 'Input',
+				'placeholder': 'Add a value...',
+				'size': 30});
+			input.keyup(function(event) {checkMultiValueButton(event, itemType, col);});
+			div.append(input);
 			label.hide();
-			input.show();
+		} else {
+			var input = $('<input>');
+			input.hide();
+			input.attr({'type': 'text',
+				'id': col + 'Input',
+				'placeholder': 'Add a value...',
+				'size': 30});
+			input.keyup(function(event) {checkSaveButton(event, itemType, col);});
+			div.append(input);
+			
+			if (editColumns.contains(col) && (item[col] == null || item[col] === '')) {
+				label.hide();
+				input.show();
+			}
 		}
 	});
 }
 
+function getMultiValue(col) {
+	var values = [];
+	$.each($('label', $('#'+col+'MultiTable')), function(i, label) {
+		if ($(label).html() !== '') {
+			values.push($(label).html());
+		}
+	});
+	return values;
+}
+
+function removeMultiValue(event, itemType, col, trId) {
+	$('#'+trId).remove();
+	var values = getMultiValue(col);
+	$('#'+col + 'Label').html(values.join(';'));
+	updateEntity(itemType, col, true);
+}
+
+function updateMultiValue(event, itemType, col, trId) {
+	if (event.which == 13) {
+		var input = $($('input', $('#'+trId))[0]);
+		var value = input.val().replace(/^\s*/, "").replace(/\s*$/, "");
+		if (value === '') {
+			removeMultiValue(event, itemType, col, trId)
+		} else {
+			var label = $($('label', $('#'+trId))[0]);
+			label.html(value);
+			var values = getMultiValue(col);
+			$('#'+col + 'Label').html(values.join(';'));
+			updateEntity(itemType, col, true);
+		}
+	} else if (event.which == 27) {
+		// ESCAPE character
+		updateEntity(itemType, col, true);
+	}
+}
+
+function checkMultiValueButton(event, itemType, col) {
+	if (event.which == 13) {
+		var input = $('#'+col + 'Input');
+		var value = input.val().replace(/^\s*/, "").replace(/\s*$/, "");
+		if (value !== '') {
+			var values = getMultiValue(col);
+			values.push(value);
+			$('#'+col + 'Label').html(values.join(';'));
+			updateEntity(itemType, col, true);
+		}
+	}
+}
+
 function checkSaveButton(event, itemType, col) {
 	if (event.which == 13) {
-		updateEntity(itemType, col);
+		updateEntity(itemType, col, false);
 	}
+}
+
+function editMultiValueItem(col, trId) {
+	$('label', $('#' + col + 'MultiTable')).hide();
+	$('span', $('#' + col + 'MultiTable')).hide();
+	$('#' + col + 'Input').hide();
+	var input = $($('input', $('#'+trId))[0]);
+	var label = $($('label', $('#'+trId))[0]);
+	input.val(label.html());
+	input.show();
 }
 
 function editItem(col) {
@@ -2100,7 +2217,7 @@ function editEntity(item) {
 	$('#refreshButton').show();
 }
 
-function updateEntity(item, column) {
+function updateEntity(item, column, isMultiValue) {
 	var cols = null;
 	var editCols = null;
 	if (item == 'scan') {
@@ -2121,7 +2238,7 @@ function updateEntity(item, column) {
 	var arr = [];
 	var obj = new Object();
 	$.each(cols, function(i, col) {
-		if (col == column) {
+		if (col == column && !isMultiValue) {
 			obj[col] = $('#' + col + 'Input').val();
 		} else {
 			obj[col] = $('#' + col + 'Label').html();

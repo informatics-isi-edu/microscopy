@@ -64,10 +64,11 @@
 
 .fancyTable td, .fancyTable th {
 	/* appearance */
-	border: 1px solid #778899;
+	/*border: 1px solid #778899;*/
 	
 	/* size */
-	padding: 5px;
+	/*padding: 5px;*/
+	padding:0px 7px 0px 7px;
 	}
 
 .fancyTable {
@@ -77,7 +78,7 @@
 
 .fancyTable tbody tr td {
 	/* appearance */
-	background-color: #eef2f9;
+	/* background-color: #eef2f9; */
 	background-image: -moz-linear-gradient(
 		top,
 		rgba(255,255,255,0.4) 0%,
@@ -99,7 +100,9 @@
 
 .fancyTable tbody tr.odd td {
 	/* appearance */
-	background-color: #d6e0ef;
+	/*background-color: #d6e0ef;*/
+	background-color: #F4FAFF;
+	
 	background-image: -moz-linear-gradient(
 		top,
 		rgba(255,255,255,0.4) 0%,
@@ -120,7 +123,9 @@
 .fancyTable tfoot tr th, 
 .fancyTable tfoot tr td {
 	/* appearance */
-	background-color: #8ca9cf;
+	/*background-color: #8ca9cf;*/
+	background-color: #84BCC4;
+	
 	background-image: -moz-linear-gradient(
 		top,
 		rgba(255,255,255,0.4) 0%,

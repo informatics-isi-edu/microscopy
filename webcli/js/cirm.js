@@ -1196,9 +1196,17 @@ function initPanels() {
 	loadLeftPanel(leftPanel, experimentsContent);
 	var searchContent = getEntityContent(searchList, 'Search History', 'Search', displaySearch, null);
 	loadLeftPanel(leftPanel, searchContent);
-	var active = (newSearchKeywords != null) ? 3 : ((newExperimentId == null) ? 1 : 2);
+	var active = false;
+	if (newSearchKeywords != null) {
+		active = 3;
+	} else if (newExperimentId != null) {
+		active = 2;
+	} else if (newBoxId != null) {
+		active = 1;
+	}
 	leftPanel.accordion({ 'header': 'h4',
 		'heightStyle': 'content',
+		'collapsible': true,
 		'active': active});
 	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
@@ -1420,16 +1428,16 @@ function displayUnassignedSlides() {
 		$('#selectAllUnassignedSlidesTh').unbind('click');
 		$('#selectAllUnassignedSlidesTh').click(function(event) {checkUncheckAll('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
 	}
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {appendSlides('experiment');});
-	$('#backButton').show();
+	$('#cancelCreateButton').unbind('click');
+	$('#cancelCreateButton').click(function(event) {appendSlides('experiment');});
+	$('#cancelCreateButton').show();
 	$('#addButton').show();
 	$('#addButton').attr('disabled', 'disabled');
 	$('#addButton').addClass('disabledButton');
 	$('#addSlidesButton').hide();
 	$('#printSlideButton').hide();
+	$('#refreshButton').hide();
 	$('#globusTransferButton').hide();
-	$('#refreshButton').show();
 	$('#centerPanelMiddle').show();
 	$('#centerPanelTop').hide();
 }

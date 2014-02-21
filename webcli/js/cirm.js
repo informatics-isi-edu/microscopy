@@ -114,6 +114,8 @@ var viewsList = ['Globus Activity', 'Printers'];
 
 var containerLayout = null;
 
+var lastSearchValue = '';
+
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 			document.body.style.cursor = 'wait';
@@ -1056,6 +1058,9 @@ function drawPanels() {
 		westSize = containerLayout.state.west.size;
 		eastSize = containerLayout.state.east.size;
 	}
+	if ($('#search').get(0) != null) {
+		lastSearchValue = $('#search').val();
+	}
 	var cirm = $('#cirm');
 	cirm.html('');
 	var container = $('<div>');
@@ -1595,6 +1600,7 @@ function initTopPanel() {
 		'size': '50'});
 	div.append(input);
 	input.keyup(function(event) {checkSearch(event);});
+	input.val(lastSearchValue);
 }
 
 function getSearchExpression(originalValue, delimiter) {

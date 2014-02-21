@@ -1820,7 +1820,7 @@ function appendImage(images) {
 	$('button[context="centerPanelBottom"]').hide();
 	$('#backButton').unbind('click');
 	$('#backButton').click(function(event) {entityStack.pop(); backupRightPanel(); appendSlides(getSlidesType());});
-	$('#backButton').show();
+	//$('#backButton').show();
 	$('#printBoxButton').hide();
 	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
@@ -2065,7 +2065,7 @@ function displayScan(img, image) {
 		'item': image});
 	$('#backButton').unbind('click');
 	$('#backButton').click(function(event) {entityStack.pop(); entityStack.pop(); backupRightPanel(); appendSlides(getSlidesType());});
-	$('#backButton').show();
+	//$('#backButton').show();
 	$('#transferButton').unbind('click');
 	$('#transferButton').click(function(event) {transferImage(image);});
 	$('#transferButton').show();
@@ -2141,6 +2141,13 @@ function initCenterPanelButtons(panel) {
 	button.attr('context', 'centerPanelBottom');
 	button.html('Submit');
 	button.button({icons: {primary: 'ui-icon-play'}}).click(function(event) {globusFileTransfer();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'cancelCreateButton');
+	button.attr('context', 'centerPanelBottom');
+	button.html('Cancel');
+	button.button({icons: {primary: 'ui-icon-cancel'}});
 
 	button = $('<button>');
 	panel.append(button);
@@ -2525,12 +2532,14 @@ function createSlide() {
 	$('#createButton').unbind('click');
 	$('#createButton').click(function(event) {saveSlide();});
 	$('#createButton').show();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {backupRightPanel(); appendSlides('box');});
-	$('#backButton').show();
+	$('#cancelCreateButton').unbind('click');
+	$('#cancelCreateButton').click(function(event) {backupRightPanel(); appendSlides('box');});
+	$('#cancelCreateButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
+	$('#refreshButton').hide();
+	$('#printBoxButton').hide();
 }
 
 function checkSubmitGetEndpointData(event) {
@@ -2753,7 +2762,7 @@ function renderTransferFiles(files) {
 	$('#submitButton').show();
 	$('#backButton').unbind('click');
 	$('#backButton').click(function(event) {backupRightPanel(); appendSlides(getSlidesType());});
-	$('#backButton').show();
+	//$('#backButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
@@ -3244,9 +3253,9 @@ function createExperiment() {
 	$('#createButton').show();
 	$('#createButton').attr('disabled', 'disabled');
 	$('#createButton').addClass('disabledButton');
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {clear();});
-	$('#backButton').show();
+	$('#cancelCreateButton').unbind('click');
+	$('#cancelCreateButton').click(function(event) {clear();});
+	$('#cancelCreateButton').show();
 	$('#printBoxButton').hide();
 	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
@@ -3420,9 +3429,9 @@ function createBox() {
 	td.append(input);
 
 	$('button[context="centerPanelBottom"]').hide();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {clear();});
-	$('#backButton').show();
+	$('#cancelCreateButton').unbind('click');
+	$('#cancelCreateButton').click(function(event) {clear();});
+	$('#cancelCreateButton').show();
 	$('#createButton').unbind('click');
 	$('#createButton').click(function(event) {saveBox();});
 	$('#createButton').show();

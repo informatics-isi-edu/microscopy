@@ -764,8 +764,23 @@ function submitGlobusLogin(username, password) {
 			token = result['access_token'];
 			//alert(token);
 			$.cookie(goauth_cookie, token, { expires: 7 });
-			postSubmitLogin();
+			checkGlobusAuthorization();
 		}
+	}
+}
+
+function checkGlobusAuthorization() {
+	var url = ERMREST_HOME + '/box';
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitLogin, null, errorGlobusAuthorization, 0);
+}
+
+function errorGlobusAuthorization(jqXHR, textStatus, errorThrown) {
+	if (jqXHR.status == 401) {
+		alert('You are not authorized to use this application.');
+		submitLogout();
+	} else {
+		handleError(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, ERMREST_HOME + '/box', 'application/json', true, null, true, postSubmitLogin, null, null,  MAX_RETRIES+1);
+		postSubmitLogin();
 	}
 }
 

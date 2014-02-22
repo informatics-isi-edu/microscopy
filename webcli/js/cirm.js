@@ -82,7 +82,7 @@ var slideNoDisplayColumns = ['id'];
 var slideClassColumns = {'box_of_origin_id': 'box', 'experiment_id': 'experiment'};
 var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'box_of_origin_id', 'experiment_id', 'comment', 'tags'];
 var slideTableDisplayColumns = {'thumbnail': 'Thumbnail', 'sequence_num': 'Seq.', 'revision': 'Rev.', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
-var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideColumnValue, 'experiment_id': getSlideColumnValue, 'comment': getSlideColumnValue, 'tags': getSlideColumnValue, 'thumbnail': getSlideThumbnail};
+var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideBoxValue, 'experiment_id': getSlideExperimentValue, 'comment': getSlideColumnValue, 'tags': getSlideColumnValue, 'thumbnail': getSlideThumbnail};
 
 var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment', 'tags'];
 var slideDisplayColumns = {'id': 'Slide ID', 'box_of_origin_id': 'Box ID', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
@@ -1233,12 +1233,24 @@ function getSlideIdValue(slide, td, val, index) {
 	td.append(a);
 }
 
-function getSlideColumnValue(slide, td, val, index) {
+function getSlideBoxValue(slide, td, val, index) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
+	a.attr('href', 'javascript:displaySlideBox("' + val + '")');
 	a.html(val);
 	td.append(a);
+}
+
+function getSlideExperimentValue(slide, td, val, index) {
+	var a = $('<a>');
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:displaySlideExperiment("' + val + '")');
+	a.html(val);
+	td.append(a);
+}
+
+function getSlideColumnValue(slide, td, val, index) {
+	td.html(val);
 }
 
 function getSlideThumbnail(slide, td, val) {
@@ -1326,7 +1338,8 @@ function checkUncheckAll(tableId, thId, buttons) {
 	}
 }
 
-function checkAvailableSlides(tableId, thId, buttons) {
+function checkAvailableSlides(event, tableId, thId, buttons) {
+	event.stopPropagation();
 	var count = $('td', $('#' + tableId)).find('input:checked').length;
 	if (count == 0) {
 		$('#' + thId).prop('checked', false);
@@ -1398,13 +1411,14 @@ function displayUnassignedSlides() {
 		$.each(arr, function(i, row) {
 			var tr = $('<tr>');
 			tbody.append(tr);
+			tr.click(function(event) {displaySlidesDetails($(this));});
 			var td = $('<td>');
 			td.addClass('center');
 			tr.append(td);
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',
 				'slideId': row['id']});
-			input.click(function(event) {checkAvailableSlides('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
+			input.click(function(event) {checkAvailableSlides(event, 'unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
 			td.append(input);
 			$.each(slideTableColumns, function(j, col) {
 				if (!slideNoDisplayColumns.contains(col)) {
@@ -1501,13 +1515,14 @@ function appendSlides(item) {
 		$.each(arr, function(i, row) {
 			var tr = $('<tr>');
 			tbody.append(tr);
+			tr.click(function(event) {displaySlidesDetails($(this));});
 			var td = $('<td>');
 			td.addClass('center');
 			tr.append(td);
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',
 				'slideId': row['id']});
-			input.click(function(event) {checkAvailableSlides('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
+			input.click(function(event) {checkAvailableSlides(event, 'slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
 			td.append(input);
 			if (row['experiment_id'] == null) {
 				input.attr('disabled', 'disabled');
@@ -1563,6 +1578,36 @@ function appendSlides(item) {
 		$('#globusTransferButton').attr('disabled', 'disabled');
 		$('#globusTransferButton').addClass('disabledButton');
 	}
+}
+
+function displaySlidesDetails(tr) {
+	$.each($('tr', tr.parent()), function(i, row) {
+		if ($(row).hasClass('highlighted')) {
+			$(row).removeClass('highlighted');
+			if (i%2 == 1) {
+				$(row).addClass('odd');
+			}
+			return false;
+		}
+	});
+	tr.addClass('highlighted');
+	$.each($('tr', tr.parent()), function(i, row) {
+		if ($(row).hasClass('highlighted')) {
+			if (i%2 == 1) {
+				$(row).removeClass('odd');
+			}
+			return false;
+		}
+	});
+	displaySlideEntity($($(':checkbox', tr).get(0)).attr('slideId'));
+}
+
+function displaySlideEntity(id) {
+	var item = slidesDict[id];
+	if (item == null) {
+		item = unassignedSlidesDict[id];
+	}
+	displayEntity('slide', item);
 }
 
 function initTopPanel() {
@@ -2636,7 +2681,7 @@ function renderTransferFiles(files) {
 		input.attr({'type': 'checkbox',
 			'checked': 'checked',
 			'filename': file});
-		input.click(function(event) {checkAvailableSlides('filesTable', 'selectAllFilesTh', ['submitButton']);});
+		input.click(function(event) {checkAvailableSlides(event, 'filesTable', 'selectAllFilesTh', ['submitButton']);});
 		td.append(input);
 		td.hide();
 		$.each(filesTableColumns, function(j, col) {

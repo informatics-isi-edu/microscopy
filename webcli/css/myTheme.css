@@ -73,7 +73,7 @@
 
 .fancyTable {
 	/* text */
-	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-family: sans-serif, 'Helvetica Neue', Helvetica, Arial;
 	}
 
 .fancyTable tbody tr td {

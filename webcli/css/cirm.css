@@ -465,3 +465,7 @@ table.multiValues td {
 	text-align: left;
 }
 
+tr.highlighted {
+	background-color: #8ca9cf;
+}
+

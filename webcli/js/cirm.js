@@ -1237,6 +1237,7 @@ function getSlideBoxValue(slide, td, val, index) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
 	a.attr('href', 'javascript:displaySlideBox("' + val + '")');
+	a.click(function(event) {event.stopPropagation();});
 	a.html(val);
 	td.append(a);
 }
@@ -1245,8 +1246,17 @@ function getSlideExperimentValue(slide, td, val, index) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
 	a.attr('href', 'javascript:displaySlideExperiment("' + val + '")');
+	a.click(function(event) {event.stopPropagation();});
 	a.html(val);
 	td.append(a);
+}
+
+function displaySlideBox(id) {
+	displayEntity('box', boxesDict[id]);
+}
+
+function displaySlideExperiment(id) {
+	displayEntity('experiment', experimentsDict[id]);
 }
 
 function getSlideColumnValue(slide, td, val, index) {

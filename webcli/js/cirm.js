@@ -1148,7 +1148,7 @@ function selectNewSearch() {
 function selectSearch(keywords) {
 	$.each($('li', $('#SearchUL')), function(i, li) {
 		if ($(li).html() == keywords) {
-			$('#leftPanel').accordion( "option", "active", 3 );
+			$('#leftPanel').accordion( "option", "active", 2 );
 			$(li).click();
 			return false;
 		}
@@ -1195,21 +1195,21 @@ function initPanels() {
 	initTopPanel();
 	var leftPanel = $('#leftPanel');
 	leftPanel.html('');
-	var viewsContent = getEntityContent(viewsList, 'Views', 'View', displayView, null);
-	loadLeftPanel(leftPanel, viewsContent);
 	var boxesContent = getEntityContent(boxesList, 'Boxes', 'Box', displayBox, createBox);
 	loadLeftPanel(leftPanel, boxesContent);
 	var experimentsContent = getEntityContent(experimentsList, 'Experiments', 'Experiment', displayExperiment, createExperiment);
 	loadLeftPanel(leftPanel, experimentsContent);
 	var searchContent = getEntityContent(searchList, 'Search History', 'Search', displaySearch, null);
 	loadLeftPanel(leftPanel, searchContent);
+	var viewsContent = getEntityContent(viewsList, 'Admin', 'View', displayView, null);
+	loadLeftPanel(leftPanel, viewsContent);
 	var active = false;
 	if (newSearchKeywords != null) {
-		active = 3;
-	} else if (newExperimentId != null) {
 		active = 2;
-	} else if (newBoxId != null) {
+	} else if (newExperimentId != null) {
 		active = 1;
+	} else if (newBoxId != null) {
+		active = 0;
 	}
 	leftPanel.accordion({ 'header': 'h4',
 		'heightStyle': 'content',
@@ -3349,7 +3349,7 @@ function displayView(ul, li) {
 	li.addClass('highlighted');
 	$('#centerPanelTop').html('');
 	$('button[context="centerPanelBottom"]').hide();
-	if (li.html() == 'Globus Activity') {
+	if (li.html() == 'Transfer Activity') {
 		globusTasks(false);
 	} else if (li.html() == 'Printers') {
 		printersManaging();

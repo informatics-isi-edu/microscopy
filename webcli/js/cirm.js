@@ -1296,6 +1296,9 @@ function getSlideThumbnail(slide, td, val) {
 	}
 	a.append(img);
 	td.append(a);
+	if (img.attr('src') == 'images/blank.jpeg') {
+		a.click(function(event) {event.preventDefault();});
+	}
 }
 
 function getFileThumbnail(td, scan) {
@@ -3358,7 +3361,9 @@ function displaySlide(id) {
 	if (item == null) {
 		item = unassignedSlidesDict[id];
 	}
-	displayEntity('slide', item);
+	//displayEntity('slide', item);
+	var rightPanel = $('#rightPanelTop');
+	rightPanel.html('');
 	entityStack.push({'itemType': 'slide',
 		'item': item});
 	getScans(id);

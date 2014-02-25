@@ -1427,6 +1427,9 @@ function displayUnassignedSlides() {
 		table.append(tbody);
 		$.each(arr, function(i, row) {
 			var tr = $('<tr>');
+			if (i%2 == 1) {
+				tr.addClass('odd');
+			}
 			tbody.append(tr);
 			tr.click(function(event) {displaySlidesDetails($(this));});
 			var td = $('<td>');
@@ -1453,9 +1456,11 @@ function displayUnassignedSlides() {
 			});
 		});
 		$('.experiment', table).hide();
+		/*
 		table.fixedHeaderTable({ 
 			altClass: 'odd'
 		});
+		*/
 		$('#selectAllUnassignedSlidesTh').unbind('click');
 		$('#selectAllUnassignedSlidesTh').click(function(event) {checkUncheckAll('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
 	}
@@ -1531,6 +1536,9 @@ function appendSlides(item) {
 		table.append(tbody);
 		$.each(arr, function(i, row) {
 			var tr = $('<tr>');
+			if (i%2 == 1) {
+				tr.addClass('odd');
+			}
 			tbody.append(tr);
 			tr.click(function(event) {displaySlidesDetails($(this));});
 			var td = $('<td>');
@@ -1561,9 +1569,11 @@ function appendSlides(item) {
 			});
 		});
 		$('.'+item, table).hide();
+		/*
 		table.fixedHeaderTable({ 
 			altClass: 'odd'
 		});
+		*/
 		$('#selectAllAssignedSlidesTh').unbind('click');
 		$('#selectAllAssignedSlidesTh').click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
 	}
@@ -2690,6 +2700,9 @@ function renderTransferFiles(files) {
 	table1.append(tbody);
 	$.each(files, function(i, file) {
 		var tr = $('<tr>');
+		if (i%2 == 1) {
+			tr.addClass('odd');
+		}
 		tbody.append(tr);
 		var td = $('<td>');
 		td.addClass('center');
@@ -2711,9 +2724,11 @@ function renderTransferFiles(files) {
 			}
 		});
 	});
+	/*
 	table1.fixedHeaderTable({ 
 		altClass: 'odd'
 	});
+	*/
 	
 	var table = $('<table>');
 	globusDirsTd.append(table);
@@ -2872,6 +2887,9 @@ function renderGlobusTasks(tasks) {
 	globusTable.append(tbody);
 	$.each(tasks, function(i, task) {
 		var tr = $('<tr>');
+		if (i%2 == 1) {
+			tr.addClass('odd');
+		}
 		tbody.append(tr);
 		$.each(globusTasksTableColumns, function(j, col) {
 			var td = $('<td>');
@@ -2885,9 +2903,11 @@ function renderGlobusTasks(tasks) {
 			}
 		});
 	});
+	/*
 	globusTable.fixedHeaderTable({ 
 		altClass: 'odd',
 	});
+	*/
 	$('button[context="centerPanelBottom"]').hide();
 	$('#globusRefreshButton').show();
 	selectedEndpoint = null;

@@ -452,7 +452,8 @@ div.attributes {
 }
 
 .container_div .grid_div {
-	width: 99%;
+	/* width: 99%;*/
+	width: 100%;
 }
 
 .height_table_div {
@@ -469,3 +470,10 @@ tr.highlighted {
 	background-color: #8ca9cf;
 }
 
+#slidesTable tr.odd td, #unassignedSlidesTable tr.odd td, #filesTable tr.odd td, #globusActivityTable tr.odd td
+{
+	color:#000000;
+	/*background-color: #D3D6FF;*/
+	/*background-color: #FFF5FF;*/
+	background-color: #F4FAFF;
+}

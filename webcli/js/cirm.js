@@ -110,7 +110,7 @@ var isSlidePrinter = false;
 var entityStack = [];
 var timestampsColumns = ['completion_time', 'deadline', 'request_time']
 
-var viewsList = ['Globus Activity', 'Printers'];
+var viewsList = ['Transfer Activity', 'Printers'];
 
 var containerLayout = null;
 
@@ -615,66 +615,71 @@ function renderLogin() {
 		submitMobileLogin();
 		return;
 	}
-	var uiDiv = $('#cirm');
-	uiDiv.html('');
-	var logoDiv = $('<div>');
-	uiDiv.append(logoDiv);
-	var img = $('<img>');
-	logoDiv.append(img);
-	img.attr({'alt': 'USC logo',
-		'src': '/cirm/images/usc-primaryshieldwordmark.png',
-		'width': 300,
-		'height': 100
+	token = $.cookie(goauth_cookie);
+	if (token != null) {
+		submitLogin();
+	} else {
+		var uiDiv = $('#cirm');
+		uiDiv.html('');
+		var logoDiv = $('<div>');
+		uiDiv.append(logoDiv);
+		var img = $('<img>');
+		logoDiv.append(img);
+		img.attr({'alt': 'USC logo',
+			'src': '/cirm/images/usc-primaryshieldwordmark.png',
+			'width': 300,
+			'height': 100
+			});
+		img.addClass('center');
+		var fieldsetDiv = $('<div>');
+		uiDiv.append(fieldsetDiv);
+		fieldsetDiv.addClass('center_fieldset');
+		fieldsetDiv.append('<br/><br/>');
+		var fieldset = $('<fieldset>');
+		fieldsetDiv.append(fieldset);
+		var legend = $('<legend>');
+		fieldset.append(legend);
+		legend.html('Login');
+		var table = $('<table>');
+		fieldset.append(table);
+		var tr = $('<tr>');
+		table.append(tr);
+		var td = $('<td>');
+		tr.append(td);
+		td.html('Username: ');
+		td.addClass('tag');
+		var input = $('<input>');
+		input.attr({'type': 'text',
+			'id': 'username',
+			'name': 'username',
+			'size': 15
 		});
-	img.addClass('center');
-	var fieldsetDiv = $('<div>');
-	uiDiv.append(fieldsetDiv);
-	fieldsetDiv.addClass('center_fieldset');
-	fieldsetDiv.append('<br/><br/>');
-	var fieldset = $('<fieldset>');
-	fieldsetDiv.append(fieldset);
-	var legend = $('<legend>');
-	fieldset.append(legend);
-	legend.html('Login');
-	var table = $('<table>');
-	fieldset.append(table);
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.html('Username: ');
-	td.addClass('tag');
-	var input = $('<input>');
-	input.attr({'type': 'text',
-		'id': 'username',
-		'name': 'username',
-		'size': 15
-	});
-	td.append(input);
-	tr = $('<tr>');
-	table.append(tr);
-	td = $('<td>');
-	tr.append(td);
-	td.html('Password: ');
-	td.addClass('tag');
-	var input = $('<input>');
-	input.attr({'type': 'password',
-		'id': 'password',
-		'name': 'password',
-		'size': 15
-	});
-	td.append(input);
-	input.keyup(function(event) {checkSubmitLogin(event);});
-	tr = $('<tr>');
-	table.append(tr);
-	td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'type': 'button',
-		'value': 'Login'
-	});
-	td.append(input);
-	input.click(function(event) {submitLogin();});
+		td.append(input);
+		tr = $('<tr>');
+		table.append(tr);
+		td = $('<td>');
+		tr.append(td);
+		td.html('Password: ');
+		td.addClass('tag');
+		var input = $('<input>');
+		input.attr({'type': 'password',
+			'id': 'password',
+			'name': 'password',
+			'size': 15
+		});
+		td.append(input);
+		input.keyup(function(event) {checkSubmitLogin(event);});
+		tr = $('<tr>');
+		table.append(tr);
+		td = $('<td>');
+		tr.append(td);
+		var input = $('<input>');
+		input.attr({'type': 'button',
+			'value': 'Login'
+		});
+		td.append(input);
+		input.click(function(event) {submitLogin();});
+	}
 }
 
 function submitLogout() {
@@ -741,8 +746,8 @@ function make_basic_auth(user, password) {
 function submitGlobusLogin(username, password) {
 	token = $.cookie(goauth_cookie);
 	if (token != null) {
-		$.removeCookie(goauth_cookie);
-		token = null;
+		//$.removeCookie(goauth_cookie);
+		//token = null;
 	}
 	if (token == null) {
 		var url = '/service/nexus/goauth/token?grant_type=client_credentials';
@@ -768,6 +773,8 @@ function submitGlobusLogin(username, password) {
 			$.cookie(goauth_cookie, token, { expires: 7 });
 			checkGlobusAuthorization();
 		}
+	} else {
+		checkGlobusAuthorization();
 	}
 }
 

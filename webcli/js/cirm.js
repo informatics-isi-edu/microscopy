@@ -1243,27 +1243,35 @@ function getSlideIdValue(slide, td, val, index) {
 function getSlideBoxValue(slide, td, val, index) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:displaySlideBox("' + val + '")');
+	a.attr('href', 'javascript:selectSlideBox("' + val + '")');
 	a.click(function(event) {event.stopPropagation();});
 	a.html(val);
 	td.append(a);
+}
+
+function selectSlideBox(boxId) {
+	$('#leftPanel').accordion( "option", "active", 0 );
+	$.each($('li', $('#BoxUL')), function(i, box) {
+		if ($(box).html() == boxId) {
+			$(box).click();
+			return false;
+		}
+	});
 }
 
 function getSlideExperimentValue(slide, td, val, index) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:displaySlideExperiment("' + val + '")');
+	a.attr('href', 'javascript:selectSlideExperiment("' + val + '")');
 	a.click(function(event) {event.stopPropagation();});
 	a.html(val);
 	td.append(a);
 }
 
-function displaySlideBox(id) {
-	displayEntity('box', boxesDict[id]);
-}
-
-function displaySlideExperiment(id) {
-	displayEntity('experiment', experimentsDict[id]);
+function selectSlideExperiment(experimentId) {
+	newExperimentId = experimentId;
+	$('#leftPanel').accordion( "option", "active", 1 );
+	selectNewExperiment();
 }
 
 function getSlideColumnValue(slide, td, val, index) {

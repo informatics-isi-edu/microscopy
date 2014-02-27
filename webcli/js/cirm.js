@@ -24,6 +24,8 @@ var BOX_PRINTER_PORT = 9100;
 var PRINTER_ADDR = null;
 var PRINTER_PORT = 0;
 var HOME;
+var CIRM_HOME;
+var PAGE_URL = null;
 var USER;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
@@ -412,6 +414,9 @@ function initCIRM() {
 			return;
 		}
 	}
+	window.onpopstate = function(event) {
+		goBack(event);
+	};
 	getBoxes(null);
 }
 
@@ -509,7 +514,13 @@ function postGetExperiments(data, textStatus, jqXHR, param) {
 		$.each(data, function(i, item) {
 			experimentsDict[item['id']] = item;
 		});
+		if (PAGE_URL == null) {
+			pushHistoryState('drawPanels', '', '', null);
+		}
 		drawPanels();
+		if (PAGE_URL != null) {
+			initPage();
+		}
 	}
 }
 
@@ -558,7 +569,7 @@ function postGetExperimentSlides(data, textStatus, jqXHR, param) {
 
 function getExperimentScans(experimentId) {
 	var url = ERMREST_HOME + '/slide/experiment_id=' + encodeSafeURIComponent(experimentId) + '/scan';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentScans, null, null, 0);
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentScans, {'id': experimentId}, null, 0);
 }
 
 function postGetExperimentScans(data, textStatus, jqXHR, param) {
@@ -567,6 +578,7 @@ function postGetExperimentScans(data, textStatus, jqXHR, param) {
 	$.each(data, function(i, item) {
 		scansDict[item['id']] = item;
 	});
+	pushHistoryState('experiment', '', 'query=experiment&id='+encodeSafeURIComponent(param['id']), {'id': param['id']});
 	appendSlides('experiment');
 	selectNewSlide();
 }
@@ -587,7 +599,7 @@ function postGetSlides(data, textStatus, jqXHR, param) {
 
 function getBoxScans(boxId) {
 	var url = ERMREST_HOME + '/scan/id::regexp::' + encodeSafeURIComponent(boxId) + '*';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxScans, null, null, 0);
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxScans, {'id': boxId}, null, 0);
 }
 
 function postGetBoxScans(data, textStatus, jqXHR, param) {
@@ -596,12 +608,18 @@ function postGetBoxScans(data, textStatus, jqXHR, param) {
 	$.each(data, function(i, item) {
 		scansDict[item['id']] = item;
 	});
+	pushHistoryState('box', '', 'query=box&id='+encodeSafeURIComponent(param['id']), {'id': param['id']});
 	appendSlides('box');
 	selectNewSlide();
 }
 
 function renderLogin() {
-	HOME = '' + window.location;
+	HOME = CIRM_HOME = '' + window.location;
+	var index = CIRM_HOME.indexOf('#');
+	if (index > 0) {
+		PAGE_URL = CIRM_HOME.substring(index+1);
+		CIRM_HOME = CIRM_HOME.substring(0, index);
+	}
 	var index = HOME.lastIndexOf('/cirm');
 	HOME = HOME.substring(0, index);
 	ERMREST_HOME = HOME + ERMREST_HOME;
@@ -697,7 +715,7 @@ function submitLogout() {
 
 function postSubmitLogout(data, textStatus, jqXHR, param) {
 	if (mobileParams == null) {
-		window.location = window.location;
+		window.location = CIRM_HOME;
 	} else {
 		mobileRequest();
 	}
@@ -730,6 +748,9 @@ function submitMobileDatabaseLogin() {
 
 function submitLogin() {
 	USER = $('#username').val();
+	if (USER == null && history.state != null) {
+		USER = history.state['user'];
+	}
 	if (GLOBUS_AUTHN) {
 		submitGlobusLogin($('#username').val(), $('#password').val());
 	} else {
@@ -1259,6 +1280,16 @@ function selectSlideBox(boxId) {
 	});
 }
 
+function selectSlideSearch(value) {
+	$('#leftPanel').accordion( "option", "active", 2 );
+	$.each($('li', $('#SearchUL')), function(i, li) {
+		if ($(li).html() == value) {
+			$(li).click();
+			return false;
+		}
+	});
+}
+
 function getSlideExperimentValue(slide, td, val, index) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
@@ -1337,7 +1368,7 @@ function addSlides() {
 		});
 		arr.push(obj);
 	});
-	cirmAJAX.PUT(url, 'application/json', false, arr, true, postAddSlides, null, null, 0);
+	cirmAJAX.PUT(url, 'application/json', false, arr, true, postAddSlides, {'id': experimentId}, null, 0);
 }
 
 function postAddSlides(data, textStatus, jqXHR, param) {
@@ -1345,6 +1376,7 @@ function postAddSlides(data, textStatus, jqXHR, param) {
 		slidesList.push(item);
 		slidesDict[item['id']] = item;
 	});
+	pushHistoryState('experiment', '', 'query=experiment&id='+encodeSafeURIComponent(param['id']), {'id': param['id']});
 	appendSlides('experiment');
 }
 
@@ -1729,6 +1761,7 @@ function checkSearch(event) {
 			} else {
 				searchList.unshift(originalValue);
 				newSearchKeywords = originalValue;
+				pushHistoryState('drawPanels', '', 'query=drawPanels&newSearchKeywords='+encodeSafeURIComponent(newSearchKeywords), {'newSearchKeywords': newSearchKeywords});
 				drawPanels();
 				newSearchKeywords = null;
 				selectNewSearch();
@@ -1799,6 +1832,7 @@ function postGetBoxSearchSlides(data, textStatus, jqXHR, param) {
 	});
 	slidesList.sort(compareIds);
 	entityStack = [];
+	pushHistoryState('search', '', 'query=search&keywords='+encodeSafeURIComponent(param['originalValue']), {'keywords': param['originalValue']});
 	appendSlides('search');
 }
 
@@ -1909,9 +1943,6 @@ function appendImage(images) {
 		img.dblclick(function(event) {enlargeImage($(this), image);});
 	});
 	$('button[context="centerPanelBottom"]').hide();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {entityStack.pop(); backupRightPanel(); appendSlides(getSlidesType());});
-	//$('#backButton').show();
 	$('#printBoxButton').hide();
 	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
@@ -2152,11 +2183,6 @@ function editItem(col) {
 
 function displayScan(img, image) {
 	displayEntity('scan', image);
-	entityStack.push({'itemType': 'scan',
-		'item': image});
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {entityStack.pop(); entityStack.pop(); backupRightPanel(); appendSlides(getSlidesType());});
-	//$('#backButton').show();
 	$('#transferButton').unbind('click');
 	$('#transferButton').click(function(event) {transferImage(image);});
 	$('#transferButton').show();
@@ -2856,9 +2882,6 @@ function renderTransferFiles(files) {
 	$('#submitButton').attr('disabled', 'disabled');
 	$('#submitButton').addClass('disabledButton');
 	$('#submitButton').show();
-	$('#backButton').unbind('click');
-	$('#backButton').click(function(event) {backupRightPanel(); appendSlides(getSlidesType());});
-	//$('#backButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
@@ -3365,15 +3388,15 @@ function createExperiment() {
 }
 
 function displaySlide(id) {
-	var item = slidesDict[id];
-	if (item == null) {
-		item = unassignedSlidesDict[id];
-	}
-	//displayEntity('slide', item);
 	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
-	entityStack.push({'itemType': 'slide',
-		'item': item});
+	var currentState = history.state;
+	if (currentState != null && 
+			(currentState['query'] == 'box' || currentState['query'] == 'experiment' || currentState['query'] == 'search')) {
+		pushHistoryState('scan', '', 
+				'query=scan&slide='+encodeSafeURIComponent(id), 
+				{'slide': id});
+	}
 	getScans(id);
 }
 
@@ -3396,8 +3419,6 @@ function displayBox(ul, li) {
 	$('button[context="centerPanelBottom"]').hide();
 	displayEntity('box', boxesDict[li.html()]);
 	entityStack = [];
-	entityStack.push({'itemType': 'box',
-		'item': boxesDict[li.html()]});
 	getSlides(li.html());
 }
 
@@ -3408,8 +3429,6 @@ function displayExperiment(ul, li) {
 	$('button[context="centerPanelBottom"]').hide();
 	displayEntity('experiment', experimentsDict[li.html()]);
 	entityStack = [];
-	entityStack.push({'itemType': 'experiment',
-		'item': experimentsDict[li.html()]});
 	getExperimentSlides(li.html());
 }
 
@@ -3847,4 +3866,86 @@ function clear() {
 	$('#search').val('');
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
+}
+
+function pushHistoryState(query, title, url, params) {
+	var state = {
+			'query': query,
+			'user': USER
+			};
+	if (params != null) {
+		$.each(params, function(key, val) {
+			state[key] = val;
+		})
+	}
+	var currentState = history.state;
+	if (!testEqual(currentState, state)) {
+		history.pushState(state, title, CIRM_HOME+'#'+url);
+	}
+}
+
+function goBack(event) {
+	var state = event.state;
+	if (state != null) {
+		$('#welcomeLink').html('Welcome ' + state['user'] + '!');
+		renderQuery(state);
+	} else {
+		history.back();
+	}
+}
+
+function testEqual(obj1, obj2) {
+	var ret = false;
+	if (obj1 != null && obj2 != null) {
+		ret = true;
+		$.each(obj1, function(key, val) {
+			if (obj2[key] != val) {
+				ret = false;
+				return false;
+			}
+		});
+		if (ret) {
+			$.each(obj2, function(key, val) {
+				if (obj1[key] != val) {
+					ret = false;
+					return false;
+				}
+			});
+		}
+	}
+	return ret;
+}
+
+function initPage() {
+	var state = {};
+	var parts = PAGE_URL.split('&');
+	PAGE_URL = null;
+	$.each(parts, function(i, part) {
+		var param = part.split('=');
+		state[param[0]] = decodeURIComponent(param[1]);
+	});
+	renderQuery(state);
+}
+
+function renderQuery(state) {
+	var query = state['query'];
+	if (query == '') {
+		drawPanels();
+	} else if (query == 'drawPanels') {
+		newSearchKeywords = state['newSearchKeywords'];
+		drawPanels();
+		if (newSearchKeywords != null) {
+			$('#search').val(newSearchKeywords);
+			newSearchKeywords = null;
+			selectNewSearch();
+		}
+	} else if (query == 'box') {
+		selectSlideBox(state['id']);
+	} else if (query == 'experiment') {
+		selectSlideExperiment(state['id']) ;
+	} else if (query == 'search') {
+		selectSearch(state['keywords']);
+	} else if (query == 'scan') {
+		displaySlide(state['slide']);
+	}
 }

@@ -3673,6 +3673,7 @@ function postSubmitTransfer(data, textStatus, jqXHR, param) {
 		}
 	});
 	files.sort(compareIgnoreCase);
+	pushHistoryState(null, '', '', null);
 	renderTransferFiles(files);
 }
 
@@ -3867,24 +3868,28 @@ function clear() {
 }
 
 function pushHistoryState(query, title, url, params) {
-	var state = {
-			'query': query,
-			'user': USER
-			};
-	if (params != null) {
-		$.each(params, function(key, val) {
-			state[key] = val;
-		})
-	}
-	var currentState = history.state;
-	if (!testEqual(currentState, state)) {
-		history.pushState(state, title, CIRM_HOME+'#'+url);
+	if (query == null) {
+		history.pushState({}, title, CIRM_HOME+'#'+url);
+	} else {
+		var state = {
+				'query': query,
+				'user': USER
+				};
+		if (params != null) {
+			$.each(params, function(key, val) {
+				state[key] = val;
+			})
+		}
+		var currentState = history.state;
+		if (!testEqual(currentState, state)) {
+			history.pushState(state, title, CIRM_HOME+'#'+url);
+		}
 	}
 }
 
 function goBack(event) {
 	var state = event.state;
-	if (state != null) {
+	if (state != null && state['query'] != null) {
 		$('#welcomeLink').html('Welcome ' + state['user'] + '!');
 		renderQuery(state);
 	} else {

@@ -49,6 +49,7 @@ var newBoxId = null;
 var newExperimentId = null;
 var newSlideId = null;
 var newSearchKeywords = null;
+var ACTIVITY_TASK_ID = null;
 
 var goauth_cookie = 'globusonline-goauth';
 var token = null;
@@ -1248,7 +1249,7 @@ function initPanels() {
 function getTaskIdValues(td, val) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:getTaskStatus("' + val + '")');
+	a.attr('href', 'javascript:displayTaskStatus("' + val + '")');
 	a.html(val);
 	td.append(a);
 }
@@ -2312,7 +2313,7 @@ function initCenterPanelButtons(panel) {
 	panel.append(button);
 	button.attr('id', 'refreshActivityButton');
 	button.attr('context', 'centerPanelBottom');
-	button.html('Refresh');
+	button.html('Get Status');
 	button.button({icons: {primary: 'ui-icon-refresh'}});
 
 	$('button', panel).hide();
@@ -2936,6 +2937,10 @@ function renderGlobusTasks(tasks) {
 	*/
 	$('button[context="centerPanelBottom"]').hide();
 	selectedEndpoint = null;
+	if (ACTIVITY_TASK_ID != null) {
+		displayTaskStatus(ACTIVITY_TASK_ID);
+		ACTIVITY_TASK_ID = null;
+	}
 }
 
 function setSelectedEndpoint(value) {
@@ -2976,7 +2981,10 @@ function globusTasks(fromRefresh) {
 	}
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
-	pushHistoryState('globus', '', 'query=globus', null);
+	var currentState = history.state;
+	if (currentState != null && currentState['query'] != 'transfer') {
+		pushHistoryState('globus', '', 'query=globus', null);
+	}
 	var url = SERVICE_TRANSFER_HOME + 'task_list?fields=task_id,request_time,completion_time,destination_endpoint,bytes_transferred,label,status,source_endpoint&orderby=request_time desc';
 	cirmAJAX.GET(url, 'application/json', false, postGlobusTasks, null, null, MAX_RETRIES+1);
 }
@@ -3676,6 +3684,8 @@ function globusFileTransfer() {
 		$('#submitButton').addClass('disabledButton');
 		return;
 	}
+	$('#submitButton').attr('disabled', 'disabled');
+	$('#submitButton').addClass('disabledButton');
 	var endpoint_2 = $('#destinationEnpointInput').val();
 	var files = [];
 	$.each($('td', $('#filesTable')).find('input:checked'), function(i, checkbox) {
@@ -3715,10 +3725,16 @@ function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
 		$('#refreshActivityButton').removeClass('disabledButton');
 		$('#refreshActivityButton').unbind('click');
 		$('#refreshActivityButton').click(function(event) {getTaskStatus(data['task_id']);});
+		pushHistoryState('transfer', '', 'query=transfer&id='+encodeSafeURIComponent(data['task_id']), {'id': data['task_id']});
 		getTaskStatus(data['task_id']);
 	} else {
 		alert(data['error']);
 	}
+}
+
+function displayTaskStatus(id) {
+	pushHistoryState('transfer', '', 'query=transfer&id='+encodeSafeURIComponent(id), {'id': id});
+	getTaskStatus(id);
 }
 
 function submitPrintSlide() {
@@ -3930,6 +3946,9 @@ function renderQuery(state) {
 	} else if (query == 'scan') {
 		displaySlide(state['slide']);
 	} else if (query == 'globus') {
+		selectTransfer();
+	} else if (query == 'transfer') {
+		ACTIVITY_TASK_ID = state['id'];
 		selectTransfer();
 	}
 }

@@ -112,7 +112,7 @@ var isSlidePrinter = false;
 var entityStack = [];
 var timestampsColumns = ['completion_time', 'deadline', 'request_time']
 
-var viewsList = ['Transfer Activity', 'Printers'];
+var viewsList = ['Transfer', 'Printers'];
 
 var containerLayout = null;
 
@@ -1280,6 +1280,16 @@ function selectSlideBox(boxId) {
 	});
 }
 
+function selectTransfer() {
+	$('#leftPanel').accordion( "option", "active", 3 );
+	$.each($('li', $('#ViewUL')), function(i, li) {
+		if ($(li).html() == 'Transfer') {
+			$(li).click();
+			return false;
+		}
+	});
+}
+
 function selectSlideSearch(value) {
 	$('#leftPanel').accordion( "option", "active", 2 );
 	$.each($('li', $('#SearchUL')), function(i, li) {
@@ -2300,13 +2310,6 @@ function initCenterPanelButtons(panel) {
 
 	button = $('<button>');
 	panel.append(button);
-	button.attr('id', 'globusRefreshButton');
-	button.attr('context', 'centerPanelBottom');
-	button.html('Refresh');
-	button.button({icons: {primary: 'ui-icon-refresh'}}).click(function(event) {globusTasks(true);});
-
-	button = $('<button>');
-	panel.append(button);
 	button.attr('id', 'refreshActivityButton');
 	button.attr('context', 'centerPanelBottom');
 	button.html('Refresh');
@@ -2881,6 +2884,10 @@ function renderGlobusTasks(tasks) {
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('');
 	centerPanel.show();
+	var p = $('<p>');
+	p.addClass('intro');
+	centerPanel.append(p);
+	p.html('Globus Activity');
 	var containerDiv = $('<div>');
 	centerPanel.append(containerDiv);
 	containerDiv.addClass('container_div');
@@ -2928,7 +2935,6 @@ function renderGlobusTasks(tasks) {
 	});
 	*/
 	$('button[context="centerPanelBottom"]').hide();
-	$('#globusRefreshButton').show();
 	selectedEndpoint = null;
 }
 
@@ -2970,7 +2976,7 @@ function globusTasks(fromRefresh) {
 	}
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
-	$('#globusRefreshButton').show();
+	pushHistoryState('globus', '', 'query=globus', null);
 	var url = SERVICE_TRANSFER_HOME + 'task_list?fields=task_id,request_time,completion_time,destination_endpoint,bytes_transferred,label,status,source_endpoint&orderby=request_time desc';
 	cirmAJAX.GET(url, 'application/json', false, postGlobusTasks, null, null, MAX_RETRIES+1);
 }
@@ -3384,7 +3390,7 @@ function displayView(ul, li) {
 	li.addClass('highlighted');
 	$('#centerPanelTop').html('');
 	$('button[context="centerPanelBottom"]').hide();
-	if (li.html() == 'Transfer Activity') {
+	if (li.html() == 'Transfer') {
 		globusTasks(false);
 	} else if (li.html() == 'Printers') {
 		printersManaging();
@@ -3923,5 +3929,7 @@ function renderQuery(state) {
 		selectSearch(state['keywords']);
 	} else if (query == 'scan') {
 		displaySlide(state['slide']);
+	} else if (query == 'globus') {
+		selectTransfer();
 	}
 }

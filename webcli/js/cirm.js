@@ -1515,7 +1515,6 @@ function displayUnassignedSlides() {
 	$('#addButton').addClass('disabledButton');
 	$('#addSlidesButton').hide();
 	$('#printSlideButton').hide();
-	$('#refreshButton').hide();
 	$('#globusTransferButton').hide();
 	$('#centerPanelMiddle').show();
 	$('#centerPanelTop').hide();
@@ -1626,7 +1625,6 @@ function appendSlides(item) {
 		$('#printSlideButton').attr('disabled', 'disabled');
 		$('#printSlideButton').addClass('disabledButton');
 	}
-	$('#refreshButton').show();
 	$('button[context="centerPanelBottom"]').hide();
 	if (item == 'box') {
 		$('#createSlideButton').show();
@@ -1944,7 +1942,6 @@ function appendImage(images) {
 	});
 	$('button[context="centerPanelBottom"]').hide();
 	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 }
@@ -2189,7 +2186,6 @@ function displayScan(img, image) {
 	$('#enlargeButton').unbind('click');
 	$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
 	$('#enlargeButton').show();
-	$('#refreshButton').hide();
 
 	$('img', $('#centerPanelTop')).removeClass('highlighted');
 	img.addClass('highlighted');
@@ -2335,14 +2331,7 @@ function initBottomPanel(panel) {
 	button.html('Print Box');
 	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintBox();});
 
-	button = $('<button>');
-	panel.append(button);
-	button.attr('id', 'refreshButton');
-	button.html('Refresh');
-	button.button({icons: {primary: 'ui-icon-refresh'}}).click(function(event) {refresh();});
-
 	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
 }
 
 function editEntity(item) {
@@ -2363,7 +2352,6 @@ function editEntity(item) {
 	});
 
 	$('#printBoxButton').hide();
-	$('#refreshButton').show();
 }
 
 function updateEntity(item, column, isMultiValue) {
@@ -2441,11 +2429,9 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	colList = temp;
 	displayEntity(item, data);
 	$('#printBoxButton').hide();
-	$('#refreshButton').show();
 	if (item == 'scan') {
 		$('#transferButton').show();
 		$('#enlargeButton').show();
-		$('#refreshButton').hide();
 	} else if (item == 'box') {
 		$('#printBoxButton').show();
 	}
@@ -2655,7 +2641,6 @@ function createSlide() {
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
-	$('#refreshButton').hide();
 	$('#printBoxButton').hide();
 }
 
@@ -2982,7 +2967,6 @@ function globusTasks(fromRefresh) {
 	if (!fromRefresh) {
 		$('#rightPanelTop').html('');
 		$('#printBoxButton').hide();
-		$('#refreshButton').hide();
 	}
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
@@ -3000,7 +2984,6 @@ function printersManaging() {
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
 	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('<p class="intro"></p>');
 	var p = $('<p>');
@@ -3163,7 +3146,6 @@ function printerManaging(printer) {
 	$('#backButton').click(function(event) {printersManaging();});
 	$('#backButton').show();
 	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 }
@@ -3210,7 +3192,6 @@ function printerSettings() {
 	$('#cancelButton').show();
 	$('#saveButton').show();
 	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
 }
 
 function updatePrinterSettings() {
@@ -3231,7 +3212,6 @@ function cancelPrinterSettings() {
 	rightPanel.html('');
 	$('button', $('#rightPanelBottom')).hide();
 	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
 }
 
 function managePrinter(param) {
@@ -3381,7 +3361,6 @@ function createExperiment() {
 	$('#cancelCreateButton').click(function(event) {clear();});
 	$('#cancelCreateButton').show();
 	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
@@ -3560,7 +3539,6 @@ function createBox() {
 	$('#createButton').attr('disabled', 'disabled');
 	$('#createButton').addClass('disabledButton');
 	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
@@ -3661,7 +3639,6 @@ function postSaveSlide(data, textStatus, jqXHR, param) {
 function submitTransfer() {
 	$('#rightPanelTop').html('');
 	$('button', $('#rightPanelBottom')).hide();
-	$('#refreshButton').hide();
 	var url = ERMREST_HOME + '/scan/';
 	var slides = [];
 	$.each($('td', $('#slidesTable')).find('input:checked'), function(i, checkbox) {
@@ -3860,7 +3837,6 @@ function clear() {
 	$('#rightPanelTop').html('');
 	$('#centerPanelTop').html(CIRM_START_INFO);
 	$('#printBoxButton').hide();
-	$('#refreshButton').hide();
 	$('button[context="centerPanelBottom"]').hide();
 	$('button', $('#rightPanelBottom')).hide();
 	$('#search').val('');

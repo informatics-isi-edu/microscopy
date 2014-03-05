@@ -1221,7 +1221,7 @@ function initPanels() {
 	loadLeftPanel(leftPanel, boxesContent);
 	var experimentsContent = getEntityContent(experimentsList, 'Experiments', 'Experiment', displayExperiment, createExperiment);
 	loadLeftPanel(leftPanel, experimentsContent);
-	var searchContent = getEntityContent(searchList, 'Search History', 'Search', displaySearch, null);
+	var searchContent = getEntityContent(searchList, 'Recent Searches', 'Search', displaySearch, null);
 	loadLeftPanel(leftPanel, searchContent);
 	var viewsContent = getEntityContent(viewsList, 'Admin', 'View', displayView, null);
 	loadLeftPanel(leftPanel, viewsContent);

@@ -1949,7 +1949,9 @@ function appendImage(images) {
 			});
 		centerPanel.append(img);
 		img.click(function(event) {displayScan($(this), image);});
-		img.dblclick(function(event) {enlargeImage($(this), image);});
+		if (image['tilesdir'][0] != '/') {
+			img.dblclick(function(event) {enlargeImage($(this), image);});
+		}
 	});
 	$('button[context="centerPanelBottom"]').hide();
 	$('#printBoxButton').hide();
@@ -1963,6 +1965,7 @@ function enlargeImage(img, image) {
 		mobileParams = {};
 		getSlide(label);
 	} else {
+		//var ZOOMIFY_HOME = 'http://cirm-dev.misd.isi.edu/cirm/zoomify/';
 		var tilesHTML = ZOOMIFY_HOME + image['tilesdir'].substr(0, image['tilesdir'].length-1);
 		window.open(
 		  tilesHTML,
@@ -2195,7 +2198,14 @@ function displayScan(img, image) {
 	$('#transferButton').click(function(event) {transferImage(image);});
 	$('#transferButton').show();
 	$('#enlargeButton').unbind('click');
-	$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
+	if (image['tilesdir'][0] != '/') {
+		$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
+		$('#enlargeButton').removeAttr('disabled');
+		$('#enlargeButton').removeClass('disabledButton');
+	} else {
+		$('#enlargeButton').attr('disabled', 'disabled');
+		$('#enlargeButton').addClass('disabledButton');
+	}
 	$('#enlargeButton').show();
 
 	$('img', $('#centerPanelTop')).removeClass('highlighted');
@@ -2453,8 +2463,12 @@ function cancel(itemType, item) {
 }
 
 function transferImage(image) {
-	//var czi = 'http://cirm-dev.misd.isi.edu/cirm-files/' + image['tilesdir'] + image['filename'];
-	var czi = DOWNLOAD_HOME + image['tilesdir'] + image['filename'];
+	var tilesDir = image['tilesdir'];
+	if (tilesDir[0] == '/') {
+		tilesDir = tilesDir.substr(1);
+	}
+	//var czi = 'http://cirm-dev.misd.isi.edu/cirm-files/' + tilesDir + image['filename'];
+	var czi = DOWNLOAD_HOME + tilesDir + image['filename'];
 	window.open(
 	  czi,
 	  '_blank' // <- This is what makes it open in a new window.

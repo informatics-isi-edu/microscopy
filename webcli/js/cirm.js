@@ -2385,7 +2385,7 @@ function updateEntity(item, column, isMultiValue) {
 		editCols = experimentEditColumns;
 	}
 
-	var url = ERMREST_HOME + '/' + item + '/id=' + encodeSafeURIComponent($('#idLabel').html());
+	var url = ERMREST_HOME + '/' + item;
 	var arr = [];
 	var obj = new Object();
 	$.each(cols, function(i, col) {

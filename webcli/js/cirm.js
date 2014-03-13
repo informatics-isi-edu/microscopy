@@ -2852,6 +2852,21 @@ function renderTransferFiles(files) {
 	td.append(input);
 	input.val('');
 	
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Deadline (minutes)');
+	var td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'id': 'transferDeadline',
+		'type': 'text',
+		'size': 5});
+	td.append(input);
+	input.val('10');
+	
 	globusDirsTd.append('<br>');
 
 	var table = $('<table>');
@@ -3709,6 +3724,11 @@ function globusFileTransfer() {
 		$('#submitButton').addClass('disabledButton');
 		return;
 	}
+	var transferDeadline = parseInt($('#transferDeadline').val());
+	if (isNaN(transferDeadline)) {
+		alert('Invalid value for the transfer deadline: "' + $('#transferDeadline').val() + '".');
+		return;
+	}
 	$('#submitButton').attr('disabled', 'disabled');
 	$('#submitButton').addClass('disabledButton');
 	var endpoint_2 = $('#destinationEnpointInput').val();
@@ -3730,6 +3750,7 @@ function globusFileTransfer() {
 	if ($('#transferLabelInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		obj['label'] = $('#transferLabelInput').val().replace(/^\s*/, "").replace(/\s*$/, "");
 	}
+	obj['deadline'] = transferDeadline;
 	obj['files'] = files;
 	var arr = [];
 	$.each(files, function(i, file) {

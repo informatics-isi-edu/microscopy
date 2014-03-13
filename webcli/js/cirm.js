@@ -1728,7 +1728,7 @@ function initTopPanel() {
 	div.attr('id', 'header');
 	topPanel.append(div);
 	var h1 = $('<h1>');
-	h1.html('CIRM Microscopy Image Viewer');
+	h1.html('Microscopy Image Manager');
 	div.append(h1);
 	var div = $('<div>');
 	div.attr('id', 'searchForm');

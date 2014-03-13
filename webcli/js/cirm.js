@@ -82,10 +82,10 @@ var experimentsList = [];
 // {"id":"20131115-myantibody2-KC-0","experiment_date":"2013-11-15","experiment_description":"myantibody2","initials":"KC","disambiguator":"0","comment":"This is Karl's experiment"}
 
 var slideNoDisplayColumns = ['id'];
-var slideClassColumns = {'box_of_origin_id': 'box', 'experiment_id': 'experiment'};
-var slideTableColumns = ['id', 'thumbnail', 'sequence_num', 'revision', 'box_of_origin_id', 'experiment_id', 'comment', 'tags'];
-var slideTableDisplayColumns = {'thumbnail': 'Thumbnail', 'sequence_num': 'Seq.', 'revision': 'Rev.', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
-var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideBoxValue, 'experiment_id': getSlideExperimentValue, 'comment': getSlideColumnValue, 'tags': getSlideColumnValue, 'thumbnail': getSlideThumbnail};
+var slideClassColumns = {'box_of_origin_id': 'box', 'experiment_id': 'experiment', 'sequence_num': 'center', 'revision': 'center', 'thumbnail': 'center', 'scans': 'center'};
+var slideTableColumns = ['id', 'sequence_num', 'revision', 'thumbnail', 'scans', 'box_of_origin_id', 'experiment_id', 'comment', 'tags'];
+var slideTableDisplayColumns = {'thumbnail': 'Thumbnail', 'scans': 'Scans', 'sequence_num': 'Seq.', 'revision': 'Rev.', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
+var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideBoxValue, 'experiment_id': getSlideExperimentValue, 'comment': getSlideColumnValue, 'tags': getSlideColumnValue, 'thumbnail': getSlideThumbnail, 'scans': getSlideScansNumber};
 
 var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment', 'tags'];
 var slideDisplayColumns = {'id': 'Slide ID', 'box_of_origin_id': 'Box ID', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
@@ -1318,6 +1318,16 @@ function selectSlideExperiment(experimentId) {
 
 function getSlideColumnValue(slide, td, val, index) {
 	td.html(val);
+}
+
+function getSlideScansNumber(slide, td, val) {
+	var no = 0;
+	$.each(scansList, function(i, scan) {
+		if (scan['id'].indexOf(slide['id']) == 0) {
+			no++;
+		}
+	});
+	td.html(no);
 }
 
 function getSlideThumbnail(slide, td, val) {

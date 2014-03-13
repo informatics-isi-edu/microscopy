@@ -108,6 +108,8 @@ p.intro {
 	text-align: center;
 	font-weight: bold;
 	font-size: 1.125em;
+	margin-top: 0.0em;
+	margin-bottom: 0.0em;
 }
 
 div.right, td.right {

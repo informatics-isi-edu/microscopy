@@ -37,6 +37,7 @@ class GlobusClient:
         token = json_data['token']
         endpoint_1 = json_data['endpoint_1']
         endpoint_2 = json_data['endpoint_2']
+        deadline = json_data['deadline']
         label = None
         if 'label' in json_data:
             label = json_data['label']
@@ -64,7 +65,7 @@ class GlobusClient:
             
             # start transfer
             code, message, data = api.transfer_submission_id()
-            t = api_client.Transfer(data['value'], endpoint_1, endpoint_2, deadline=datetime.utcnow() + timedelta(minutes=10), label=label)
+            t = api_client.Transfer(data['value'], endpoint_1, endpoint_2, deadline=datetime.utcnow() + timedelta(minutes=deadline), label=label)
             
             files = json_data['files']
             for item in files:

@@ -91,7 +91,7 @@ h5.center, div.center {
 
 li.highlighted {
 	background-color: #BDD7DB;
-	font-weight: bold;
+	/*font-weight: bold;*/
 }
 
 img.highlighted {

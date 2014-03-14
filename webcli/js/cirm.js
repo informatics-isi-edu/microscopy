@@ -638,67 +638,71 @@ function renderLogin() {
 	if (token != null) {
 		submitLogin();
 	} else {
-		var uiDiv = $('#cirm');
-		uiDiv.html('');
-		var logoDiv = $('<div>');
-		uiDiv.append(logoDiv);
-		var img = $('<img>');
-		logoDiv.append(img);
-		img.attr({'alt': 'USC logo',
-			'src': '/cirm/images/usc-primaryshieldwordmark.png',
-			'width': 300,
-			'height': 100
-			});
-		img.addClass('center');
-		var fieldsetDiv = $('<div>');
-		uiDiv.append(fieldsetDiv);
-		fieldsetDiv.addClass('center_fieldset');
-		fieldsetDiv.append('<br/><br/>');
-		var fieldset = $('<fieldset>');
-		fieldsetDiv.append(fieldset);
-		var legend = $('<legend>');
-		fieldset.append(legend);
-		legend.html('Login');
-		var table = $('<table>');
-		fieldset.append(table);
-		var tr = $('<tr>');
-		table.append(tr);
-		var td = $('<td>');
-		tr.append(td);
-		td.html('Username: ');
-		td.addClass('tag');
-		var input = $('<input>');
-		input.attr({'type': 'text',
-			'id': 'username',
-			'name': 'username',
-			'size': 15
-		});
-		td.append(input);
-		tr = $('<tr>');
-		table.append(tr);
-		td = $('<td>');
-		tr.append(td);
-		td.html('Password: ');
-		td.addClass('tag');
-		var input = $('<input>');
-		input.attr({'type': 'password',
-			'id': 'password',
-			'name': 'password',
-			'size': 15
-		});
-		td.append(input);
-		input.keyup(function(event) {checkSubmitLogin(event);});
-		tr = $('<tr>');
-		table.append(tr);
-		td = $('<td>');
-		tr.append(td);
-		var input = $('<input>');
-		input.attr({'type': 'button',
-			'value': 'Login'
-		});
-		td.append(input);
-		input.click(function(event) {submitLogin();});
+		renderLoginForm();
 	}
+}
+
+function renderLoginForm() {
+	var uiDiv = $('#cirm');
+	uiDiv.html('');
+	var logoDiv = $('<div>');
+	uiDiv.append(logoDiv);
+	var img = $('<img>');
+	logoDiv.append(img);
+	img.attr({'alt': 'USC logo',
+		'src': '/cirm/images/usc-primaryshieldwordmark.png',
+		'width': 300,
+		'height': 100
+		});
+	img.addClass('center');
+	var fieldsetDiv = $('<div>');
+	uiDiv.append(fieldsetDiv);
+	fieldsetDiv.addClass('center_fieldset');
+	fieldsetDiv.append('<br/><br/>');
+	var fieldset = $('<fieldset>');
+	fieldsetDiv.append(fieldset);
+	var legend = $('<legend>');
+	fieldset.append(legend);
+	legend.html('Login');
+	var table = $('<table>');
+	fieldset.append(table);
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.html('Username: ');
+	td.addClass('tag');
+	var input = $('<input>');
+	input.attr({'type': 'text',
+		'id': 'username',
+		'name': 'username',
+		'size': 15
+	});
+	td.append(input);
+	tr = $('<tr>');
+	table.append(tr);
+	td = $('<td>');
+	tr.append(td);
+	td.html('Password: ');
+	td.addClass('tag');
+	var input = $('<input>');
+	input.attr({'type': 'password',
+		'id': 'password',
+		'name': 'password',
+		'size': 15
+	});
+	td.append(input);
+	input.keyup(function(event) {checkSubmitLogin(event);});
+	tr = $('<tr>');
+	table.append(tr);
+	td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'type': 'button',
+		'value': 'Login'
+	});
+	td.append(input);
+	input.click(function(event) {submitLogin();});
 }
 
 function submitLogout() {
@@ -751,6 +755,10 @@ function submitLogin() {
 	USER = $('#username').val();
 	if (USER == null && history.state != null) {
 		USER = history.state['user'];
+		if (USER == null || USER == undefined) {
+			renderLoginForm();
+			return;
+		}
 	}
 	if (GLOBUS_AUTHN) {
 		submitGlobusLogin($('#username').val(), $('#password').val());

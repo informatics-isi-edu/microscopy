@@ -2451,6 +2451,9 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 		}
 	});
 	colList = temp;
+	if (item == 'slide') {
+		updateRowData(slideColumns, slideEditColumns, data);
+	}
 	displayEntity(item, data);
 	$('#printBoxButton').hide();
 	if (item == 'scan') {
@@ -4001,4 +4004,27 @@ function renderQuery(state) {
 		ACTIVITY_TASK_ID = state['id'];
 		selectTransfer();
 	}
+}
+
+function updateRowData(columns, editColumns, data) {
+	var tr = $($('tr.highlighted', $('#slidesTable')).get(0));
+	$.each(editColumns, function(i, col) {
+		var index = getColumnPosition(columns, col);
+		updateRow(tr, index, data[col]);
+	});
+}
+
+function getColumnPosition(table, col) {
+	var ret = 0;
+	$.each(table, function(i, name) {
+		if (name == col) {
+			ret = i+3;
+			return false;
+		}
+	});
+	return ret;
+}
+
+function updateRow(tr, index, value) {
+	$('td:nth-child('+index+')', tr).html(value);
 }

@@ -31,7 +31,7 @@ class GlobusClient:
         # get the transfer parameters
         input_data = cStringIO.StringIO(web.ctx.env['wsgi.input'].read())
         json_data = json.load(input_data)
-        #web.debug(('json_data', json_data))
+        web.debug(('json_data', json_data))
         response = []
         user = json_data['user']
         token = json_data['token']

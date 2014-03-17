@@ -479,3 +479,15 @@ tr.highlighted {
 	/*background-color: #FFF5FF;*/
 	background-color: #F4FAFF;
 }
+
+div.footnote {
+	background-color: rgb(238, 238, 238);
+	/* border: 1px solid rgb(204, 204, 204); */
+	/* border-radius: 5px 5px 5px 5px; */
+	width: 100%;
+}
+
+td.no_padding {
+	padding-left:0px;
+	padding-right:0px;
+}

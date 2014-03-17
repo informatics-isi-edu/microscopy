@@ -120,8 +120,7 @@
 
 .fancyTable thead tr th,
 .fancyTable thead tr td,
-.fancyTable tfoot tr th, 
-.fancyTable tfoot tr td {
+.fancyTable tfoot tr th {
 	/* appearance */
 	/*background-color: #8ca9cf;*/
 	background-color: #84BCC4;

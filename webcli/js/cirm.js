@@ -9,7 +9,6 @@ var debug = false;
 var selectedEndpoint = null;
 var endpointPath = [];
 
-var ENDPOINT_SOURCE='isidev#cirm-files';
 var TILES_DIR='/';
 var CXI_RET='Return value';
 var CXI_MSG='Return Message';
@@ -3764,6 +3763,7 @@ function globusFileTransfer() {
 	}
 	$('#submitButton').attr('disabled', 'disabled');
 	$('#submitButton').addClass('disabledButton');
+	var endpoint_1 = null;
 	var endpoint_2 = $('#destinationEnpointInput').val();
 	var files = [];
 	$.each($('td', $('#filesTable')).find('input:checked'), function(i, checkbox) {
@@ -3778,7 +3778,6 @@ function globusFileTransfer() {
 	var obj = new Object();
 	obj['user'] = USER;
 	obj['token'] = token;
-	obj['endpoint_1'] = ENDPOINT_SOURCE;
 	obj['endpoint_2'] = endpoint_2;
 	if ($('#transferLabelInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		obj['label'] = $('#transferLabelInput').val().replace(/^\s*/, "").replace(/\s*$/, "");
@@ -3788,10 +3787,16 @@ function globusFileTransfer() {
 	var arr = [];
 	$.each(files, function(i, file) {
 		var scan = filesDict[file];
-		var item = {};
-		item['file_from'] = TILES_DIR + scan['tilesdir'] + file;
-		item['file_to'] = destDir + file;
-		arr.push(item);
+		if (endpoint_1 == null) {
+			endpoint_1 = scan['endpoint'];
+			obj['endpoint_1'] = endpoint_1;
+		}
+		if (endpoint_1 == scan['endpoint']) {
+			var item = {};
+			item['file_from'] = TILES_DIR + scan['tilesdir'] + file;
+			item['file_to'] = destDir + file;
+			arr.push(item);
+		}
 	});
 	obj['files'] = arr;
 	cirmAJAX.POST(url, 'application/json', false, obj, true, postGlobusFileTransfer, null, null, 0);

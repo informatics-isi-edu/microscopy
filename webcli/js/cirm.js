@@ -9,7 +9,6 @@ var debug = false;
 var selectedEndpoint = null;
 var endpointPath = [];
 
-var TILES_DIR='/';
 var CXI_RET='Return value';
 var CXI_MSG='Return Message';
 var MOBILE_AUTHENTICATE = true;
@@ -31,7 +30,6 @@ var WEBAUTHN_HOME = '/ermrest/authn/session';
 var PRINTER_HOME = '/ermrest/printer/';
 var GLOBUS_TRANSFER_HOME = '/ermrest/transfer';
 var ZOOMIFY_HOME = '/ermrest/zoomify/';
-var DOWNLOAD_HOME = '/cirm-files/';
 var SERVICE_TRANSFER_HOME = '/service/transfer/';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
@@ -627,7 +625,6 @@ function renderLogin() {
 	PRINTER_HOME = HOME + PRINTER_HOME;
 	GLOBUS_TRANSFER_HOME = HOME + GLOBUS_TRANSFER_HOME;
 	ZOOMIFY_HOME = HOME + ZOOMIFY_HOME;
-	DOWNLOAD_HOME = HOME + DOWNLOAD_HOME;
 	SERVICE_TRANSFER_HOME = HOME + SERVICE_TRANSFER_HOME;
 	if (isMobileSearch() && !MOBILE_AUTHENTICATE) {
 		submitMobileLogin();
@@ -1371,6 +1368,7 @@ function getSlideThumbnail(slide, td, val) {
 function getFileSize(td, scan, scanFiles) {
 	scanFiles['filesCount'] += 1;
 	scanFiles['filesSize'] += scan['filesize'];
+	td.addClass('nowrap');
 	td.html(getSize('file', scan['filesize']));
 }
 
@@ -2489,12 +2487,7 @@ function cancel(itemType, item) {
 }
 
 function transferImage(image) {
-	var tilesDir = image['tilesdir'];
-	if (tilesDir[0] == '/') {
-		tilesDir = tilesDir.substr(1);
-	}
-	//var czi = 'http://cirm-dev.misd.isi.edu/cirm-files/' + tilesDir + image['filename'];
-	var czi = DOWNLOAD_HOME + tilesDir + image['filename'];
+	var czi = image['filename'];
 	window.open(
 	  czi,
 	  '_blank' // <- This is what makes it open in a new window.
@@ -3793,8 +3786,13 @@ function globusFileTransfer() {
 		}
 		if (endpoint_1 == scan['endpoint']) {
 			var item = {};
-			item['file_from'] = TILES_DIR + scan['tilesdir'] + file;
-			item['file_to'] = destDir + file;
+			var a = $('<a>', { href:file } )[0];
+			var parts = a.pathname.split('/');
+			var base_name = parts[parts.length-1];
+			parts.splice(1,1);
+			var file_from = parts.join('/');
+			item['file_from'] = file_from;
+			item['file_to'] = destDir + base_name;
 			arr.push(item);
 		}
 	});

@@ -96,10 +96,10 @@ var unassignedSlidesDict = {};
 var unassignedSlidesList = [];
 //{"id":"20131108-wnt1creZEGG-RES-0-09-000","sequence_num":9,"revision":0,"box_of_origin_id":"20131108-wnt1creZEGG-RES-0","experiment_id":null,"comment":"This is a slide"}
 
-var scanColumns = ['id', 'slide_id', 'scan_num', 'endpoint', 'filename', 'filesize', 'thumbnail', 'tilesdir', 'zoomify', 'comment', 'tags'];
+var scanColumns = ['id', 'slide_id', 'scan_num', 'go_endpoint', 'go_path', 'http_url', 'filename', 'filesize', 'thumbnail', 'tilesdir', 'zoomify', 'comment', 'tags'];
 var scanEditColumns = ['comment', 'tags'];
 var scanMultiValuesColumns = ['tags'];
-var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'scan_num': 'Scan Number', 'endpoint': 'Endpoint', 'filename': 'File', 'filesize': 'Size', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'zoomify': 'Zoomify', 'comment': 'Comment', 'tags': 'Tags'};
+var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'scan_num': 'Scan Number', 'go_endpoint': 'GO Endpoint', 'go_path': 'GO Path', 'http_url': 'HTTP URL', 'filename': 'File', 'filesize': 'Size (bytes)', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'zoomify': 'Zoomify', 'comment': 'Comment', 'tags': 'Tags'};
 var scansDict = {};
 var scansList = [];
 // {"id":"20131108-wnt1creZEGG-RES-0-38-001-000","slide_id":"20131108-wnt1creZEGG-RES-0-38-001","scan_num":0,"filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","thumbnail":"20131108-wnt1creZEGG-RES-0-38-001.jpeg","tilesdir":"20131108-wnt1creZEGG-RES-0-38-001/","comment":"This is a scan"}
@@ -2486,7 +2486,7 @@ function cancel(itemType, item) {
 }
 
 function transferImage(image) {
-	var czi = image['filename'];
+	var czi = image['http_url'];
 	window.open(
 	  czi,
 	  '_blank' // <- This is what makes it open in a new window.
@@ -2731,7 +2731,7 @@ function renderTransferFiles(files) {
 	var gridDiv = $('<div>');
 	containerDiv.append(gridDiv);
 	gridDiv.addClass('grid_div height_table_div');
-	gridDiv.height($('#centerPanel').height()*50/100);
+	gridDiv.height($('#centerPanel').height()*60/100);
 	var table1 = $('<table>');
 	gridDiv.append(table1);
 	table1.attr('id', 'filesTable');
@@ -3780,18 +3780,13 @@ function globusFileTransfer() {
 	$.each(files, function(i, file) {
 		var scan = filesDict[file];
 		if (endpoint_1 == null) {
-			endpoint_1 = scan['endpoint'];
+			endpoint_1 = scan['go_endpoint'];
 			obj['endpoint_1'] = endpoint_1;
 		}
-		if (endpoint_1 == scan['endpoint']) {
+		if (endpoint_1 == scan['go_endpoint']) {
 			var item = {};
-			var a = $('<a>', { href:file } )[0];
-			var parts = a.pathname.split('/');
-			var base_name = parts[parts.length-1];
-			parts.splice(1,1);
-			var file_from = parts.join('/');
-			item['file_from'] = file_from;
-			item['file_to'] = destDir + base_name;
+			item['file_from'] = scan['go_path'];
+			item['file_to'] = destDir + scan['filename'];
 			arr.push(item);
 		}
 	});

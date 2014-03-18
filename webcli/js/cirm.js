@@ -433,7 +433,7 @@ function mobileRequest() {
 		var genotype = encodeSafeURIComponent(mobileParams['box']['sample_name']);
 		var img = [];
 		$.each(mobileParams['scans'], function(i, scan) {
-			img.push(encodeSafeURIComponent('images/'+scan['thumbnail']));
+			img.push(encodeSafeURIComponent(scan['thumbnail']));
 		});
 		url = '/cirm/mobile.html?slide='+slide+
 			'&experiment='+experiment+
@@ -1346,7 +1346,7 @@ function getSlideThumbnail(slide, td, val) {
 		if (scan['id'].indexOf(slide['id']) == 0) {
 			img.attr({'alt': 'Undefined',
 				'title': 'Thumbnail',
-				'src': 'images/'+scan['thumbnail'],
+				'src': scan['thumbnail'],
 				'width': 30,
 				'height': 30
 				});
@@ -1378,7 +1378,7 @@ function getFileThumbnail(td, scan) {
 	var img = $('<img>');
 	img.attr({'alt': 'Undefined',
 		'title': 'Thumbnail',
-		'src': 'images/'+scan['thumbnail'],
+		'src': scan['thumbnail'],
 		'width': 30,
 		'height': 30
 		});
@@ -1965,7 +1965,7 @@ function appendImage(images) {
 		var img = $('<img>');
 		img.attr({'alt': 'Undefined',
 			'title': 'Thumbnail',
-			'src': 'images/'+image['thumbnail'],
+			'src': image['thumbnail'],
 			'width': 100,
 			'height': 100,
 			'index': image['id']

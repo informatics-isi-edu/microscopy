@@ -96,10 +96,10 @@ var unassignedSlidesDict = {};
 var unassignedSlidesList = [];
 //{"id":"20131108-wnt1creZEGG-RES-0-09-000","sequence_num":9,"revision":0,"box_of_origin_id":"20131108-wnt1creZEGG-RES-0","experiment_id":null,"comment":"This is a slide"}
 
-var scanColumns = ['id', 'slide_id', 'scan_num', 'filename', 'filesize', 'thumbnail', 'tilesdir', 'comment', 'tags'];
+var scanColumns = ['id', 'slide_id', 'scan_num', 'endpoint', 'filename', 'filesize', 'thumbnail', 'tilesdir', 'zoomify', 'comment', 'tags'];
 var scanEditColumns = ['comment', 'tags'];
 var scanMultiValuesColumns = ['tags'];
-var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'scan_num': 'Scan Number', 'filename': 'File', 'filesize': 'Size', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'comment': 'Comment', 'tags': 'Tags'};
+var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'scan_num': 'Scan Number', 'endpoint': 'Endpoint', 'filename': 'File', 'filesize': 'Size', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'zoomify': 'Zoomify', 'comment': 'Comment', 'tags': 'Tags'};
 var scansDict = {};
 var scansList = [];
 // {"id":"20131108-wnt1creZEGG-RES-0-38-001-000","slide_id":"20131108-wnt1creZEGG-RES-0-38-001","scan_num":0,"filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","thumbnail":"20131108-wnt1creZEGG-RES-0-38-001.jpeg","tilesdir":"20131108-wnt1creZEGG-RES-0-38-001/","comment":"This is a scan"}
@@ -1970,7 +1970,7 @@ function appendImage(images) {
 			});
 		centerPanel.append(img);
 		img.click(function(event) {displayScan($(this), image);});
-		if (image['tilesdir'][0] != '/') {
+		if (image['tilesdir'] != null) {
 			img.dblclick(function(event) {enlargeImage($(this), image);});
 		}
 	});
@@ -1986,8 +1986,7 @@ function enlargeImage(img, image) {
 		mobileParams = {};
 		getSlide(label);
 	} else {
-		//var ZOOMIFY_HOME = 'http://cirm-dev.misd.isi.edu/cirm/zoomify/';
-		var tilesHTML = ZOOMIFY_HOME + image['tilesdir'].substr(0, image['tilesdir'].length-1);
+		var tilesHTML = image['zoomify'];
 		window.open(
 		  tilesHTML,
 		  '_blank' // <- This is what makes it open in a new window.
@@ -2219,7 +2218,7 @@ function displayScan(img, image) {
 	$('#transferButton').click(function(event) {transferImage(image);});
 	$('#transferButton').show();
 	$('#enlargeButton').unbind('click');
-	if (image['tilesdir'][0] != '/') {
+	if (image['tilesdir'] != null) {
 		$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
 		$('#enlargeButton').removeAttr('disabled');
 		$('#enlargeButton').removeClass('disabledButton');

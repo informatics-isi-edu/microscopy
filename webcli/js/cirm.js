@@ -57,8 +57,8 @@ var globusTasksTableColumns = ['label', 'task_id', 'status', 'source_endpoint', 
 var globusTasksTableDisplayColumns = {'label': 'Label', 'task_id': 'Task ID', 'status': 'Status', 'source_endpoint': 'Source', 'destination_endpoint': 'Destination', 'request_time': 'Requested', 'completion_time': 'Completed', 'bytes_transferred': 'Bytes Transferred'};
 var globusTasksDisplayValue = {'task_id': getTaskIdValues};
 
-var filesTableColumns = ['thumbnail', 'filename', 'filesize'];
-var filesTableDisplayColumns = {'thumbnail': 'Thumbnail', 'filename': 'Name', 'filesize': 'Size'};
+var filesTableColumns = ['thumbnail', 'original_filename', 'filesize'];
+var filesTableDisplayColumns = {'thumbnail': 'Thumbnail', 'original_filename': 'Name', 'filesize': 'Size'};
 var fileDisplayValue = {'thumbnail': getFileThumbnail, 'filesize': getFileSize};
 var filesDict = {};
 
@@ -96,13 +96,13 @@ var unassignedSlidesDict = {};
 var unassignedSlidesList = [];
 //{"id":"20131108-wnt1creZEGG-RES-0-09-000","sequence_num":9,"revision":0,"box_of_origin_id":"20131108-wnt1creZEGG-RES-0","experiment_id":null,"comment":"This is a slide"}
 
-var scanColumns = ['id', 'slide_id', 'scan_num', 'go_endpoint', 'go_path', 'http_url', 'filename', 'filesize', 'thumbnail', 'tilesdir', 'zoomify', 'comment', 'tags'];
+var scanColumns = ['id', 'slide_id', 'original_filename', 'go_endpoint', 'go_path', 'http_url', 'filename', 'filesize', 'thumbnail', 'tilesdir', 'zoomify', 'comment', 'tags'];
 var scanEditColumns = ['comment', 'tags'];
 var scanMultiValuesColumns = ['tags'];
-var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'scan_num': 'Scan Number', 'go_endpoint': 'GO Endpoint', 'go_path': 'GO Path', 'http_url': 'HTTP URL', 'filename': 'File', 'filesize': 'Size (bytes)', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'zoomify': 'Zoomify', 'comment': 'Comment', 'tags': 'Tags'};
+var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'original_filename': 'Original File Name', 'go_endpoint': 'GO Endpoint', 'go_path': 'GO Path', 'http_url': 'HTTP URL', 'filename': 'File', 'filesize': 'Size (bytes)', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'zoomify': 'Zoomify', 'comment': 'Comment', 'tags': 'Tags'};
 var scansDict = {};
 var scansList = [];
-// {"id":"20131108-wnt1creZEGG-RES-0-38-001-000","slide_id":"20131108-wnt1creZEGG-RES-0-38-001","scan_num":0,"filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","thumbnail":"20131108-wnt1creZEGG-RES-0-38-001.jpeg","tilesdir":"20131108-wnt1creZEGG-RES-0-38-001/","comment":"This is a scan"}
+// {"id":"20131108-wnt1creZEGG-RES-0-38-001-000","slide_id":"20131108-wnt1creZEGG-RES-0-38-001","original_filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","thumbnail":"20131108-wnt1creZEGG-RES-0-38-001.jpeg","tilesdir":"20131108-wnt1creZEGG-RES-0-38-001/","comment":"This is a scan"}
 
 var searchList = [];
 var isSlidePrinter = false;
@@ -1340,7 +1340,7 @@ function getSlideThumbnail(slide, td, val) {
 	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
 	var img = $('<img>');
 	$.each(scansList, function(i, scan) {
-		if (scan['id'].indexOf(slide['id']) == 0) {
+		if (scan['slide_id'] == slide['id'] && scan['thumbnail'] != null) {
 			img.attr({'alt': 'Undefined',
 				'title': 'Thumbnail',
 				'src': scan['thumbnail'],
@@ -1376,7 +1376,7 @@ function getFileThumbnail(td, scan) {
 	var img = $('<img>');
 	img.attr({'alt': 'Undefined',
 		'title': 'Thumbnail',
-		'src': scan['thumbnail'],
+		'src': scan['thumbnail'] != null ? scan['thumbnail'] : 'images/blank.jpeg',
 		'width': 30,
 		'height': 30
 		});

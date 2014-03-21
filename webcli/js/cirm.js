@@ -5,6 +5,8 @@ Array.prototype.contains = function (elem) {
 	return false;
 };
 
+var cirm_tables = ['box', 'experiment', 'slide', 'scan'];
+var cirm_tables_columns = {};
 var debug = false;
 var selectedEndpoint = null;
 var endpointPath = [];
@@ -22,6 +24,7 @@ var BOX_PRINTER_PORT = 9100;
 var PRINTER_ADDR = null;
 var PRINTER_PORT = 0;
 var HOME;
+var ERMREST_SCHEMA_HOME = '/ermrest/catalog/1/schema/cirm/table/';
 var CIRM_HOME;
 var PAGE_URL = null;
 var USER;
@@ -53,6 +56,8 @@ var token = null;
 
 var URL_ESCAPE = new String("~!()'");
 
+var tablesMetadata = {};
+
 var globusTasksTableColumns = ['label', 'task_id', 'status', 'source_endpoint', 'destination_endpoint', 'request_time', 'completion_time', 'bytes_transferred'];
 var globusTasksTableDisplayColumns = {'label': 'Label', 'task_id': 'Task ID', 'status': 'Status', 'source_endpoint': 'Source', 'destination_endpoint': 'Destination', 'request_time': 'Requested', 'completion_time': 'Completed', 'bytes_transferred': 'Bytes Transferred'};
 var globusTasksDisplayValue = {'task_id': getTaskIdValues};
@@ -62,18 +67,16 @@ var filesTableDisplayColumns = {'thumbnail': 'Thumbnail', 'original_filename': '
 var fileDisplayValue = {'thumbnail': getFileThumbnail, 'filesize': getFileSize};
 var filesDict = {};
 
-var boxColumns = ['id', 'section_date', 'sample_name', 'initials', 'disambiguator', 'comment', 'tags'];
+var boxColumns = null;
 var boxEditColumns = ['comment', 'tags'];
 var boxMultiValuesColumns = ['tags'];
-var boxDisplayColumns = {'id': 'Box ID', 'section_date': 'Section Date', 'sample_name': 'Sample Name', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment', 'tags': 'Tags'};
 var boxesDict = {};
 var boxesList = [];
 // {"id":"20131108-wnt1creZEGG-RES-0","section_date":"2013-11-08","sample_name":"wnt1creZEGG","initials":"RES","disambiguator":"0","comment":"This is a box of origin"}
 
-var experimentColumns = ['id', 'experiment_date', 'experiment_description', 'initials', 'disambiguator', 'comment', 'tags'];
+var experimentColumns = null;
 var experimentEditColumns = ['comment', 'tags'];
 var experimentMultiValuesColumns = ['tags'];
-var experimentDisplayColumns = {'id': 'Experiment ID', 'experiment_date': 'Experiment Date', 'experiment_description': 'Experiment Description', 'initials': 'Initials', 'disambiguator': 'Disambiguator', 'comment': 'Comment', 'tags': 'Tags'};
 var experimentsDict = {};
 var experimentsList = [];
 // {"id":"20131115-myantibody2-KC-0","experiment_date":"2013-11-15","experiment_description":"myantibody2","initials":"KC","disambiguator":"0","comment":"This is Karl's experiment"}
@@ -84,7 +87,7 @@ var slideTableColumns = ['id', 'sequence_num', 'revision', 'thumbnail', 'scans',
 var slideTableDisplayColumns = {'thumbnail': 'Thumbnail', 'scans': 'Scans', 'sequence_num': 'Seq.', 'revision': 'Rev.', 'box_of_origin_id': 'Box ID', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
 var slideDisplayValue = {'id': getSlideIdValue, 'sequence_num': getSlideColumnValue, 'revision': getSlideColumnValue, 'box_of_origin_id': getSlideBoxValue, 'experiment_id': getSlideExperimentValue, 'comment': getSlideColumnValue, 'tags': getSlideColumnValue, 'thumbnail': getSlideThumbnail, 'scans': getSlideScansNumber};
 
-var slideColumns = ['id', 'box_of_origin_id', 'sequence_num', 'revision', 'experiment_id', 'comment', 'tags'];
+var slideColumns = null;
 var slideDisplayColumns = {'id': 'Slide ID', 'box_of_origin_id': 'Box ID', 'sequence_num': 'Sequence Number', 'revision': 'Revision', 'experiment_id': 'Experiment ID', 'comment': 'Comment', 'tags': 'Tags'};
 var slideEditColumns = ['comment', 'tags'];
 var slideMultiValuesColumns = ['tags'];
@@ -96,10 +99,9 @@ var unassignedSlidesDict = {};
 var unassignedSlidesList = [];
 //{"id":"20131108-wnt1creZEGG-RES-0-09-000","sequence_num":9,"revision":0,"box_of_origin_id":"20131108-wnt1creZEGG-RES-0","experiment_id":null,"comment":"This is a slide"}
 
-var scanColumns = ['id', 'slide_id', 'original_filename', 'go_endpoint', 'go_path', 'http_url', 'filename', 'filesize', 'thumbnail', 'tilesdir', 'zoomify', 'comment', 'tags'];
+var scanColumns = null;
 var scanEditColumns = ['comment', 'tags'];
 var scanMultiValuesColumns = ['tags'];
-var scanDisplayColumns = {'id': 'Scan ID', 'slide_id': 'Slide ID', 'original_filename': 'Original File Name', 'go_endpoint': 'GO Endpoint', 'go_path': 'GO Path', 'http_url': 'HTTP URL', 'filename': 'File', 'filesize': 'Size (bytes)', 'thumbnail': 'Thumbnail', 'tilesdir': 'Tile Directory', 'zoomify': 'Zoomify', 'comment': 'Comment', 'tags': 'Tags'};
 var scansDict = {};
 var scansList = [];
 // {"id":"20131108-wnt1creZEGG-RES-0-38-001-000","slide_id":"20131108-wnt1creZEGG-RES-0-38-001","original_filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","thumbnail":"20131108-wnt1creZEGG-RES-0-38-001.jpeg","tilesdir":"20131108-wnt1creZEGG-RES-0-38-001/","comment":"This is a scan"}
@@ -415,6 +417,14 @@ function initCIRM() {
 	window.onpopstate = function(event) {
 		goBack(event);
 	};
+	$.each(cirm_tables, function(i, table) {
+		getMetadata(table);
+		cirm_tables_columns[table] = getTableColumns(table);
+	});
+	boxColumns = cirm_tables_columns['box'];
+	experimentColumns = cirm_tables_columns['experiment'];
+	slideColumns = cirm_tables_columns['slide'];
+	scanColumns = cirm_tables_columns['scan'];
 	getBoxes(null);
 }
 
@@ -625,6 +635,7 @@ function renderLogin() {
 	PRINTER_HOME = HOME + PRINTER_HOME;
 	GLOBUS_TRANSFER_HOME = HOME + GLOBUS_TRANSFER_HOME;
 	ZOOMIFY_HOME = HOME + ZOOMIFY_HOME;
+	ERMREST_SCHEMA_HOME = HOME + ERMREST_SCHEMA_HOME;
 	SERVICE_TRANSFER_HOME = HOME + SERVICE_TRANSFER_HOME;
 	if (isMobileSearch() && !MOBILE_AUTHENTICATE) {
 		submitMobileLogin();
@@ -1997,31 +2008,26 @@ function enlargeImage(img, image) {
 function displayEntity(itemType, item) {
 	var updateItem = null;
 	var cols = null;
-	var displayCols = null;
 	if (itemType == 'scan') {
 		updateItem = 'updateScan';
 		cols = scanColumns;
-		displayCols = scanDisplayColumns;
 	} else if (itemType == 'slide') {
 		updateItem = 'updateSlide';
 		cols = slideColumns;
-		displayCols = slideDisplayColumns;
 	} else if (itemType == 'box') {
 		updateItem = 'updateBox';
 		cols = boxColumns;
-		displayCols = boxDisplayColumns;
 	} else if (itemType == 'experiment') {
 		updateItem = 'updateExperiment';
 		cols = experimentColumns;
-		displayCols = experimentDisplayColumns;
 	}
 
 	$('#cancelButton').hide();
 	$('#saveButton').hide();
-	displayItem(cols, displayCols, item, itemType);
+	displayItem(cols, item, itemType);
 }
 
-function displayItem(cols, displayCols, item, itemType) {
+function displayItem(cols, item, itemType) {
 	$('button', $('#rightPanelBottom')).hide();
 	var editColumns = [];
 	var multiValuesColumns = [];
@@ -2056,7 +2062,7 @@ function displayItem(cols, displayCols, item, itemType) {
 		var div = $('<div>');
 		rightPanel.append(div);
 		div.addClass('info');
-		div.html(displayCols[col]+':');
+		div.html(col+':');
 		var div = $('<div>');
 		div.addClass('attributes');
 		rightPanel.append(div);
@@ -2427,27 +2433,22 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	var colDict = null;
 	var colList = null;
 	var cols = null;
-	var displayCols = null;
 	if (item == 'scan') {
 		colDict = scansDict;
 		colList = scansList;
 		cols = scanColumns;
-		displayCols = scanDisplayColumns;
 	} else if (item == 'slide') {
 		colDict = slidesDict;
 		colList = slidesList;
 		cols = slideColumns;
-		displayCols = slideDisplayColumns;
 	} else if (item == 'box') {
 		colDict = boxesDict;
 		colList = boxesList;
 		cols = boxColumns;
-		displayCols = boxDisplayColumns;
 	} else if (item == 'experiment') {
 		colDict = experimentsDict;
 		colList = experimentsList;
 		cols = experimentColumns;
-		displayCols = experimentDisplayColumns;
 	}
 
 	data = data[0];
@@ -3320,11 +3321,9 @@ function postManagePrinter(data, textStatus, jqXHR, param) {
 
 function displayData(item, itemType) {
 	var cols = [];
-	var displayCols = {};
 	$.each(item, function(col, value) {
 		if (value != null && !$.isPlainObject(value)) {
 			cols.push(col);
-			displayCols[col] = col;
 			if (timestampsColumns.contains(col)) {
 				item[col] = getLocaleTimestamp(item[col]);
 			} else {
@@ -3333,7 +3332,7 @@ function displayData(item, itemType) {
 		}
 	});
 	cols.sort(compareIgnoreCase);
-	displayItem(cols, displayCols, item, itemType);
+	displayItem(cols, item, itemType);
 }
 
 function createExperiment() {
@@ -4055,3 +4054,57 @@ function getColumnPosition(table, col) {
 function updateRow(tr, index, value) {
 	$('td:nth-child('+index+')', tr).html(value);
 }
+
+function getMetadata(table) {
+	var url = ERMREST_SCHEMA_HOME + encodeSafeURIComponent(table);
+	document.body.style.cursor = 'wait';
+	$.ajax({
+		url: url,
+		contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+		headers: make_headers(),
+		timeout: AJAX_TIMEOUT,
+		async: false,
+		accepts: {text: 'application/json'},
+		processData: true,
+		data: [],
+		dataType: 'json',
+		success: function(data, textStatus, jqXHR) {
+			document.body.style.cursor = 'default';
+			tablesMetadata[table] = data;
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			document.body.style.cursor = 'default';
+			var msg = '';
+			var err = jqXHR.status;
+			if (err != null) {
+				msg += 'Status: ' + err + '\n';
+			}
+			err = jqXHR.responseText;
+			if (err != null) {
+				msg += 'ResponseText: ' + err + '\n';
+			}
+			if (textStatus != null) {
+				msg += 'TextStatus: ' + textStatus + '\n';
+			}
+			if (errorThrown != null) {
+				msg += 'ErrorThrown: ' + errorThrown + '\n';
+			}
+			msg += 'URL: ' + url + '\n';
+			document.body.style.cursor = 'default';
+			alert(msg);
+		}
+	});
+}
+
+function getTableColumns(table) {
+	var data = tablesMetadata[table];
+	var ret = [];
+	if (data != null) {
+		var column_definitions = data['column_definitions'];
+		$.each(column_definitions, function(i, col) {
+			ret.push(col['name']);
+		});
+	}
+	return ret;
+}
+

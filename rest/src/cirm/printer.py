@@ -111,11 +111,11 @@ class PrintJob (Printer):
         if entity == 'box':
             box = json_data[0]
             id = box['id']
-            section_date = box['section_date']
-            sample_name = box['sample_name']
-            initials = box['initials']
-            disambiguator = box['disambiguator']
-            comment = box['comment']
+            section_date = box['Section Date']
+            sample_name = box['Sample Name']
+            initials = box['Initials']
+            disambiguator = box['Disambiguator']
+            comment = box['Comment']
             try:
                 res = cxi.utils.makeBoxLabel(self.printer_id, self.printer_port, section_date, sample_name, initials, disambiguator, self.uri, id, comment)
             except:
@@ -127,12 +127,12 @@ class PrintJob (Printer):
             for slide in json_data:
                 id = slide['id']
                 experiment = slide['experiment']
-                experiment_date = slide['experiment_date']
-                sample_name = slide['sample_name']
-                experiment_description = slide['experiment_description']
-                initials = slide['initials']
-                sequence_num = slide['sequence_num']
-                revision = slide['revision']
+                experiment_date = slide['Experiment Date']
+                sample_name = slide['Sample Name']
+                experiment_description = slide['Experiment Description']
+                initials = slide['Initials']
+                sequence_num = slide['Seq.']
+                revision = slide['Rev.']
                 try:
                     res = cxi.utils.makeSliceLabel(self.printer_id, self.printer_port, experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
                 except:

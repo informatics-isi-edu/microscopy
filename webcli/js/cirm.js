@@ -6,7 +6,7 @@ Array.prototype.contains = function (elem) {
 };
 
 var slideExperimentColumn = 'Experiment ID';
-var cirm_tables = ['box', 'experiment', 'slide', 'scan'];
+var cirm_tables = ['Box', 'Experiment', 'Slide', 'Scan'];
 var cirm_tables_columns = {};
 var debug = false;
 var selectedEndpoint = null;
@@ -25,7 +25,7 @@ var BOX_PRINTER_PORT = 9100;
 var PRINTER_ADDR = null;
 var PRINTER_PORT = 0;
 var HOME;
-var ERMREST_SCHEMA_HOME = '/ermrest/catalog/1/schema/cirm/table/';
+var ERMREST_SCHEMA_HOME = '/ermrest/catalog/1/schema/CIRM/table/';
 var CIRM_HOME;
 var PAGE_URL = null;
 var USER;
@@ -56,6 +56,7 @@ var goauth_cookie = 'globusonline-goauth';
 var token = null;
 
 var URL_ESCAPE = new String("~!()'");
+var ID_ESCAPE = new String(".");
 
 var tablesMetadata = {};
 
@@ -63,9 +64,9 @@ var globusTasksTableColumns = ['label', 'task_id', 'status', 'source_endpoint', 
 var globusTasksTableDisplayColumns = {'label': 'Label', 'task_id': 'Task ID', 'status': 'Status', 'source_endpoint': 'Source', 'destination_endpoint': 'Destination', 'request_time': 'Requested', 'completion_time': 'Completed', 'bytes_transferred': 'Bytes Transferred'};
 var globusTasksDisplayValue = {'task_id': getTaskIdValues};
 
-var filesTableColumns = ['thumbnail', 'original_filename', 'filesize'];
-var filesTableDisplayColumns = {'thumbnail': 'Thumbnail', 'original_filename': 'Name', 'filesize': 'Size'};
-var fileDisplayValue = {'thumbnail': getFileThumbnail, 'filesize': getFileSize};
+var filesTableColumns = ['Thumbnail', 'Original Filename', 'File Size'];
+var fileDisplayValue = {'Thumbnail': getFileThumbnail, 'File Size': getFileSize};
+var fileClassValue = {'Thumbnail': 'thumbnail', 'File Size': 'file_size'};
 var filesDict = {};
 
 var boxColumns = null;
@@ -73,36 +74,36 @@ var boxEditColumns = ['Comment', 'Tags'];
 var boxMultiValuesColumns = ['Tags'];
 var boxesDict = {};
 var boxesList = [];
-// {"id":"20131108-wnt1creZEGG-RES-0","Section Date":"2013-11-08","Sample Name":"wnt1creZEGG","Initials":"RES","Disambiguator":"0","Comment":"This is a box of origin"}
+// {"ID":"20131108-wnt1creZEGG-RES-0","Section Date":"2013-11-08","Sample Name":"wnt1creZEGG","Initials":"RES","Disambiguator":"0","Comment":"This is a box of origin"}
 
 var experimentColumns = null;
 var experimentEditColumns = ['Comment', 'Tags'];
 var experimentMultiValuesColumns = ['Tags'];
 var experimentsDict = {};
 var experimentsList = [];
-// {"id":"20131115-myantibody2-KC-0","Experiment Date":"2013-11-15","Experiment Description":"myantibody2","Initials":"KC","Disambiguator":"0","Comment":"This is Karl's experiment"}
+// {"ID":"20131115-myantibody2-KC-0","Experiment Date":"2013-11-15","Experiment Description":"myantibody2","Initials":"KC","Disambiguator":"0","Comment":"This is Karl's experiment"}
 
-var slideNoDisplayColumns = ['id'];
-var slideClassColumns = {'Box ID': 'box', 'Experiment ID': 'experiment', 'Seq.': 'center', 'Rev.': 'center', 'Thumbnail': 'center', 'Scans': 'center'};
-var slideTableColumns = ['id', 'Seq.', 'Rev.', 'Thumbnail', 'Scans', 'Box ID', 'Experiment ID', 'Comment', 'Tags'];
-var slideDisplayValue = {'id': getSlideIdValue, 'Seq.': getSlideColumnValue, 'Rev.': getSlideColumnValue, 'Box ID': getSlideBoxValue, 'Experiment ID': getSlideExperimentValue, 'Comment': getSlideColumnValue, 'Tags': getSlideColumnValue, 'Thumbnail': getSlideThumbnail, 'Scans': getSlideScansNumber};
+var slideNoDisplayColumns = ['ID'];
+var slideClassColumns = {'Box ID': 'Box', 'Experiment ID': 'Experiment', 'Seq.': 'center', 'Rev.': 'center', 'Thumbnail': 'center', 'Scans': 'center'};
+var slideTableColumns = ['ID', 'Seq.', 'Rev.', 'Thumbnail', 'Scans', 'Box ID', 'Experiment ID', 'Comment', 'Tags'];
+var slideDisplayValue = {'ID': getSlideIdValue, 'Seq.': getSlideColumnValue, 'Rev.': getSlideColumnValue, 'Box ID': getSlideBoxValue, 'Experiment ID': getSlideExperimentValue, 'Comment': getSlideColumnValue, 'Tags': getSlideColumnValue, 'Thumbnail': getSlideThumbnail, 'Scans': getSlideScansNumber};
 
 var slideColumns = null;
 var slideEditColumns = ['Comment', 'Tags'];
 var slideMultiValuesColumns = ['Tags'];
 var slidesDict = {};
 var slidesList = [];
-//{"id":"20131108-wnt1creZEGG-RES-0-09-000","Seq.":9,"Rev.":0,"Box ID":"20131108-wnt1creZEGG-RES-0","Experiment ID":"20131115-myantibody2-KC-0","Comment":"This is a slide"}
+//{"ID":"20131108-wnt1creZEGG-RES-0-09-000","Seq.":9,"Rev.":0,"Box ID":"20131108-wnt1creZEGG-RES-0","Experiment ID":"20131115-myantibody2-KC-0","Comment":"This is a slide"}
 var unassignedSlidesDict = {};
 var unassignedSlidesList = [];
-//{"id":"20131108-wnt1creZEGG-RES-0-09-000","Seq.":9,"Rev.":0,"Box ID":"20131108-wnt1creZEGG-RES-0","Experiment ID":null,"Comment":"This is a slide"}
+//{"ID":"20131108-wnt1creZEGG-RES-0-09-000","Seq.":9,"Rev.":0,"Box ID":"20131108-wnt1creZEGG-RES-0","Experiment ID":null,"Comment":"This is a slide"}
 
 var scanColumns = null;
 var scanEditColumns = ['Comment', 'Tags'];
 var scanMultiValuesColumns = ['Tags'];
 var scansDict = {};
 var scansList = [];
-// {"id":"20131108-wnt1creZEGG-RES-0-38-001-000","slide_id":"20131108-wnt1creZEGG-RES-0-38-001","original_filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","thumbnail":"20131108-wnt1creZEGG-RES-0-38-001.jpeg","tilesdir":"20131108-wnt1creZEGG-RES-0-38-001/","Comment":"This is a scan"}
+// {"ID":"20131108-wnt1creZEGG-RES-0-38-001-000","Slide ID":"20131108-wnt1creZEGG-RES-0-38-001","Original Filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","Filename":"20131108-wnt1creZEGG-RES-0-38-001.czi","Thumbnail":"20131108-wnt1creZEGG-RES-0-38-001.jpeg","Comment":"This is a scan"}
 
 var searchList = [];
 var isSlidePrinter = false;
@@ -326,13 +327,13 @@ function initCIRMMobile() {
 		$.each(arr, function(i, param) {
 			var values = param.split('=');
 			if (isSlide) {
-				if (values[0] == 'experiment') {
+				if (values[0] == 'Experiment') {
 					$('#experimentDiv').html('Experiment: ' + decodeURIComponent(values[1]));
 				} else if (values[0] == 'date') {
 					$('#dateDiv').html('Date: ' + decodeURIComponent(values[1]));
 				} else if (values[0] == 'genotype') {
 					$('#genotypeDiv').html('Sample: ' + decodeURIComponent(values[1]));
-				} else if (values[0] == 'slide') {
+				} else if (values[0] == 'Slide') {
 					$('#slideDiv').html('Slide: ' + decodeURIComponent(values[1]));
 				} else if (values[0] == 'img') {
 					var gridDiv = $('#slideGridDiv');
@@ -362,7 +363,7 @@ function initCIRMMobile() {
 					});
 				}
 			} else if (isBox) {
-				if (values[0] == 'id') {
+				if (values[0] == 'ID') {
 					$('#boxDiv').html('Box ID: ' + decodeURIComponent(values[1]));
 				} else if (values[0] == 'date') {
 					$('#dateDiv').html('Section Date: ' + decodeURIComponent(values[1]));
@@ -419,42 +420,42 @@ function initCIRM() {
 		getMetadata(table);
 		cirm_tables_columns[table] = getTableColumns(table);
 	});
-	boxColumns = cirm_tables_columns['box'];
-	experimentColumns = cirm_tables_columns['experiment'];
-	slideColumns = cirm_tables_columns['slide'];
-	scanColumns = cirm_tables_columns['scan'];
+	boxColumns = cirm_tables_columns['Box'];
+	experimentColumns = cirm_tables_columns['Experiment'];
+	slideColumns = cirm_tables_columns['Slide'];
+	scanColumns = cirm_tables_columns['Scan'];
 	getBoxes(null);
 }
 
 function mobileRequest() {
 	var url = null;
-	if (mobileParams['slide'] != null) {
-		var slide = encodeSafeURIComponent(mobileParams['slide']['id']);
+	if (mobileParams['Slide'] != null) {
+		var slide = encodeSafeURIComponent(mobileParams['Slide']['ID']);
 		var experiment = '';
 		var experimentDate = '';
-		if (mobileParams['slide'][slideExperimentColumn] != null) {
-			experiment = encodeSafeURIComponent(mobileParams['experiment']['Experiment Description']);
-			experimentDate = encodeSafeURIComponent(mobileParams['experiment']['Experiment Date']);
+		if (mobileParams['Slide'][slideExperimentColumn] != null) {
+			experiment = encodeSafeURIComponent(mobileParams['Experiment']['Experiment Description']);
+			experimentDate = encodeSafeURIComponent(mobileParams['Experiment']['Experiment Date']);
 		}
-		var genotype = encodeSafeURIComponent(mobileParams['box']['Sample Name']);
+		var genotype = encodeSafeURIComponent(mobileParams['Box']['Sample Name']);
 		var img = [];
 		$.each(mobileParams['scans'], function(i, scan) {
-			img.push(encodeSafeURIComponent(scan['thumbnail']));
+			img.push(encodeSafeURIComponent(scan['Thumbnail']));
 		});
-		url = '/cirm/mobile.html?slide='+slide+
-			'&experiment='+experiment+
+		url = '/cirm/mobile.html?Slide='+slide+
+			'&Experiment='+experiment+
 			'&date='+experimentDate+
 			'&genotype='+genotype;
 		if (img.length > 0) {
 			url += '&img=' + img.join(',');
 		}
-	} else if (mobileParams['box'] != null) {
-		var id = encodeSafeURIComponent(mobileParams['box']['id']);
-		var sectionDate = encodeSafeURIComponent(mobileParams['box']['Section Date']);
-		var genotype = encodeSafeURIComponent(mobileParams['box']['Sample Name']);
-		var initials = encodeSafeURIComponent(mobileParams['box']['Initials']);
-		var disambiguator = encodeSafeURIComponent(mobileParams['box']['Disambiguator']);
-		url = '/cirm/box.html?id='+id+
+	} else if (mobileParams['Box'] != null) {
+		var id = encodeSafeURIComponent(mobileParams['Box']['ID']);
+		var sectionDate = encodeSafeURIComponent(mobileParams['Box']['Section Date']);
+		var genotype = encodeSafeURIComponent(mobileParams['Box']['Sample Name']);
+		var initials = encodeSafeURIComponent(mobileParams['Box']['Initials']);
+		var disambiguator = encodeSafeURIComponent(mobileParams['Box']['Disambiguator']);
+		url = '/cirm/box.html?ID='+id+
 		'&disambiguator='+disambiguator+
 		'&date='+sectionDate+
 		'&initials='+initials+
@@ -466,8 +467,8 @@ function mobileRequest() {
 }
 
 function getBox(id) {
-	var url = ERMREST_HOME + '/box/id=' + encodeSafeURIComponent(id);
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBox, {'id': id}, null, 0);
+	var url = ERMREST_HOME + '/Box/ID=' + encodeSafeURIComponent(id);
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBox, {'ID': id}, null, 0);
 }
 
 function postGetBox(data, textStatus, jqXHR, param) {
@@ -476,49 +477,49 @@ function postGetBox(data, textStatus, jqXHR, param) {
 		submitLogout();
 		return;
 	}
-	mobileParams['box'] = data[0];
+	mobileParams['Box'] = data[0];
 	submitLogout();
 }
 
 function getBoxes(id) {
-	var url = ERMREST_HOME + '/box';
+	var url = ERMREST_HOME + '/Box';
 	if (id != null) {
-		url += '/id=' + encodeSafeURIComponent(id);
+		url += '/ID=' + encodeSafeURIComponent(id);
 	}
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxes, {'id': id}, null, 0);
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxes, {'ID': id}, null, 0);
 }
 
 function postGetBoxes(data, textStatus, jqXHR, param) {
 	if (mobileParams != null) {
-		mobileParams['box'] = data[0];
+		mobileParams['Box'] = data[0];
 	} else {
 		boxesList = data;
 		boxesDict = {};
 		$.each(data, function(i, item) {
-			boxesDict[item['id']] = item;
+			boxesDict[item['ID']] = item;
 		});
 	}
 	
-	getExperiments(mobileParams == null ? null : mobileParams.slide[slideExperimentColumn]);
+	getExperiments(mobileParams == null ? null : mobileParams.Slide[slideExperimentColumn]);
 }
 
 function getExperiments(id) {
-	var url = ERMREST_HOME + '/experiment';
+	var url = ERMREST_HOME + '/Experiment';
 	if (id != null) {
-		url += '/id=' + encodeSafeURIComponent(id);
+		url += '/ID=' + encodeSafeURIComponent(id);
 	}
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperiments, null, null, 0);
 }
 
 function postGetExperiments(data, textStatus, jqXHR, param) {
 	if (mobileParams != null) {
-		mobileParams['experiment'] = data[0];
-		getScans(mobileParams['slide']['id']);
+		mobileParams['Experiment'] = data[0];
+		getScans(mobileParams['Slide']['ID']);
 	} else {
 		experimentsList = data;
 		experimentsDict = {};
 		$.each(data, function(i, item) {
-			experimentsDict[item['id']] = item;
+			experimentsDict[item['ID']] = item;
 		});
 		if (PAGE_URL == null) {
 			pushHistoryState('drawPanels', '', '', null);
@@ -531,7 +532,7 @@ function postGetExperiments(data, textStatus, jqXHR, param) {
 }
 
 function getUnassignedSlides() {
-	var url = ERMREST_HOME + '/slide/'+encodeSafeURIComponent(slideExperimentColumn)+'::null::';
+	var url = ERMREST_HOME + '/Slide/'+encodeSafeURIComponent(slideExperimentColumn)+'::null::';
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetUnassignedSlides, null, null, 0);
 }
 
@@ -539,13 +540,13 @@ function postGetUnassignedSlides(data, textStatus, jqXHR, param) {
 	unassignedSlidesList = data;
 	unassignedSlidesDict = {};
 	$.each(data, function(i, item) {
-		unassignedSlidesDict[item['id']] = item;
+		unassignedSlidesDict[item['ID']] = item;
 	});
 	displayUnassignedSlides();
 }
 
 function getSlide(id) {
-	var url = ERMREST_HOME + '/slide/id=' + encodeSafeURIComponent(id);
+	var url = ERMREST_HOME + '/Slide/ID=' + encodeSafeURIComponent(id);
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlide, null, null, 0);
 }
 
@@ -555,12 +556,12 @@ function postGetSlide(data, textStatus, jqXHR, param) {
 		submitLogout();
 		return;
 	}
-	mobileParams['slide'] = data[0];
+	mobileParams['Slide'] = data[0];
 	getBoxes(data[0]['Box ID']);
 }
 
 function getExperimentSlides(experimentId) {
-	var url = ERMREST_HOME + '/slide/'+encodeSafeURIComponent(slideExperimentColumn)+'=' + encodeSafeURIComponent(experimentId);
+	var url = ERMREST_HOME + '/Slide/'+encodeSafeURIComponent(slideExperimentColumn)+'=' + encodeSafeURIComponent(experimentId);
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSlides, {'experimentId': experimentId}, null, 0);
 }
 
@@ -568,29 +569,29 @@ function postGetExperimentSlides(data, textStatus, jqXHR, param) {
 	slidesList = data;
 	slidesDict = {};
 	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
+		slidesDict[item['ID']] = item;
 	});
 	getExperimentScans(param['experimentId']);
 }
 
 function getExperimentScans(experimentId) {
-	var url = ERMREST_HOME + '/slide/'+encodeSafeURIComponent(slideExperimentColumn)+'=' + encodeSafeURIComponent(experimentId) + '/scan';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentScans, {'id': experimentId}, null, 0);
+	var url = ERMREST_HOME + '/Slide/'+encodeSafeURIComponent(slideExperimentColumn)+'=' + encodeSafeURIComponent(experimentId) + '/Scan';
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentScans, {'ID': experimentId}, null, 0);
 }
 
 function postGetExperimentScans(data, textStatus, jqXHR, param) {
 	scansList = data;
 	scansDict = {};
 	$.each(data, function(i, item) {
-		scansDict[item['id']] = item;
+		scansDict[item['ID']] = item;
 	});
-	pushHistoryState('experiment', '', 'query=experiment&id='+encodeSafeURIComponent(param['id']), {'id': param['id']});
-	appendSlides('experiment');
+	pushHistoryState('Experiment', '', 'query=Experiment&ID='+encodeSafeURIComponent(param['ID']), {'ID': param['ID']});
+	appendSlides('Experiment');
 	selectNewSlide();
 }
 
 function getSlides(boxId) {
-	var url = ERMREST_HOME + '/box/id=' + encodeSafeURIComponent(boxId) + '/slide';
+	var url = ERMREST_HOME + '/Box/ID=' + encodeSafeURIComponent(boxId) + '/Slide';
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlides, {'boxId': boxId}, null, 0);
 }
 
@@ -598,24 +599,24 @@ function postGetSlides(data, textStatus, jqXHR, param) {
 	slidesList = data;
 	slidesDict = {};
 	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
+		slidesDict[item['ID']] = item;
 	});
 	getBoxScans(param['boxId']);
 }
 
 function getBoxScans(boxId) {
-	var url = ERMREST_HOME + '/scan/id::regexp::' + encodeSafeURIComponent(boxId) + '*';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxScans, {'id': boxId}, null, 0);
+	var url = ERMREST_HOME + '/Scan/ID::regexp::' + encodeSafeURIComponent(boxId) + '*';
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxScans, {'ID': boxId}, null, 0);
 }
 
 function postGetBoxScans(data, textStatus, jqXHR, param) {
 	scansList = data;
 	scansDict = {};
 	$.each(data, function(i, item) {
-		scansDict[item['id']] = item;
+		scansDict[item['ID']] = item;
 	});
-	pushHistoryState('box', '', 'query=box&id='+encodeSafeURIComponent(param['id']), {'id': param['id']});
-	appendSlides('box');
+	pushHistoryState('Box', '', 'query=Box&ID='+encodeSafeURIComponent(param['ID']), {'ID': param['ID']});
+	appendSlides('Box');
 	selectNewSlide();
 }
 
@@ -814,7 +815,7 @@ function submitGlobusLogin(username, password) {
 }
 
 function checkGlobusAuthorization() {
-	var url = ERMREST_HOME + '/box';
+	var url = ERMREST_HOME + '/Box';
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitLogin, null, errorGlobusAuthorization, 0);
 }
 
@@ -823,7 +824,7 @@ function errorGlobusAuthorization(jqXHR, textStatus, errorThrown) {
 		alert('You are not authorized to use this application.');
 		submitLogout();
 	} else {
-		handleError(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, ERMREST_HOME + '/box', 'application/json', true, null, true, postSubmitLogin, null, null,  MAX_RETRIES+1);
+		handleError(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, ERMREST_HOME + '/Box', 'application/json', true, null, true, postSubmitLogin, null, null,  MAX_RETRIES+1);
 		postSubmitLogin();
 	}
 }
@@ -1216,7 +1217,7 @@ function getEntityContent(entityList, displayName, entityName, clickFunction, cr
 	}
 	$.each(arr, function(i, item) {
 		if (entityName != 'Search' && entityName != 'View') {
-			values.push(item['id']);
+			values.push(item['ID']);
 		} else {
 			values.push(item);
 		}
@@ -1270,7 +1271,7 @@ function getTaskIdValues(td, val) {
 function getSlideIdValue(slide, td, val, index) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
+	a.attr('href', 'javascript:displaySlide("' + slide['ID'] + '")');
 	a.html(index);
 	td.append(a);
 }
@@ -1336,7 +1337,7 @@ function getSlideColumnValue(slide, td, val, index) {
 function getSlideScansNumber(slide, td, val) {
 	var no = 0;
 	$.each(scansList, function(i, scan) {
-		if (scan['id'].indexOf(slide['id']) == 0) {
+		if (scan['ID'].indexOf(slide['ID']) == 0) {
 			no++;
 		}
 	});
@@ -1346,13 +1347,13 @@ function getSlideScansNumber(slide, td, val) {
 function getSlideThumbnail(slide, td, val) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:displaySlide("' + slide['id'] + '")');
+	a.attr('href', 'javascript:displaySlide("' + slide['ID'] + '")');
 	var img = $('<img>');
 	$.each(scansList, function(i, scan) {
-		if (scan['slide_id'] == slide['id'] && scan['thumbnail'] != null) {
+		if (scan['Slide ID'] == slide['ID'] && scan['Thumbnail'] != null) {
 			img.attr({'alt': 'Undefined',
 				'title': 'Thumbnail',
-				'src': scan['thumbnail'],
+				'src': scan['Thumbnail'],
 				'width': 30,
 				'height': 30
 				});
@@ -1376,16 +1377,16 @@ function getSlideThumbnail(slide, td, val) {
 
 function getFileSize(td, scan, scanFiles) {
 	scanFiles['filesCount'] += 1;
-	scanFiles['filesSize'] += scan['filesize'];
+	scanFiles['filesSize'] += scan['File Size'];
 	td.addClass('nowrap');
-	td.html(getSize('file', scan['filesize']));
+	td.html(getSize('file', scan['File Size']));
 }
 
 function getFileThumbnail(td, scan) {
 	var img = $('<img>');
 	img.attr({'alt': 'Undefined',
 		'title': 'Thumbnail',
-		'src': scan['thumbnail'] != null ? scan['thumbnail'] : 'images/blank.jpeg',
+		'src': scan['Thumbnail'] != null ? scan['Thumbnail'] : 'images/blank.jpeg',
 		'width': 30,
 		'height': 30
 		});
@@ -1395,7 +1396,7 @@ function getFileThumbnail(td, scan) {
 function addSlides() {
 	var li = $('.highlighted', $('#leftPanel'))[0];
 	var experimentId = $(li).html();
-	var url = ERMREST_HOME + '/slide';
+	var url = ERMREST_HOME + '/Slide';
 	var arr = [];
 	$.each($('td', $('#unassignedSlidesTable')).find('input:checked'), function(i, checkbox) {
 		var slide = unassignedSlidesDict[$(checkbox).attr('slideId')];
@@ -1409,16 +1410,16 @@ function addSlides() {
 		});
 		arr.push(obj);
 	});
-	cirmAJAX.PUT(url, 'application/json', false, arr, true, postAddSlides, {'id': experimentId}, null, 0);
+	cirmAJAX.PUT(url, 'application/json', false, arr, true, postAddSlides, {'ID': experimentId}, null, 0);
 }
 
 function postAddSlides(data, textStatus, jqXHR, param) {
 	$.each(data, function(i, item) {
 		slidesList.push(item);
-		slidesDict[item['id']] = item;
+		slidesDict[item['ID']] = item;
 	});
-	pushHistoryState('experiment', '', 'query=experiment&id='+encodeSafeURIComponent(param['id']), {'id': param['id']});
-	appendSlides('experiment');
+	pushHistoryState('Experiment', '', 'query=Experiment&ID='+encodeSafeURIComponent(param['ID']), {'ID': param['ID']});
+	appendSlides('Experiment');
 }
 
 function checkUncheckAll(tableId, thId, buttons) {
@@ -1521,7 +1522,7 @@ function displayUnassignedSlides() {
 			tr.append(td);
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',
-				'slideId': row['id']});
+				'slideId': row['ID']});
 			input.click(function(event) {checkAvailableSlides(event, 'unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
 			td.append(input);
 			$.each(slideTableColumns, function(j, col) {
@@ -1539,7 +1540,7 @@ function displayUnassignedSlides() {
 				}
 			});
 		});
-		$('.experiment', table).hide();
+		$('.Experiment', table).hide();
 		/*
 		table.fixedHeaderTable({ 
 			altClass: 'odd'
@@ -1549,7 +1550,7 @@ function displayUnassignedSlides() {
 		$('#selectAllUnassignedSlidesTh').click(function(event) {checkUncheckAll('unassignedSlidesTable', 'selectAllUnassignedSlidesTh', ['addButton']);});
 	}
 	$('#cancelCreateButton').unbind('click');
-	$('#cancelCreateButton').click(function(event) {appendSlides('experiment');});
+	$('#cancelCreateButton').click(function(event) {appendSlides('Experiment');});
 	$('#cancelCreateButton').show();
 	$('#addButton').show();
 	$('#addButton').attr('disabled', 'disabled');
@@ -1575,9 +1576,9 @@ function appendSlides(item) {
 		var p = $('<p>');
 		p.addClass('intro');
 		centerPanel.append(p);
-		if (item == 'box') {
+		if (item == 'Box') {
 			p.html('Box Slides');
-		} else if (item == 'experiment') {
+		} else if (item == 'Experiment') {
 			p.html('Experiment Slides');
 		} else if (item == 'search') {
 			p.html('Search Slides');
@@ -1629,7 +1630,7 @@ function appendSlides(item) {
 			tr.append(td);
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',
-				'slideId': row['id']});
+				'slideId': row['ID']});
 			input.click(function(event) {checkAvailableSlides(event, 'slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
 			td.append(input);
 			if (row[slideExperimentColumn] == null) {
@@ -1661,13 +1662,13 @@ function appendSlides(item) {
 		$('#selectAllAssignedSlidesTh').click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
 	}
 	
-	if (arr.length > 0 && item == 'experiment') {
+	if (arr.length > 0 && item == 'Experiment') {
 		$('#printSlideButton').show();
 		$('#printSlideButton').attr('disabled', 'disabled');
 		$('#printSlideButton').addClass('disabledButton');
 	}
 	$('button[context="centerPanelBottom"]').hide();
-	if (item == 'box') {
+	if (item == 'Box') {
 		$('#createSlideButton').show();
 		$('#printBoxButton').show();
 		if (newBoxId != null) {
@@ -1675,7 +1676,7 @@ function appendSlides(item) {
 			newBoxId = null;
 		}
 	}
-	if (item == 'experiment') {
+	if (item == 'Experiment') {
 		$('#printBoxButton').hide();
 		$('#addSlidesButton').show();
 		if (arr.length > 0) {
@@ -1716,7 +1717,7 @@ function displaySlideEntity(id) {
 	if (item == null) {
 		item = unassignedSlidesDict[id];
 	}
-	displayEntity('slide', item);
+	displayEntity('Slide', item);
 }
 
 function initTopPanel() {
@@ -1810,7 +1811,7 @@ function checkSearch(event) {
 }
 
 function getSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/scan';
+	var url = ERMREST_HOME + '/Scan';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSearchSlides, params, null, 0);
@@ -1820,13 +1821,13 @@ function postGetSearchSlides(data, textStatus, jqXHR, param) {
 	scansDict = {};
 	scansList = data;
 	$.each(data, function(i, item) {
-		scansDict[item['id']] = item;
+		scansDict[item['ID']] = item;
 	});
 	getSlideSearchSlides(param['keywords'], param['originalValue']);
 }
 
 function getSlideSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/slide/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords);
+	var url = ERMREST_HOME + '/Slide/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords);
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlideSearchSlides, params, null, 0);
@@ -1835,13 +1836,13 @@ function getSlideSearchSlides(keywords, originalValue) {
 function postGetSlideSearchSlides(data, textStatus, jqXHR, param) {
 	slidesDict = {};
 	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
+		slidesDict[item['ID']] = item;
 	});
 	getExperimentSearchSlides(param['keywords'], param['originalValue']);
 }
 
 function getExperimentSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/experiment/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/slide';
+	var url = ERMREST_HOME + '/Experiment/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/Slide';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSearchSlides, params, null, 0);
@@ -1849,13 +1850,13 @@ function getExperimentSearchSlides(keywords, originalValue) {
 
 function postGetExperimentSearchSlides(data, textStatus, jqXHR, param) {
 	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
+		slidesDict[item['ID']] = item;
 	});
 	getBoxSearchSlides(param['keywords'], param['originalValue']);
 }
 
 function getBoxSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/box/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/slide';
+	var url = ERMREST_HOME + '/Box/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/Slide';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxSearchSlides, params, null, 0);
@@ -1863,7 +1864,7 @@ function getBoxSearchSlides(keywords, originalValue) {
 
 function postGetBoxSearchSlides(data, textStatus, jqXHR, param) {
 	$.each(data, function(i, item) {
-		slidesDict[item['id']] = item;
+		slidesDict[item['ID']] = item;
 	});
 	slidesList = [];
 	$.each(slidesDict, function(key, item) {
@@ -1944,7 +1945,7 @@ function checkExperimentSaveButton() {
 }
 
 function getScans(id) {
-	var url = ERMREST_HOME + '/slide/id='+encodeSafeURIComponent(id)+'/scan';
+	var url = ERMREST_HOME + '/Slide/ID='+encodeSafeURIComponent(id)+'/Scan';
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetScans, null, null, 0);
 }
 
@@ -1958,9 +1959,9 @@ function postGetScans(data, textStatus, jqXHR, param) {
 }
 
 function appendImage(images) {
-	var item = 'box';
+	var item = 'Box';
 	if ($('.highlighted', $('#ExperimentDiv')).length > 0) {
-		item = 'experiment';
+		item = 'Experiment';
 	}
 	var centerPanel = $('#centerPanelTop');
 	if (images.length == 0) {
@@ -1972,14 +1973,14 @@ function appendImage(images) {
 		var img = $('<img>');
 		img.attr({'alt': 'Undefined',
 			'title': 'Thumbnail',
-			'src': image['thumbnail'],
+			'src': image['Thumbnail'],
 			'width': 100,
 			'height': 100,
-			'index': image['id']
+			'index': image['ID']
 			});
 		centerPanel.append(img);
 		img.click(function(event) {displayScan($(this), image);});
-		if (image['tilesdir'] != null) {
+		if (image['Zoomify'] != null) {
 			img.dblclick(function(event) {enlargeImage($(this), image);});
 		}
 	});
@@ -1991,11 +1992,11 @@ function appendImage(images) {
 
 function enlargeImage(img, image) {
 	if (cirm_mobile) {
-		var label = image['slide_id'];
+		var label = image['Slide ID'];
 		mobileParams = {};
 		getSlide(label);
 	} else {
-		var tilesHTML = image['zoomify'];
+		var tilesHTML = image['Zoomify'];
 		window.open(
 		  tilesHTML,
 		  '_blank' // <- This is what makes it open in a new window.
@@ -2006,16 +2007,16 @@ function enlargeImage(img, image) {
 function displayEntity(itemType, item) {
 	var updateItem = null;
 	var cols = null;
-	if (itemType == 'scan') {
+	if (itemType == 'Scan') {
 		updateItem = 'updateScan';
 		cols = scanColumns;
-	} else if (itemType == 'slide') {
+	} else if (itemType == 'Slide') {
 		updateItem = 'updateSlide';
 		cols = slideColumns;
-	} else if (itemType == 'box') {
+	} else if (itemType == 'Box') {
 		updateItem = 'updateBox';
 		cols = boxColumns;
-	} else if (itemType == 'experiment') {
+	} else if (itemType == 'Experiment') {
 		updateItem = 'updateExperiment';
 		cols = experimentColumns;
 	}
@@ -2033,21 +2034,21 @@ function displayItem(cols, item, itemType) {
 	rightPanel.html('');
 	var p = $('<p>');
 	p.addClass('intro');
-	if (itemType == 'box') {
+	if (itemType == 'Box') {
 		p.html('Box Attributes');
 		editColumns = boxEditColumns;
 		multiValuesColumns = boxMultiValuesColumns;
-	} else if (itemType == 'experiment') {
+	} else if (itemType == 'Experiment') {
 		p.html('Experiment Attributes');
 		editColumns = experimentEditColumns;
 		multiValuesColumns = experimentMultiValuesColumns;
-	} else if (itemType == 'scan') {
+	} else if (itemType == 'Scan') {
 		p.html('Scan Attributes');
 		editColumns = scanEditColumns;
 		multiValuesColumns = scanMultiValuesColumns;
 	} else if (itemType == 'activity') {
 		p.html('Activity Attributes');
-	} else if (itemType == 'slide') {
+	} else if (itemType == 'Slide') {
 		p.html('Slide Attributes');
 		editColumns = slideEditColumns;
 		multiValuesColumns = slideMultiValuesColumns;
@@ -2217,12 +2218,12 @@ function editItem(col) {
 }
 
 function displayScan(img, image) {
-	displayEntity('scan', image);
+	displayEntity('Scan', image);
 	$('#transferButton').unbind('click');
 	$('#transferButton').click(function(event) {transferImage(image);});
 	$('#transferButton').show();
 	$('#enlargeButton').unbind('click');
-	if (image['tilesdir'] != null) {
+	if (image['Zoomify'] != null) {
 		$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
 		$('#enlargeButton').removeAttr('disabled');
 		$('#enlargeButton').removeClass('disabledButton');
@@ -2374,13 +2375,13 @@ function initBottomPanel(panel) {
 
 function editEntity(item) {
 	var cols = null;
-	if (item == 'scan') {
+	if (item == 'Scan') {
 		cols = scanEditColumns;
-	} else if (item == 'slide') {
+	} else if (item == 'Slide') {
 		cols = slideEditColumns;
-	} else if (item == 'box') {
+	} else if (item == 'Box') {
 		cols = boxEditColumns;
-	} else if (item == 'experiment') {
+	} else if (item == 'Experiment') {
 		cols = experimentEditColumns;
 	}
 	$.each(cols, function(i, col) {
@@ -2395,16 +2396,16 @@ function editEntity(item) {
 function updateEntity(item, column, isMultiValue) {
 	var cols = null;
 	var editCols = null;
-	if (item == 'scan') {
+	if (item == 'Scan') {
 		cols = scanColumns;
 		editCols = scanEditColumns;
-	} else if (item == 'slide') {
+	} else if (item == 'Slide') {
 		cols = slideColumns;
 		editCols = slideEditColumns;
-	} else if (item == 'box') {
+	} else if (item == 'Box') {
 		cols = boxColumns;
 		editCols = boxEditColumns;
-	} else if (item == 'experiment') {
+	} else if (item == 'Experiment') {
 		cols = experimentColumns;
 		editCols = experimentEditColumns;
 	}
@@ -2431,44 +2432,44 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	var colDict = null;
 	var colList = null;
 	var cols = null;
-	if (item == 'scan') {
+	if (item == 'Scan') {
 		colDict = scansDict;
 		colList = scansList;
 		cols = scanColumns;
-	} else if (item == 'slide') {
+	} else if (item == 'Slide') {
 		colDict = slidesDict;
 		colList = slidesList;
 		cols = slideColumns;
-	} else if (item == 'box') {
+	} else if (item == 'Box') {
 		colDict = boxesDict;
 		colList = boxesList;
 		cols = boxColumns;
-	} else if (item == 'experiment') {
+	} else if (item == 'Experiment') {
 		colDict = experimentsDict;
 		colList = experimentsList;
 		cols = experimentColumns;
 	}
 
 	data = data[0];
-	colDict[data['id']] = data;
+	colDict[data['ID']] = data;
 	var temp = [];
 	$.each(colList, function(i, col) {
-		if (col['id'] != data['id']) {
+		if (col['ID'] != data['ID']) {
 			temp.push(col);
 		} else {
 			temp.push(data);
 		}
 	});
 	colList = temp;
-	if (item == 'slide') {
+	if (item == 'Slide') {
 		updateRowData(slideColumns, slideEditColumns, data);
 	}
 	displayEntity(item, data);
 	$('#printBoxButton').hide();
-	if (item == 'scan') {
+	if (item == 'Scan') {
 		$('#transferButton').show();
 		$('#enlargeButton').show();
-	} else if (item == 'box') {
+	} else if (item == 'Box') {
 		$('#printBoxButton').show();
 	}
 }
@@ -2485,7 +2486,7 @@ function cancel(itemType, item) {
 }
 
 function transferImage(image) {
-	var czi = image['http_url'];
+	var czi = image['HTTP URL'];
 	window.open(
 	  czi,
 	  '_blank' // <- This is what makes it open in a new window.
@@ -2515,8 +2516,8 @@ function compareNumbers(val1, val2) {
 }
 
 function compareIds(item1, item2) {
-	var val1 = item1['id'];
-	var val2 = item2['id'];
+	var val1 = item1['ID'];
+	var val2 = item2['ID'];
 	return compareIgnoreCase(val1, val2);
 }
 
@@ -2671,7 +2672,7 @@ function createSlide() {
 	$('#createButton').click(function(event) {saveSlide();});
 	$('#createButton').show();
 	$('#cancelCreateButton').unbind('click');
-	$('#cancelCreateButton').click(function(event) {backupRightPanel(); appendSlides('box');});
+	$('#cancelCreateButton').click(function(event) {backupRightPanel(); appendSlides('Box');});
 	$('#cancelCreateButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
@@ -2750,8 +2751,11 @@ function renderTransferFiles(files) {
 	th.hide();
 	$.each(filesTableColumns, function(i, col) {
 		var th = $('<th>');
+		if (fileClassValue[col] != null) {
+			th.addClass(fileClassValue[col]);
+		}
 		tr.append(th);
-		th.html(filesTableDisplayColumns[col]);
+		th.html(col);
 	});
 	var tfoot = $('<tfoot>');
 	table1.append(tfoot);
@@ -2788,6 +2792,9 @@ function renderTransferFiles(files) {
 		td.hide();
 		$.each(filesTableColumns, function(j, col) {
 			var td = $('<td>');
+			if (fileClassValue[col] != null) {
+				td.addClass(fileClassValue[col]);
+			}
 			tr.append(td);
 			if (fileDisplayValue[col] != null) {
 				fileDisplayValue[col](td, filesDict[file], scanFiles);
@@ -3027,9 +3034,9 @@ function checkFilesTransferButton() {
 function getSlidesType() {
 	var ret = null;
 	if ($('.highlighted', $('#BoxDiv')).length > 0) {
-		ret = 'box';
+		ret = 'Box';
 	} else if ($('.highlighted', $('#ExperimentDiv')).length > 0) {
-		ret = 'experiment';
+		ret = 'Experiment';
 	} else if ($('.highlighted', $('#SearchDiv')).length > 0) {
 		ret = 'search';
 	}
@@ -3291,7 +3298,7 @@ function cancelPrinterSettings() {
 }
 
 function managePrinter(param) {
-	var url = PRINTER_HOME + (isSlidePrinter ? 'slide' : 'box') + '/control/' + encodeSafeURIComponent(param) + '/';
+	var url = PRINTER_HOME + (isSlidePrinter ? 'Slide' : 'Box') + '/control/' + encodeSafeURIComponent(param) + '/';
 	var arr = [];
 	var obj = new Object();
 	obj['printer_id'] = PRINTER_ADDR;
@@ -3445,10 +3452,10 @@ function displaySlide(id) {
 	rightPanel.html('');
 	var currentState = history.state;
 	if (currentState != null && 
-			(currentState['query'] == 'box' || currentState['query'] == 'experiment' || currentState['query'] == 'search')) {
-		pushHistoryState('scan', '', 
-				'query=scan&slide='+encodeSafeURIComponent(id), 
-				{'slide': id});
+			(currentState['query'] == 'Box' || currentState['query'] == 'Experiment' || currentState['query'] == 'search')) {
+		pushHistoryState('Scan', '', 
+				'query=Scan&Slide='+encodeSafeURIComponent(id), 
+				{'Slide': id});
 	}
 	getScans(id);
 }
@@ -3470,7 +3477,7 @@ function displayBox(ul, li) {
 	li.addClass('highlighted');
 	$('#centerPanelTop').html('');
 	$('button[context="centerPanelBottom"]').hide();
-	displayEntity('box', boxesDict[li.html()]);
+	displayEntity('Box', boxesDict[li.html()]);
 	entityStack = [];
 	getSlides(li.html());
 }
@@ -3480,7 +3487,7 @@ function displayExperiment(ul, li) {
 	li.addClass('highlighted');
 	$('#centerPanelTop').html('');
 	$('button[context="centerPanelBottom"]').hide();
-	displayEntity('experiment', experimentsDict[li.html()]);
+	displayEntity('Experiment', experimentsDict[li.html()]);
 	entityStack = [];
 	getExperimentSlides(li.html());
 }
@@ -3620,7 +3627,7 @@ function createBox() {
 
 function saveBox() {
 	var boxDate = $('#boxDate').val().split('-').join('');
-	var url = ERMREST_HOME + '/box';
+	var url = ERMREST_HOME + '/Box';
 	var arr = [];
 	var obj = new Object();
 	obj['Section Date'] = $('#boxDate').val();
@@ -3629,19 +3636,19 @@ function saveBox() {
 	obj['Disambiguator'] = $('#boxDisambiguator').val();
 	obj['Comment'] = $('#boxComment').val();
 	var id = [boxDate, $('#boxGenotype').val(), $('#boxRI').val(), $('#boxDisambiguator').val()].join('-');
-	obj['id'] = id;
+	obj['ID'] = id;
 	arr.push(obj);
 	cirmAJAX.POST(url, 'application/json', false, arr, true, postSaveBox, null, null, 0);
 }
 
 function postSaveBox(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data);
-	newBoxId = data[0]['id'];
+	newBoxId = data[0]['ID'];
 	getBoxes(null);
 }
 
 function saveExperiment() {
-	var url = ERMREST_HOME + '/experiment';
+	var url = ERMREST_HOME + '/Experiment';
 	var arr = [];
 	var obj = new Object();
 	obj['Experiment Date'] = $('#experimentDate').val();
@@ -3651,14 +3658,14 @@ function saveExperiment() {
 	obj['Comment'] = $('#experimentComment').val();
 	var experimentDate = $('#experimentDate').val().split('-').join('');
 	var id = [experimentDate, $('#experimentDescription').val(), $('#experimentRI').val(), $('#experimentDisambiguator').val()].join('-');
-	obj['id'] = id;
+	obj['ID'] = id;
 	arr.push(obj);
 	cirmAJAX.POST(url, 'application/json', false, arr, true, postSaveExperiment, null, null, 0);
 }
 
 function postSaveExperiment(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data);
-	newExperimentId = data[0]['id'];
+	newExperimentId = data[0]['ID'];
 	getBoxes(null);
 }
 
@@ -3677,7 +3684,7 @@ function saveSlide() {
 			return;
 	}
 	var id = $($('.highlighted', $('#BoxDiv'))[0]).html();
-	var url = ERMREST_HOME + '/slide';
+	var url = ERMREST_HOME + '/Slide';
 	var arr = [];
 	for (var i=0; i < slidesCount; i++) {
 		var obj = new Object();
@@ -3694,7 +3701,7 @@ function saveSlide() {
 			slideSequenceNumber = '0' + slideSequenceNumber;
 		}
 		var slideId = [id, slideSequenceNumber, slideRevision].join('-');
-		obj['id'] = slideId;
+		obj['ID'] = slideId;
 		arr.push(obj);
 	}
 //alert(JSON.stringify(arr));
@@ -3705,7 +3712,7 @@ function postSaveSlide(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data);
 	$.each(data, function(i, item) {
 		slidesList.push(item);
-		slidesDict[item['id']] = item;
+		slidesDict[item['ID']] = item;
 	});
 	appendSlides(getSlidesType());
 }
@@ -3713,10 +3720,10 @@ function postSaveSlide(data, textStatus, jqXHR, param) {
 function submitTransfer() {
 	$('#rightPanelTop').html('');
 	$('button', $('#rightPanelBottom')).hide();
-	var url = ERMREST_HOME + '/scan/';
+	var url = ERMREST_HOME + '/Scan/';
 	var slides = [];
 	$.each($('td', $('#slidesTable')).find('input:checked'), function(i, checkbox) {
-		slides.push('slide_id=' + encodeSafeURIComponent($(checkbox).attr('slideId')));
+		slides.push('Slide ID=' + encodeSafeURIComponent($(checkbox).attr('slideId')));
 	});
 	url += slides.join(';');
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitTransfer, null, null, 0);
@@ -3726,7 +3733,7 @@ function postSubmitTransfer(data, textStatus, jqXHR, param) {
 	var files = [];
 	filesDict = {};
 	$.each(data, function(i, scan) {
-		var filename = scan['filename'];
+		var filename = scan['Filename'];
 		if (!files.contains(filename)) {
 			files.push(filename);
 			filesDict[filename] = scan;
@@ -3777,13 +3784,13 @@ function globusFileTransfer() {
 	$.each(files, function(i, file) {
 		var scan = filesDict[file];
 		if (endpoint_1 == null) {
-			endpoint_1 = scan['go_endpoint'];
+			endpoint_1 = scan['GO Endpoint'];
 			obj['endpoint_1'] = endpoint_1;
 		}
-		if (endpoint_1 == scan['go_endpoint']) {
+		if (endpoint_1 == scan['GO Endpoint']) {
 			var item = {};
-			item['file_from'] = scan['go_path'];
-			item['file_to'] = destDir + scan['filename'];
+			item['file_from'] = scan['GO Path'];
+			item['file_to'] = destDir + scan['Filename'];
 			arr.push(item);
 		}
 	});
@@ -3798,7 +3805,7 @@ function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
 		$('#refreshActivityButton').removeClass('disabledButton');
 		$('#refreshActivityButton').unbind('click');
 		$('#refreshActivityButton').click(function(event) {getTaskStatus(data['task_id']);});
-		pushHistoryState('transfer', '', 'query=transfer&id='+encodeSafeURIComponent(data['task_id']), {'id': data['task_id']});
+		pushHistoryState('transfer', '', 'query=transfer&id='+encodeSafeURIComponent(data['task_id']), {'ID': data['task_id']});
 		getTaskStatus(data['task_id']);
 	} else {
 		alert(data['error']);
@@ -3806,7 +3813,7 @@ function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
 }
 
 function displayTaskStatus(id) {
-	pushHistoryState('transfer', '', 'query=transfer&id='+encodeSafeURIComponent(id), {'id': id});
+	pushHistoryState('transfer', '', 'query=transfer&id='+encodeSafeURIComponent(id), {'ID': id});
 	getTaskStatus(id);
 }
 
@@ -3820,12 +3827,12 @@ function submitPrintSlide() {
 		var obj = new Object();
 		obj['Rev.'] = slide['Rev.'];
 		obj['Seq.'] = slide['Seq.'];
-		obj['experiment'] = slide[slideExperimentColumn];
+		obj['Experiment'] = slide[slideExperimentColumn];
 		obj['Experiment Date'] = experiment['Experiment Date'];
 		obj['Sample Name'] = box['Sample Name'];
 		obj['Experiment Description'] = experiment['Experiment Description'];
 		obj['Initials'] = experiment['Initials'];
-		obj['id'] = slide['id'];
+		obj['ID'] = slide['ID'];
 		obj['printer_id'] = SLIDE_PRINTER_ADDR;
 		obj['printer_port'] = SLIDE_PRINTER_PORT;
 		arr.push(obj);
@@ -4014,18 +4021,18 @@ function renderQuery(state) {
 			newSearchKeywords = null;
 			selectNewSearch();
 		}
-	} else if (query == 'box') {
-		selectSlideBox(state['id']);
-	} else if (query == 'experiment') {
-		selectSlideExperiment(state['id']) ;
+	} else if (query == 'Box') {
+		selectSlideBox(state['ID']);
+	} else if (query == 'Experiment') {
+		selectSlideExperiment(state['ID']) ;
 	} else if (query == 'search') {
 		selectSearch(state['keywords']);
-	} else if (query == 'scan') {
-		displaySlide(state['slide']);
+	} else if (query == 'Scan') {
+		displaySlide(state['Slide']);
 	} else if (query == 'globus') {
 		selectTransfer();
 	} else if (query == 'transfer') {
-		ACTIVITY_TASK_ID = state['id'];
+		ACTIVITY_TASK_ID = state['ID'];
 		selectTransfer();
 	}
 }
@@ -4107,7 +4114,11 @@ function getTableColumns(table) {
 }
 
 function makeId(id) {
-	var parts = id.split(' ');
+	var val = id;
+	$.each(ID_ESCAPE, function(i,c) {
+		val = val.replace(new RegExp('\\' + c, 'g'), '_');
+	});
+	var parts = val.split(' ');
 	return parts.join('_');
 }
 

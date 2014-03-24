@@ -491,3 +491,15 @@ td.no_padding {
 	padding-left:0px;
 	padding-right:0px;
 }
+
+td.thumbnail {
+	width:1%;
+	text-align:center;
+}
+
+td.file_size, th.file_size {
+	width:1%;
+	text-align:right;
+	white-space:nowrap;
+}
+

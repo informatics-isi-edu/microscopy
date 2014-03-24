@@ -51,6 +51,7 @@ var newExperimentId = null;
 var newSlideId = null;
 var newSearchKeywords = null;
 var ACTIVITY_TASK_ID = null;
+var SLIDE_VIEW = null;
 
 var goauth_cookie = 'globusonline-goauth';
 var token = null;
@@ -112,6 +113,9 @@ var entityStack = [];
 var timestampsColumns = ['completion_time', 'deadline', 'request_time']
 
 var viewsList = ['Transfer', 'Printers'];
+var slidesViewList = ['All', 'Unassigned'];
+var SORT_IDS = ['Box', 'Experiment'];
+var SCAN_HISTORY = ['Box', 'Experiment', 'Slide', 'search'];
 
 var containerLayout = null;
 
@@ -558,6 +562,40 @@ function postGetSlide(data, textStatus, jqXHR, param) {
 	}
 	mobileParams['Slide'] = data[0];
 	getBoxes(data[0]['Box ID']);
+}
+
+function getBoxesSlides(view) {
+	var url = ERMREST_HOME + '/Scan';
+	var params = {'view': view};
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxesSlides, params, null, 0);
+}
+
+function postGetBoxesSlides(data, textStatus, jqXHR, param) {
+	scansDict = {};
+	scansList = data;
+	$.each(data, function(i, item) {
+		scansDict[item['ID']] = item;
+	});
+	var view = param['view'];
+	var url = ERMREST_HOME + '/Slide';
+	if (view == 'Unassigned') {
+		url += '/'+encodeSafeURIComponent(slideExperimentColumn)+'::null::';
+	}
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetViewSlides, {'view': view}, null, 0);
+}
+
+function postGetViewSlides(data, textStatus, jqXHR, param) {
+	$.each(data, function(i, item) {
+		slidesDict[item['ID']] = item;
+	});
+	slidesList = [];
+	$.each(data, function(i, item) {
+		slidesList.push(item);
+	});
+	slidesList.sort(compareIds);
+	entityStack = [];
+	pushHistoryState('Slide', '', 'query=Slide&view='+encodeSafeURIComponent(param['view']), {'view': param['view']});
+	appendSlides('slide');
 }
 
 function getExperimentSlides(experimentId) {
@@ -1184,7 +1222,7 @@ function selectNewSearch() {
 function selectSearch(keywords) {
 	$.each($('li', $('#SearchUL')), function(i, li) {
 		if ($(li).html() == keywords) {
-			$('#leftPanel').accordion( "option", "active", 2 );
+			$('#leftPanel').accordion( "option", "active", 3 );
 			$(li).click();
 			return false;
 		}
@@ -1212,11 +1250,11 @@ function getEntityContent(entityList, displayName, entityName, clickFunction, cr
 	obj['Create'] = createFunction;
 	var values = [];
 	var arr = [].concat(entityList);
-	if (entityName != 'Search' && entityName != 'View') {
+	if (SORT_IDS.contains(entityName)) {
 		arr.sort(compareIds);
 	}
 	$.each(arr, function(i, item) {
-		if (entityName != 'Search' && entityName != 'View') {
+		if (SORT_IDS.contains(entityName)) {
 			values.push(item['ID']);
 		} else {
 			values.push(item);
@@ -1235,13 +1273,15 @@ function initPanels() {
 	loadLeftPanel(leftPanel, boxesContent);
 	var experimentsContent = getEntityContent(experimentsList, 'Experiments', 'Experiment', displayExperiment, createExperiment);
 	loadLeftPanel(leftPanel, experimentsContent);
+	var slidesContent = getEntityContent(slidesViewList, 'Slides', 'Slide', displayBoxesSlides, null);
+	loadLeftPanel(leftPanel, slidesContent);
 	var searchContent = getEntityContent(searchList, 'Recent Searches', 'Search', displaySearch, null);
 	loadLeftPanel(leftPanel, searchContent);
 	var viewsContent = getEntityContent(viewsList, 'Admin', 'View', displayView, null);
 	loadLeftPanel(leftPanel, viewsContent);
 	var active = false;
 	if (newSearchKeywords != null) {
-		active = 2;
+		active = 3;
 	} else if (newExperimentId != null) {
 		active = 1;
 	} else if (newBoxId != null) {
@@ -1296,7 +1336,7 @@ function selectSlideBox(boxId) {
 }
 
 function selectTransfer() {
-	$('#leftPanel').accordion( "option", "active", 3 );
+	$('#leftPanel').accordion( "option", "active", 4 );
 	$.each($('li', $('#ViewUL')), function(i, li) {
 		if ($(li).html() == 'Transfer') {
 			$(li).click();
@@ -1305,8 +1345,18 @@ function selectTransfer() {
 	});
 }
 
-function selectSlideSearch(value) {
+function selectSlideView() {
 	$('#leftPanel').accordion( "option", "active", 2 );
+	$.each($('li', $('#SlideUL')), function(i, li) {
+		if ($(li).html() == SLIDE_VIEW) {
+			$(li).click();
+			return false;
+		}
+	});
+}
+
+function selectSlideSearch(value) {
+	$('#leftPanel').accordion( "option", "active", 3 );
 	$.each($('li', $('#SearchUL')), function(i, li) {
 		if ($(li).html() == value) {
 			$(li).click();
@@ -3451,8 +3501,7 @@ function displaySlide(id) {
 	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
 	var currentState = history.state;
-	if (currentState != null && 
-			(currentState['query'] == 'Box' || currentState['query'] == 'Experiment' || currentState['query'] == 'search')) {
+	if (currentState != null && SCAN_HISTORY.contains(currentState['query'])) {
 		pushHistoryState('Scan', '', 
 				'query=Scan&Slide='+encodeSafeURIComponent(id), 
 				{'Slide': id});
@@ -3502,6 +3551,18 @@ function displaySearch(ul, li) {
 	$('button[context="centerPanelBottom"]').hide();
 	entityStack = [];
 	getSearchSlides(getSearchExpression(li.html(), '&'), li.html());
+}
+
+function displayBoxesSlides(ul, li) {
+	$('li', $('#leftPanel')).removeClass('highlighted');
+	li.addClass('highlighted');
+	$('#rightPanelTop').html('');
+	$('#centerPanelTop').html('');
+	$('#printBoxButton').hide();
+	$('button', $('#rightPanelBottom')).hide();
+	$('button[context="centerPanelBottom"]').hide();
+	entityStack = [];
+	getBoxesSlides(li.html());
 }
 
 function checkBoxSaveButton() {
@@ -4034,6 +4095,9 @@ function renderQuery(state) {
 	} else if (query == 'transfer') {
 		ACTIVITY_TASK_ID = state['ID'];
 		selectTransfer();
+	} else if (query == 'Slide') {
+		SLIDE_VIEW = state['view'];
+		selectSlideView();
 	}
 }
 

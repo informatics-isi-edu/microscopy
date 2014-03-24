@@ -110,7 +110,7 @@ class PrintJob (Printer):
             self.setPrinter(entity, (json_data[0]['printer_id'], json_data[0]['printer_port']))
         if entity == 'box':
             box = json_data[0]
-            id = box['id']
+            id = box['ID']
             section_date = box['Section Date']
             sample_name = box['Sample Name']
             initials = box['Initials']
@@ -125,8 +125,8 @@ class PrintJob (Printer):
             response.append(res)
         elif entity == 'slide':
             for slide in json_data:
-                id = slide['id']
-                experiment = slide['experiment']
+                id = slide['ID']
+                experiment = slide['Experiment']
                 experiment_date = slide['Experiment Date']
                 sample_name = slide['Sample Name']
                 experiment_description = slide['Experiment Description']

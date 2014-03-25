@@ -33,7 +33,6 @@ var ERMREST_HOME = '/ermrest/catalog/1/entity';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
 var PRINTER_HOME = '/ermrest/printer/';
 var GLOBUS_TRANSFER_HOME = '/ermrest/transfer';
-var ZOOMIFY_HOME = '/ermrest/zoomify/';
 var SERVICE_TRANSFER_HOME = '/service/transfer/';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
@@ -671,7 +670,6 @@ function renderLogin() {
 	WEBAUTHN_HOME = HOME + WEBAUTHN_HOME;
 	PRINTER_HOME = HOME + PRINTER_HOME;
 	GLOBUS_TRANSFER_HOME = HOME + GLOBUS_TRANSFER_HOME;
-	ZOOMIFY_HOME = HOME + ZOOMIFY_HOME;
 	ERMREST_SCHEMA_HOME = HOME + ERMREST_SCHEMA_HOME;
 	SERVICE_TRANSFER_HOME = HOME + SERVICE_TRANSFER_HOME;
 	if (isMobileSearch() && !MOBILE_AUTHENTICATE) {

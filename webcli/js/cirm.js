@@ -12,6 +12,7 @@ var debug = false;
 var selectedEndpoint = null;
 var endpointPath = [];
 
+var LAST_STATE = null;
 var CXI_RET='Return value';
 var CXI_MSG='Return Message';
 var MOBILE_AUTHENTICATE = true;
@@ -4031,6 +4032,7 @@ function pushHistoryState(query, title, url, params) {
 		var currentState = history.state;
 		if (!testEqual(currentState, state)) {
 			history.pushState(state, title, CIRM_HOME+'#'+url);
+			LAST_STATE = state;
 		}
 	}
 }
@@ -4039,7 +4041,12 @@ function goBack(event) {
 	var state = event.state;
 	if (state != null && state['query'] != null) {
 		$('#welcomeLink').html('Welcome ' + state['user'] + '!');
-		renderQuery(state);
+		if (!testEqual(LAST_STATE, state)) {
+			renderQuery(state);
+			LAST_STATE = state;
+		} else {
+			history.back();
+		}
 	} else {
 		//history.back();
 	}

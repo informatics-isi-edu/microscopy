@@ -526,6 +526,11 @@ function postGetExperiments(data, textStatus, jqXHR, param) {
 		});
 		if (PAGE_URL == null) {
 			pushHistoryState('drawPanels', '', '', null);
+		} else {
+			var state = getPageState();
+			if (state['query'] == 'search' && state['keywords'] != null) {
+				searchList.unshift(state['keywords']);
+			}
 		}
 		drawPanels();
 		if (PAGE_URL != null) {
@@ -1213,6 +1218,11 @@ function selectNewExperiment() {
 }
 
 function selectNewSearch() {
+	setTimeout('setNewSearch()', 1);
+}
+
+function setNewSearch() {
+	$('#leftPanel').accordion( "option", "active", 3 );
 	var newSearch = $('li', $('#SearchUL'))[0];
 	$(newSearch).click();
 }
@@ -4031,7 +4041,7 @@ function goBack(event) {
 		$('#welcomeLink').html('Welcome ' + state['user'] + '!');
 		renderQuery(state);
 	} else {
-		history.back();
+		//history.back();
 	}
 }
 
@@ -4057,14 +4067,19 @@ function testEqual(obj1, obj2) {
 	return ret;
 }
 
-function initPage() {
+function getPageState() {
 	var state = {};
 	var parts = PAGE_URL.split('&');
-	PAGE_URL = null;
 	$.each(parts, function(i, part) {
 		var param = part.split('=');
 		state[param[0]] = decodeURIComponent(param[1]);
 	});
+	return state;
+}
+
+function initPage() {
+	var state = getPageState();
+	PAGE_URL = null;
 	renderQuery(state);
 }
 

@@ -1953,7 +1953,7 @@ function loadLeftPanel(panel, vals) {
 			var buttonImage = $('<button>').button({icons: {primary: 'ui-icon-circle-plus'},
 				text: false});
 			buttonImage.addClass('newEntity');
-			buttonImage.click(function(event) {val['Create']();});
+			buttonImage.click(function(event) {event.stopPropagation();val['Create']();});
 			buttonImage.attr('title', 'New '+val['Name']);
 			buttonImage.css('width', 5);
 			h4.append(buttonImage);

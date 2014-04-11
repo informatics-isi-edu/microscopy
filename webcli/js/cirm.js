@@ -3862,6 +3862,7 @@ function globusFileTransfer() {
 	obj['deadline'] = transferDeadline;
 	obj['files'] = files;
 	var arr = [];
+	var fileNames = {};
 	$.each(files, function(i, file) {
 		var scan = filesDict[file];
 		if (endpoint_1 == null) {
@@ -3871,7 +3872,14 @@ function globusFileTransfer() {
 		if (endpoint_1 == scan['GO Endpoint']) {
 			var item = {};
 			item['file_from'] = scan['GO Path'];
-			item['file_to'] = destDir + scan['Filename'];
+			var fileName = scan['Original Filename'];
+			if (fileNames[fileName] == null) {
+				fileNames[fileName] = 0;
+			} else {
+				var parts = fileName.split('.czi');
+				fileName = parts[0] + '_' + ++fileNames[fileName] + '.czi';
+			}
+			item['file_to'] = destDir + fileName;
 			arr.push(item);
 		}
 	});

@@ -3476,6 +3476,7 @@ function createExperiment() {
 		'maxlength': '1',
 		'type': 'text'});
 	td.append(input);
+	input.val('0');
 	input.keyup(function(event) {checkExperimentSaveButton();});
 
 	var tr = $('<tr>');
@@ -3665,6 +3666,7 @@ function createBox() {
 		'maxlength': '1',
 		'type': 'text'});
 	td.append(input);
+	input.val('0');
 	input.keyup(function(event) {checkBoxSaveButton();});
 
 	var tr = $('<tr>');
@@ -4018,7 +4020,10 @@ function clear() {
 
 function pushHistoryState(query, title, url, params) {
 	if (query == null) {
-		history.pushState({}, title, CIRM_HOME+'#'+url);
+		if (!testEqual(LAST_STATE, {})) {
+			history.pushState({}, title, CIRM_HOME+'#'+url);
+			LAST_STATE = {};
+		}
 	} else {
 		var state = {
 				'query': query,

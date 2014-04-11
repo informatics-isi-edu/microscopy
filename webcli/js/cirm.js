@@ -648,7 +648,7 @@ function postGetSlides(data, textStatus, jqXHR, param) {
 }
 
 function getBoxScans(boxId) {
-	var url = ERMREST_HOME + '/Scan/ID::regexp::' + encodeSafeURIComponent(boxId) + '*';
+	var url = ERMREST_HOME + '/Scan/' + encodeSafeURIComponent('Slide ID') + '::regexp::' + encodeSafeURIComponent(boxId) + '*';
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxScans, {'ID': boxId}, null, 0);
 }
 
@@ -1396,7 +1396,7 @@ function getSlideColumnValue(slide, td, val, index) {
 function getSlideScansNumber(slide, td, val) {
 	var no = 0;
 	$.each(scansList, function(i, scan) {
-		if (scan['ID'].indexOf(slide['ID']) == 0) {
+		if (scan['Slide ID'] == slide['ID']) {
 			no++;
 		}
 	});

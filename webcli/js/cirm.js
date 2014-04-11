@@ -2813,10 +2813,11 @@ function renderTransferFiles(files) {
 	tr.append(th);
 	var input = $('<input>');
 	input.attr({'type': 'checkbox',
+		'checked': 'checked',
 		'id': 'selectAllFilesTh'});
 	input.click(function(event) {checkUncheckAll('filesTable', 'selectAllFilesTh', ['submitButton']);});
 	th.append(input);
-	th.hide();
+	//th.hide();
 	$.each(filesTableColumns, function(i, col) {
 		var th = $('<th>');
 		if (fileClassValue[col] != null) {
@@ -2857,7 +2858,7 @@ function renderTransferFiles(files) {
 			'filename': file});
 		input.click(function(event) {checkAvailableSlides(event, 'filesTable', 'selectAllFilesTh', ['submitButton']);});
 		td.append(input);
-		td.hide();
+		//td.hide();
 		$.each(filesTableColumns, function(j, col) {
 			var td = $('<td>');
 			if (fileClassValue[col] != null) {

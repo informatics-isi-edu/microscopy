@@ -1430,7 +1430,16 @@ function getSlideThumbnail(slide, td, val) {
 	a.append(img);
 	td.append(a);
 	if (img.attr('src') == 'images/blank.jpeg') {
-		a.click(function(event) {event.preventDefault();});
+		var hasFile = false;
+		$.each(scansList, function(i, scan) {
+			if (scan['Slide ID'] == slide['ID'] && scan['Original Filename'] != null) {
+				hasFile = true;
+				return false;
+			}
+		});
+		if (!hasFile) {
+			a.click(function(event) {event.preventDefault();});
+		}
 	}
 }
 
@@ -2032,7 +2041,7 @@ function appendImage(images) {
 		var img = $('<img>');
 		img.attr({'alt': 'Undefined',
 			'title': 'Thumbnail',
-			'src': image['Thumbnail'],
+			'src': image['Thumbnail'] != null ? image['Thumbnail'] : 'images/blank.jpeg',
 			'width': 100,
 			'height': 100,
 			'index': image['ID']

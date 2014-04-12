@@ -114,7 +114,6 @@ var timestampsColumns = ['completion_time', 'deadline', 'request_time']
 
 var viewsList = ['Transfer', 'Printers'];
 var slidesViewList = ['All', 'Unassigned'];
-var SORT_IDS = ['Box', 'Experiment'];
 var SCAN_HISTORY = ['Box', 'Experiment', 'Slide', 'search'];
 
 var containerLayout = null;
@@ -1250,7 +1249,7 @@ function selectNewSlide() {
 	}
 }
 
-function getEntityContent(entityList, displayName, entityName, clickFunction, createFunction) {
+function getEntityContent(entityList, displayName, entityName, clickFunction, createFunction, compareEntities, node) {
 	var entityContent = [];
 	var obj = {};
 	obj['Display'] = displayName;
@@ -1259,15 +1258,11 @@ function getEntityContent(entityList, displayName, entityName, clickFunction, cr
 	obj['Create'] = createFunction;
 	var values = [];
 	var arr = [].concat(entityList);
-	if (SORT_IDS.contains(entityName)) {
-		arr.sort(compareIds);
+	if (compareEntities != null) {
+		arr.sort(compareEntities);
 	}
 	$.each(arr, function(i, item) {
-		if (SORT_IDS.contains(entityName)) {
-			values.push(item['ID']);
-		} else {
-			values.push(item);
-		}
+		values.push(node(item));
 	});
 	obj['Values'] = values;
 	entityContent.push(obj);
@@ -1278,15 +1273,15 @@ function initPanels() {
 	initTopPanel();
 	var leftPanel = $('#leftPanel');
 	leftPanel.html('');
-	var boxesContent = getEntityContent(boxesList, 'Boxes', 'Box', displayBox, createBox);
+	var boxesContent = getEntityContent(boxesList, 'Boxes', 'Box', displayBox, createBox, compareBoxes, boxNode);
 	loadLeftPanel(leftPanel, boxesContent);
-	var experimentsContent = getEntityContent(experimentsList, 'Experiments', 'Experiment', displayExperiment, createExperiment);
+	var experimentsContent = getEntityContent(experimentsList, 'Experiments', 'Experiment', displayExperiment, createExperiment, compareExperiments, experimentNode);
 	loadLeftPanel(leftPanel, experimentsContent);
-	var slidesContent = getEntityContent(slidesViewList, 'Slides', 'Slide', displayBoxesSlides, null);
+	var slidesContent = getEntityContent(slidesViewList, 'Slides', 'Slide', displayBoxesSlides, null, null, entityNode);
 	loadLeftPanel(leftPanel, slidesContent);
-	var searchContent = getEntityContent(searchList, 'Recent Searches', 'Search', displaySearch, null);
+	var searchContent = getEntityContent(searchList, 'Recent Searches', 'Search', displaySearch, null, null, entityNode);
 	loadLeftPanel(leftPanel, searchContent);
-	var viewsContent = getEntityContent(viewsList, 'Admin', 'View', displayView, null);
+	var viewsContent = getEntityContent(viewsList, 'Admin', 'View', displayView, null, null, entityNode);
 	loadLeftPanel(leftPanel, viewsContent);
 	var active = false;
 	if (newSearchKeywords != null) {
@@ -1978,7 +1973,8 @@ function loadLeftPanel(panel, vals) {
 			var li = $('<li>');
 			ul.append(li);
 			li.addClass('nowrap');
-			li.html(value);
+			li.attr('entityId', value['entityId']);
+			li.html(value['display']);
 		});
 		$('li', ul).click(function(event) {val['Click'](ul, $(this));});
 		$('li', ul).hover(
@@ -2581,6 +2577,41 @@ function compareNumbers(val1, val2) {
 		ret = 1;
 	}
 	return ret;
+}
+
+function entityNode(entity) {
+	return {'entityId': entity,
+		'display': entity};
+}
+
+function boxNode(box) {
+	return {'entityId': box['ID'],
+		'display': boxDisplayName(box)};
+}
+
+function experimentNode(experiment) {
+	return {'entityId': experiment['ID'],
+		'display': experimentDisplayName(experiment)};
+}
+
+function boxDisplayName(box) {
+	return box['Sample Name'] + '-' + box['Initials'] + '-' + box['Section Date'];
+}
+
+function experimentDisplayName(experiment) {
+	return experiment['Experiment Description'] + '-' + experiment['Initials'] + '-' + experiment['Experiment Date'];
+}
+
+function compareBoxes(item1, item2) {
+	var val1 = boxDisplayName(item1);
+	var val2 = boxDisplayName(item2);
+	return compareIgnoreCase(val1, val2);
+}
+
+function compareExperiments(item1, item2) {
+	var val1 = experimentDisplayName(item1);
+	var val2 = experimentDisplayName(item2);
+	return compareIgnoreCase(val1, val2);
 }
 
 function compareIds(item1, item2) {
@@ -3546,9 +3577,9 @@ function displayBox(ul, li) {
 	li.addClass('highlighted');
 	$('#centerPanelTop').html('');
 	$('button[context="centerPanelBottom"]').hide();
-	displayEntity('Box', boxesDict[li.html()]);
+	displayEntity('Box', boxesDict[li.attr('entityId')]);
 	entityStack = [];
-	getSlides(li.html());
+	getSlides(li.attr('entityId'));
 }
 
 function displayExperiment(ul, li) {
@@ -3556,9 +3587,9 @@ function displayExperiment(ul, li) {
 	li.addClass('highlighted');
 	$('#centerPanelTop').html('');
 	$('button[context="centerPanelBottom"]').hide();
-	displayEntity('Experiment', experimentsDict[li.html()]);
+	displayEntity('Experiment', experimentsDict[li.attr('entityId')]);
 	entityStack = [];
-	getExperimentSlides(li.html());
+	getExperimentSlides(li.attr('entityId'));
 }
 
 function displaySearch(ul, li) {

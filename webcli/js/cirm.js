@@ -120,6 +120,13 @@ var containerLayout = null;
 
 var lastSearchValue = '';
 
+var buttonsEnableFunction = {
+		'globusTransferButton': hasScans,
+		'printSlideButton': hasExperiments,
+		'addButton': hasCheckedEntries,
+		'submitButton': hasCheckedFiles
+}
+
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 			document.body.style.cursor = 'wait';
@@ -1458,7 +1465,7 @@ function getFileThumbnail(td, scan) {
 
 function addSlides() {
 	var li = $('.highlighted', $('#leftPanel'))[0];
-	var experimentId = $(li).html();
+	var experimentId = $(li).attr('entityId');
 	var url = ERMREST_HOME + '/Slide';
 	var arr = [];
 	$.each($('td', $('#unassignedSlidesTable')).find('input:checked'), function(i, checkbox) {
@@ -1489,10 +1496,14 @@ function checkUncheckAll(tableId, thId, buttons) {
 	var checked = $('#' + thId).prop('checked');
 	if (checked) {
 		$('td', $('#' + tableId)).find('input:not(:checked)').prop('checked', true);
-		$('td', $('#' + tableId)).find('input:disabled').prop('checked', false);
 		$.each(buttons, function(i, buttonId) {
-			$('#'+ buttonId).removeAttr('disabled');
-			$('#'+ buttonId).removeClass('disabledButton');
+			if (buttonsEnableFunction[buttonId](tableId)) {
+				$('#'+ buttonId).removeAttr('disabled');
+				$('#'+ buttonId).removeClass('disabledButton');
+			} else {
+				$('#'+ buttonId).attr('disabled', 'disabled');
+				$('#'+ buttonId).addClass('disabledButton');
+			}
 		});
 	} else {
 		$('td', $('#' + tableId)).find('input:checked').prop('checked', false);
@@ -1514,15 +1525,55 @@ function checkAvailableSlides(event, tableId, thId, buttons) {
 		});
 	} else {
 		$.each(buttons, function(i, buttonId) {
-			$('#'+ buttonId).removeAttr('disabled');
-			$('#'+ buttonId).removeClass('disabledButton');
+			if (buttonsEnableFunction[buttonId](tableId)) {
+				$('#'+ buttonId).removeAttr('disabled');
+				$('#'+ buttonId).removeClass('disabledButton');
+			} else {
+				$('#'+ buttonId).attr('disabled', 'disabled');
+				$('#'+ buttonId).addClass('disabledButton');
+			}
 		});
-		if ($('td', $('#' + tableId)).find('input:not(:checked)').length == $('td', $('#' + tableId)).find('input:disabled').length) {
-			$('#' + thId).prop('checked', true);
-		} else {
+		if ($('td', $('#' + tableId)).find('input:not(:checked)').length > 0) {
 			$('#' + thId).prop('checked', false);
+		} else {
+			$('#' + thId).prop('checked', true);
 		}
 	}
+}
+
+function hasScans(tableId) {
+	var ret = 0;
+	$.each($('td', $('#' + tableId)).find('input:checked'), function(i, entry) {
+		var no = 0;
+		$.each(scansList, function(j, scan) {
+			if (scan['Slide ID'] == $(entry).attr('slideId')) {
+				no++;
+			}
+		});
+		ret += no;
+	});
+	return (ret > 0);
+}
+
+function hasExperiments(tableId) {
+	var ret = 0;
+	$.each($('td', $('#' + tableId)).find('input:checked'), function(i, entry) {
+		if (slidesDict[$(entry).attr('slideId')]['Experiment ID'] != null) {
+			ret += 1;
+		}
+	});
+	return (ret > 0);
+}
+
+function hasCheckedEntries(tableId) {
+	var ret = $('td', $('#' + tableId)).find('input:checked').length;
+	return (ret > 0);
+}
+
+function hasCheckedFiles(tableId) {
+	return ($('td', $('#' + tableId)).find('input:checked').length > 0 && 
+			selectedEndpoint != null && 
+			$('#destinationDirectoryInput').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0);
 }
 
 function displayUnassignedSlides() {
@@ -1696,10 +1747,6 @@ function appendSlides(item) {
 				'slideId': row['ID']});
 			input.click(function(event) {checkAvailableSlides(event, 'slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
 			td.append(input);
-			if (row[slideExperimentColumn] == null) {
-				input.attr('disabled', 'disabled');
-				input.addClass('disabledButton');
-			}
 			$.each(slideTableColumns, function(j, col) {
 				if (!slideNoDisplayColumns.contains(col)) {
 					var td = $('<td>');

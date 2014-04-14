@@ -3900,7 +3900,7 @@ function saveSlide() {
 			alert('Invalid value for the Revision: "' + $('#slideRevision').val() + '".');
 			return;
 	}
-	var id = $($('.highlighted', $('#BoxDiv'))[0]).html();
+	var id = $($('.highlighted', $('#BoxDiv'))[0]).attr('entityId');
 	var url = ERMREST_HOME + '/Slide';
 	var arr = [];
 	for (var i=0; i < slidesCount; i++) {

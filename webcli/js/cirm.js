@@ -110,7 +110,7 @@ var searchList = [];
 var isSlidePrinter = false;
 
 var entityStack = [];
-var timestampsColumns = ['completion_time', 'deadline', 'request_time']
+var timestampsColumns = ['completion_time', 'deadline', 'request_time'];
 
 var viewsList = ['Transfer', 'Printers'];
 var slidesViewList = ['All', 'Unassigned'];
@@ -125,7 +125,9 @@ var buttonsEnableFunction = {
 		'printSlideButton': hasExperiments,
 		'addButton': hasCheckedEntries,
 		'submitButton': hasCheckedFiles
-}
+};
+
+var updateEntityParameters = null;
 
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
@@ -423,6 +425,27 @@ function initCIRM() {
 			return;
 		}
 	}
+	$('#dialog-confirm').dialog({
+		modal: true,
+		autoOpen: false,
+		buttons: {
+			'No': function() {
+				proceedUpdateEntity(updateEntityParameters['item'], 
+						updateEntityParameters['column'], 
+						updateEntityParameters['isMultiValue'], 
+						false);
+				$(this).dialog('close');
+			},
+			'Yes': function() {
+				proceedUpdateEntity(updateEntityParameters['item'], 
+						updateEntityParameters['column'], 
+						updateEntityParameters['isMultiValue'], 
+						true);
+				$( this ).dialog('close');
+			}
+		}
+	});
+	
 	window.onpopstate = function(event) {
 		goBack(event);
 	};
@@ -2505,6 +2528,20 @@ function editEntity(item) {
 }
 
 function updateEntity(item, column, isMultiValue) {
+	if (item == 'Slide' && $('td', $('#slidesTable')).find('input:checked').length > 1) {
+		updateEntityParameters = {
+				'item': item,
+				'column': column,
+				'isMultiValue': isMultiValue
+		};
+		$('#dialog-confirm').html('Do you want to apply the update to all the selected slides?');
+		$('#dialog-confirm').dialog('open');
+	} else {
+		proceedUpdateEntity(item, column, isMultiValue, false);
+	}
+}
+
+function proceedUpdateEntity(item, column, isMultiValue, answer) {
 	var cols = null;
 	var editCols = null;
 	if (item == 'Scan') {
@@ -2523,18 +2560,41 @@ function updateEntity(item, column, isMultiValue) {
 
 	var url = ERMREST_HOME + '/' + item;
 	var arr = [];
-	var obj = new Object();
-	$.each(cols, function(i, col) {
-		if (col == column && !isMultiValue) {
-			obj[col] = $('#' + makeId(col) + 'Input').val();
-		} else {
-			obj[col] = $('#' + makeId(col) + 'Label').html();
-		}
-		if (obj[col] == '') {
-			delete obj[col];
-		}
-	});
-	arr.push(obj);
+	if (item == 'Slide' && answer) {
+		$.each($('td', $('#slidesTable')).find('input:checked'), function(i, entry) {
+			var slideId = $(entry).attr('slideId');
+			var obj = new Object();
+			$.each(cols, function(i, col) {
+				if (col == column) {
+					if (!isMultiValue) {
+						obj[col] = $('#' + makeId(col) + 'Input').val();
+					} else {
+						obj[col] = $('#' + makeId(col) + 'Label').html();
+					}
+					if (obj[col] == '') {
+						delete obj[col];
+					}
+				} else {
+					obj[col] = slidesDict[slideId][col];
+				}
+			});
+			arr.push(obj);
+		});
+		
+	} else {
+		var obj = new Object();
+		$.each(cols, function(i, col) {
+			if (col == column && !isMultiValue) {
+				obj[col] = $('#' + makeId(col) + 'Input').val();
+			} else {
+				obj[col] = $('#' + makeId(col) + 'Label').html();
+			}
+			if (obj[col] == '') {
+				delete obj[col];
+			}
+		});
+		arr.push(obj);
+	}
 	cirmAJAX.PUT(url, 'application/json', false, arr, true, postUpdateEntity, {'item': item}, null, 0);
 }
 
@@ -2561,21 +2621,18 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 		cols = experimentColumns;
 	}
 
-	data = data[0];
-	colDict[data['ID']] = data;
+	$.each(data, function(i, entity) {
+		colDict[entity['ID']] = entity;
+	});
 	var temp = [];
 	$.each(colList, function(i, col) {
-		if (col['ID'] != data['ID']) {
-			temp.push(col);
-		} else {
-			temp.push(data);
-		}
+		temp.push(colDict[col['ID']]);
 	});
 	colList = temp;
 	if (item == 'Slide') {
 		updateRowData(slideColumns, slideEditColumns, data);
 	}
-	displayEntity(item, data);
+	displayEntity(item, data[0]);
 	$('#printBoxButton').hide();
 	if (item == 'Scan') {
 		$('#transferButton').show();
@@ -4223,10 +4280,13 @@ function renderQuery(state) {
 }
 
 function updateRowData(columns, editColumns, data) {
-	var tr = $($('tr.highlighted', $('#slidesTable')).get(0));
-	$.each(editColumns, function(i, col) {
-		var index = getColumnPosition(columns, col);
-		updateRow(tr, index, data[col]);
+	$.each(data, function(i, entity) {
+		var slideId = entity['ID'];
+		var tr = $($('input[slideId='+slideId+']', $('#slidesTable'))).parent().parent();
+		$.each(editColumns, function(j, col) {
+			var index = getColumnPosition(columns, col);
+			updateRow(tr, index, entity[col]);
+		});
 	});
 }
 

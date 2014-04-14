@@ -1197,7 +1197,7 @@ function drawPanels() {
 function selectNewBox() {
 	if (newBoxId != null) {
 		$.each($('li', $('#BoxUL')), function(i, box) {
-			if ($(box).html() == newBoxId) {
+			if ($(box).attr('entityId') == newBoxId) {
 				$(box).click();
 				return false;
 			}
@@ -1208,7 +1208,7 @@ function selectNewBox() {
 function selectNewExperiment() {
 	if (newExperimentId != null) {
 		$.each($('li', $('#ExperimentUL')), function(i, experiment) {
-			if ($(experiment).html() == newExperimentId) {
+			if ($(experiment).attr('entityId') == newExperimentId) {
 				newExperimentId = null;
 				$(experiment).click();
 				return false;
@@ -1332,7 +1332,7 @@ function getSlideBoxValue(slide, td, val, index) {
 function selectSlideBox(boxId) {
 	$('#leftPanel').accordion( "option", "active", 0 );
 	$.each($('li', $('#BoxUL')), function(i, box) {
-		if ($(box).html() == boxId) {
+		if ($(box).attr('entityId') == boxId) {
 			$(box).click();
 			return false;
 		}

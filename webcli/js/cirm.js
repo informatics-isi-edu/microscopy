@@ -4531,5 +4531,11 @@ function postDeleteSlide(data, textStatus, jqXHR, param) {
 			$(tr).addClass('odd');
 		}
 	});
+	$('#deleteSlideButton').attr('disabled', 'disabled');
+	$('#deleteSlideButton').addClass('disabledButton');
+	if ($('tbody tr', $('.fancyTable')).length == 0) {
+		$('#deleteBoxButton').removeAttr('disabled');
+		$('#deleteBoxButton').removeClass('disabledButton');
+	}
 }
 

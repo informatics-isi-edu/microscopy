@@ -2388,6 +2388,7 @@ function displayScan(img, image) {
 		$('#enlargeButton').addClass('disabledButton');
 	}
 	$('#enlargeButton').show();
+	$('#deleteScanButton').show();
 
 	$('img', $('#centerPanelTop')).removeClass('highlighted');
 	img.addClass('highlighted');
@@ -2485,6 +2486,13 @@ function initCenterPanelButtons(panel) {
 	button.html('Add');
 	button.button();
 	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {addSlides();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'deleteScanButton');
+	button.attr('context', 'centerPanelBottom');
+	button.html('Delete Scan');
+	button.button({icons: {primary: 'ui-icon-trash'}}).click(function(event) {deleteScan();});
 
 	button = $('<button>');
 	panel.append(button);
@@ -2676,6 +2684,7 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	if (item == 'Scan') {
 		$('#transferButton').show();
 		$('#enlargeButton').show();
+		$('#deleteScanButton').show();
 	} else if (item == 'Box') {
 		$('#printBoxButton').show();
 		$('#deleteBoxButton').show();
@@ -4456,5 +4465,20 @@ function postDeleteExperiment(data, textStatus, jqXHR, param) {
 	alert('The experiment "' + param['name'] + '" was successfully deleted.');
 	experimentActive = true;
 	getBoxes(null);
+}
+
+function deleteScan() {
+	var name = $('#' + makeId('Original Filename') + 'Label').html();
+	var answer = confirm ('Are you sure you want to delete the scan "' + name + '"?');
+	if (answer) {
+		var scan = $('#IDLabel').html();
+		var url = ERMREST_HOME + '/Scan/ID=' + encodeSafeURIComponent(scan);
+		cirmAJAX.DELETE(url, true, postDeleteScan, {'name': name}, null, 0);
+	}
+}
+
+function postDeleteScan(data, textStatus, jqXHR, param) {
+	alert('The scan "' + param['name'] + '" was successfully deleted.');
+	history.back();
 }
 

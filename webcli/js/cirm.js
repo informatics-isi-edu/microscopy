@@ -48,6 +48,8 @@ var cirm_mobile = false;
 var mobileParams = null;
 var newBoxId = null;
 var newExperimentId = null;
+var boxActive = false;
+var experimentActive = false;
 var newSlideId = null;
 var newSearchKeywords = null;
 var ACTIVITY_TASK_ID = null;
@@ -1221,7 +1223,15 @@ function drawPanels() {
 		south: {resizable: false}});
 	selectNewBox();
 	selectNewExperiment();
+	if (boxActive || experimentActive) {
+		setTimeout('openAccordion()', 1);
+	}
 	$('#centerPanel').css('max-height', $('#centerPanel').css('height'));
+}
+
+function openAccordion() {
+	$('#leftPanel').accordion( "option", "active", boxActive ? 0 : 1 );
+	boxActive = experimentActive = false;
 }
 
 function selectNewBox() {
@@ -1316,9 +1326,9 @@ function initPanels() {
 	var active = false;
 	if (newSearchKeywords != null) {
 		active = 3;
-	} else if (newExperimentId != null) {
+	} else if (newExperimentId != null || experimentActive) {
 		active = 1;
-	} else if (newBoxId != null) {
+	} else if (newBoxId != null || boxActive) {
 		active = 0;
 	}
 	leftPanel.accordion({ 'header': 'h4',
@@ -1693,6 +1703,7 @@ function displayUnassignedSlides() {
 	$('#addButton').attr('disabled', 'disabled');
 	$('#addButton').addClass('disabledButton');
 	$('#addSlidesButton').hide();
+	$('#deleteExperimentButton').hide();
 	$('#printSlideButton').hide();
 	$('#globusTransferButton').hide();
 	$('#centerPanelMiddle').show();
@@ -1821,6 +1832,7 @@ function appendSlides(item) {
 		$('#printBoxButton').hide();
 		$('#deleteBoxButton').hide();
 		$('#addSlidesButton').show();
+		$('#deleteExperimentButton').show();
 		if (arr.length > 0) {
 			$('#printSlideButton').show();
 		}
@@ -2416,6 +2428,13 @@ function initCenterPanelButtons(panel) {
 	button.attr('context', 'centerPanelBottom');
 	button.html('Add Slides');
 	button.button({icons: {primary: 'ui-icon-cart'}}).click(function(event) {getUnassignedSlides();});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'deleteExperimentButton');
+	button.attr('context', 'centerPanelBottom');
+	button.html('Delete Experiment');
+	button.button({icons: {primary: 'ui-icon-trash'}}).click(function(event) {deleteExperiment();});
 
 	button = $('<button>');
 	panel.append(button);
@@ -4419,6 +4438,23 @@ function deleteBox() {
 
 function postDeleteBox(data, textStatus, jqXHR, param) {
 	alert('The box "' + param['name'] + '" was successfully deleted.');
+	boxActive = true;
+	getBoxes(null);
+}
+
+function deleteExperiment() {
+	var name = $($('.highlighted', $('#ExperimentDiv'))[0]).html();
+	var answer = confirm ('Are you sure you want to delete the experiment "' + name + '"?');
+	if (answer) {
+		var experiment = experimentsDict[$($('.highlighted', $('#ExperimentDiv'))[0]).attr('entityId')]['ID'];
+		var url = ERMREST_HOME + '/Experiment/ID=' + encodeSafeURIComponent(experiment);
+		cirmAJAX.DELETE(url, true, postDeleteExperiment, {'name': name}, null, 0);
+	}
+}
+
+function postDeleteExperiment(data, textStatus, jqXHR, param) {
+	alert('The experiment "' + param['name'] + '" was successfully deleted.');
+	experimentActive = true;
 	getBoxes(null);
 }
 

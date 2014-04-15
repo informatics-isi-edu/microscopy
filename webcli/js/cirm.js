@@ -1804,6 +1804,14 @@ function appendSlides(item) {
 	if (item == 'Box') {
 		$('#createSlideButton').show();
 		$('#printBoxButton').show();
+		$('#deleteBoxButton').show();
+		if ($('tbody tr', $('#slidesTable')).length > 0) {
+			$('#deleteBoxButton').attr('disabled', 'disabled');
+			$('#deleteBoxButton').addClass('disabledButton');
+		} else {
+			$('#deleteBoxButton').removeAttr('disabled');
+			$('#deleteBoxButton').removeClass('disabledButton');
+		}
 		if (newBoxId != null) {
 			$('#createSlideButton').click();
 			newBoxId = null;
@@ -1811,6 +1819,7 @@ function appendSlides(item) {
 	}
 	if (item == 'Experiment') {
 		$('#printBoxButton').hide();
+		$('#deleteBoxButton').hide();
 		$('#addSlidesButton').show();
 		if (arr.length > 0) {
 			$('#printSlideButton').show();
@@ -2120,6 +2129,7 @@ function appendImage(images) {
 	});
 	$('button[context="centerPanelBottom"]').hide();
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 }
@@ -2500,6 +2510,14 @@ function initBottomPanel(panel) {
 
 	var button = $('<button>');
 	panel.append(button);
+	button.attr('id', 'deleteBoxButton');
+	button.html('Delete Box');
+	button.button({icons: {primary: 'ui-icon-trash'}}).click(function(event) {deleteBox();});
+
+	$('#deleteBoxButton').hide();
+
+	var button = $('<button>');
+	panel.append(button);
 	button.attr('id', 'printBoxButton');
 	button.html('Print Box');
 	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintBox();});
@@ -2525,6 +2543,7 @@ function editEntity(item) {
 	});
 
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 }
 
 function updateEntity(item, column, isMultiValue) {
@@ -2634,11 +2653,20 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	}
 	displayEntity(item, data[0]);
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	if (item == 'Scan') {
 		$('#transferButton').show();
 		$('#enlargeButton').show();
 	} else if (item == 'Box') {
 		$('#printBoxButton').show();
+		$('#deleteBoxButton').show();
+		if ($('tbody tr', $('#slidesTable')).length > 0) {
+			$('#deleteBoxButton').attr('disabled', 'disabled');
+			$('#deleteBoxButton').addClass('disabledButton');
+		} else {
+			$('#deleteBoxButton').removeAttr('disabled');
+			$('#deleteBoxButton').removeClass('disabledButton');
+		}
 	}
 }
 
@@ -2881,6 +2909,7 @@ function createSlide() {
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 }
 
 function checkSubmitGetEndpointData(event) {
@@ -3151,6 +3180,7 @@ function renderTransferFiles(files) {
 	$('#refreshActivityButton').addClass('disabledButton');
 	$('#refreshActivityButton').show();
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	selectedEndpoint = null;
 }
 
@@ -3251,6 +3281,7 @@ function globusTasks(fromRefresh) {
 	if (!fromRefresh) {
 		$('#rightPanelTop').html('');
 		$('#printBoxButton').hide();
+		$('#deleteBoxButton').hide();
 	}
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
@@ -3271,6 +3302,7 @@ function printersManaging() {
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('<p class="intro"></p>');
 	var p = $('<p>');
@@ -3433,6 +3465,7 @@ function printerManaging(printer) {
 	$('#backButton').click(function(event) {printersManaging();});
 	$('#backButton').show();
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 }
@@ -3479,6 +3512,7 @@ function printerSettings() {
 	$('#cancelButton').show();
 	$('#saveButton').show();
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 }
 
 function updatePrinterSettings() {
@@ -3499,6 +3533,7 @@ function cancelPrinterSettings() {
 	rightPanel.html('');
 	$('button', $('#rightPanelBottom')).hide();
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 }
 
 function managePrinter(param) {
@@ -3647,6 +3682,7 @@ function createExperiment() {
 	$('#cancelCreateButton').click(function(event) {clear();});
 	$('#cancelCreateButton').show();
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
@@ -3702,6 +3738,7 @@ function displaySearch(ul, li) {
 	$('#rightPanelTop').html('');
 	$('#centerPanelTop').html('');
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
 	entityStack = [];
@@ -3714,6 +3751,7 @@ function displayBoxesSlides(ul, li) {
 	$('#rightPanelTop').html('');
 	$('#centerPanelTop').html('');
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
 	entityStack = [];
@@ -3837,6 +3875,7 @@ function createBox() {
 	$('#createButton').attr('disabled', 'disabled');
 	$('#createButton').addClass('disabledButton');
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
@@ -4077,7 +4116,7 @@ function postSubmitPrintSlide(data, textStatus, jqXHR, param) {
 function submitPrintBox() {
 	var url = PRINTER_HOME + 'box/job';
 	var arr = [];
-	var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).html()];
+	var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).attr('entityId')];
 	var obj = {};
 	$.each(boxColumns, function(i, col) {
 		obj[col] = box[col];
@@ -4164,6 +4203,7 @@ function clear() {
 	$('#rightPanelTop').html('');
 	$('#centerPanelTop').html(CIRM_START_INFO);
 	$('#printBoxButton').hide();
+	$('#deleteBoxButton').hide();
 	$('button[context="centerPanelBottom"]').hide();
 	$('button', $('#rightPanelBottom')).hide();
 	$('#search').val('');
@@ -4365,5 +4405,20 @@ function makeId(id) {
 	});
 	var parts = val.split(' ');
 	return parts.join('_');
+}
+
+function deleteBox() {
+	var name = $($('.highlighted', $('#BoxDiv'))[0]).html();
+	var answer = confirm ('Are you sure you want to delete the box "' + name + '"?');
+	if (answer) {
+		var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).attr('entityId')]['ID'];
+		var url = ERMREST_HOME + '/Box/ID=' + encodeSafeURIComponent(box);
+		cirmAJAX.DELETE(url, true, postDeleteBox, {'name': name}, null, 0);
+	}
+}
+
+function postDeleteBox(data, textStatus, jqXHR, param) {
+	alert('The box "' + param['name'] + '" was successfully deleted.');
+	getBoxes(null);
 }
 

@@ -1438,6 +1438,16 @@ function getSlideScansNumber(slide, td, val) {
 	td.html(no);
 }
 
+function getSlideScansCount(slideId) {
+	var no = 0;
+	$.each(scansList, function(i, scan) {
+		if (scan['Slide ID'] == slideId) {
+			no++;
+		}
+	});
+	return no;
+}
+
 function getSlideThumbnail(slide, td, val) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
@@ -1706,6 +1716,7 @@ function displayUnassignedSlides() {
 	$('#deleteExperimentButton').hide();
 	$('#printSlideButton').hide();
 	$('#globusTransferButton').hide();
+	$('#deleteSlideButton').hide();
 	$('#centerPanelMiddle').show();
 	$('#centerPanelTop').hide();
 }
@@ -1841,6 +1852,9 @@ function appendSlides(item) {
 		$('#globusTransferButton').show();
 		$('#globusTransferButton').attr('disabled', 'disabled');
 		$('#globusTransferButton').addClass('disabledButton');
+		$('#deleteSlideButton').show();
+		$('#deleteSlideButton').attr('disabled', 'disabled');
+		$('#deleteSlideButton').addClass('disabledButton');
 	}
 }
 
@@ -2208,6 +2222,13 @@ function displayItem(cols, item, itemType) {
 		p.html('Slide Attributes');
 		editColumns = slideEditColumns;
 		multiValuesColumns = slideMultiValuesColumns;
+		if (getSlideScansCount(item['ID']) == 0) {
+			$('#deleteSlideButton').removeAttr('disabled');
+			$('#deleteSlideButton').removeClass('disabledButton');
+		} else {
+			$('#deleteSlideButton').attr('disabled', 'disabled');
+			$('#deleteSlideButton').addClass('disabledButton');
+		}
 	} else if (itemType == 'printer') {
 		p.html('Printer Attributes');
 	}
@@ -2507,6 +2528,13 @@ function initCenterPanelButtons(panel) {
 	button.attr('context', 'centerPanelBottom');
 	button.html('Download');
 	button.button({icons: {primary: 'ui-icon-arrowthick-1-s'}});
+
+	button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'deleteSlideButton');
+	button.attr('context', 'centerPanelBottom');
+	button.html('Delete Slide');
+	button.button({icons: {primary: 'ui-icon-trash'}}).click(function(event) {deleteSlide();});
 
 	button = $('<button>');
 	panel.append(button);
@@ -2936,6 +2964,7 @@ function createSlide() {
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
+	$('#deleteSlideButton').hide();
 	$('#printBoxButton').hide();
 	$('#deleteBoxButton').hide();
 }
@@ -3204,6 +3233,7 @@ function renderTransferFiles(files) {
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
+	$('#deleteSlideButton').hide();
 	$('#refreshActivityButton').attr('disabled', 'disabled');
 	$('#refreshActivityButton').addClass('disabledButton');
 	$('#refreshActivityButton').show();
@@ -3714,6 +3744,7 @@ function createExperiment() {
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
+	$('#deleteSlideButton').hide();
 }
 
 function displaySlide(id) {
@@ -3907,6 +3938,7 @@ function createBox() {
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
+	$('#deleteSlideButton').hide();
 }
 
 function saveBox() {
@@ -4480,5 +4512,24 @@ function deleteScan() {
 function postDeleteScan(data, textStatus, jqXHR, param) {
 	alert('The scan "' + param['name'] + '" was successfully deleted.');
 	history.back();
+}
+
+function deleteSlide() {
+	var slide = $('#IDLabel').html();
+	var answer = confirm ('Are you sure you want to delete the slide "' + slide + '"?');
+	if (answer) {
+		var url = ERMREST_HOME + '/Slide/ID=' + encodeSafeURIComponent(slide);
+		cirmAJAX.DELETE(url, true, postDeleteSlide, {'name': slide}, null, 0);
+	}
+}
+
+function postDeleteSlide(data, textStatus, jqXHR, param) {
+	$('tr.highlighted', $('.fancyTable')).remove();
+	$('tr.odd', $('.fancyTable')).removeClass('odd');
+	$.each($('tbody tr', $('.fancyTable')), function(i, tr) {
+		if (i%2 == 1) {
+			$(tr).addClass('odd');
+		}
+	});
 }
 

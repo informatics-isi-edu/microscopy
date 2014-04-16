@@ -4503,14 +4503,58 @@ function deleteScan() {
 	var name = $('#' + makeId('Original Filename') + 'Label').html();
 	var answer = confirm ('Are you sure you want to delete the scan "' + name + '"?');
 	if (answer) {
-		var scan = $('#IDLabel').html();
-		var url = ERMREST_HOME + '/Scan/ID=' + encodeSafeURIComponent(scan);
-		cirmAJAX.DELETE(url, true, postDeleteScan, {'name': name}, null, 0);
+		var id = $('#IDLabel').html();
+		var scan = scansDict[id];
+		var url = ERMREST_HOME + '/Scan/ID=' + encodeSafeURIComponent(id);
+		cirmAJAX.DELETE(url, true, postDeleteScan, {'scan': scan}, null, 0);
 	}
 }
 
 function postDeleteScan(data, textStatus, jqXHR, param) {
-	alert('The scan "' + param['name'] + '" was successfully deleted.');
+	var answer = confirm ('Do you want to delete also the scan\'s file(s)?');
+	if (answer) {
+		var url = SERVICE_TRANSFER_HOME + 'submission_id';
+		cirmAJAX.GET(url, 'application/json', true, activateDeleteEndpoint, param, null, MAX_RETRIES+1);
+	} else {
+		alert('The scan was successfully deleted.');
+		history.back();
+	}
+}
+
+function activateDeleteEndpoint(data, textStatus, jqXHR, param) {
+	var scan = param['scan'];
+	var endpoint = encodeSafeURIComponent(scan['GO Endpoint']);
+	var obj = {'scan': scan,
+			'submission_id': data['value']};
+	var url = SERVICE_TRANSFER_HOME + 'endpoint/' + endpoint + '/autoactivate';
+	cirmAJAX.POST(url, 'application/json', true, {}, true, deleteScanFiles, obj, null, 0);
+}
+
+function deleteScanFiles(data, textStatus, jqXHR, param) {
+	var scan = param['scan'];
+	var submission_id = param['submission_id'];
+	var url = SERVICE_TRANSFER_HOME + '/delete';
+	var obj = {
+			  "submission_id": submission_id,
+			  "endpoint": scan['GO Endpoint'], 
+			  "recursive": false, 
+			  "DATA_TYPE": "delete",
+			  "label": "delete scan", 
+			  "length": 1, 
+			  "deadline": formatDateTime((new Date((new Date()).getTime() + 10*60*1000))), 
+			  "ignore_missing": true, 
+			  "DATA": [
+			           {
+			             "path": scan['GO Path'], 
+			             "DATA_TYPE": "delete_item"
+			           }
+			         ]
+			};
+	cirmAJAX.POST(url, 'application/json', false, obj, true, postDeleteScanFiles, {'scan': scan}, null, 0);
+}
+
+function postDeleteScanFiles(data, textStatus, jqXHR, param) {
+	alert('The scan "' + param['scan']['Original Filename'] + '" was successfully deleted.');
 	history.back();
 }
 
@@ -4537,5 +4581,29 @@ function postDeleteSlide(data, textStatus, jqXHR, param) {
 		$('#deleteBoxButton').removeAttr('disabled');
 		$('#deleteBoxButton').removeClass('disabledButton');
 	}
+}
+
+function formatDateTime(s) {
+	var year = s.getFullYear();
+	var month = ('0' + (s.getMonth() + 1)).slice(-2);
+	var day = ('0' + s.getDate()).slice(-2);
+	var hour = ('0' + s.getHours()).slice(-2);
+	var minutes = ('0' + s.getMinutes()).slice(-2);
+	var seconds = ('0' + s.getSeconds()).slice(-2);
+	var utcSign = '-';
+	var delta = s.getTimezoneOffset() / 60;
+	if (delta < 0) {
+		utcSign = '+';
+	}
+	var zone = utcSign + ('00' + delta).slice(-2) + ':' + ('00' + (s.getTimezoneOffset() % 60)).slice(-2);
+	var ret = 	year + '-' +
+				month + '-' +
+				day + ' ' +
+				hour + ':' +
+				minutes + ':' +
+				seconds +
+				zone;
+	return ret;
+	
 }
 

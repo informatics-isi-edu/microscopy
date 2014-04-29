@@ -182,12 +182,22 @@ for page in outpages:
 
 infile.close()
 
+dump_image_json = False
 
-# TODO: generate zoomify XML parameter file based on pages[-1] info
-# note: round up image sizes to tile aligned values?
+if dump_image_json:
+    infofile = open( info_template % dict(outdir=outdir), 'w' )
+    json.dump(outinfo[-1], infofile, indent=2)
+    infofile.write('\n')
+    infofile.close()
 
-infofile = open( info_template % dict(outdir=outdir), 'w' )
-json.dump(outinfo[-1], infofile, indent=2)
-infofile.write('\n')
-infofile.close()
+# TODO: make this proper content
+zoomify_descriptor = """<Foo>
+  <tilesize>%(tile_width)d</tilesize>
+  <numtiles>%(total_tile_count)d</numtiles>
+  <width>%(image_width_padded)d</width>
+  <height>%(image_length_padded)d</height>
+</Foo>""" % outinfo[-1]
+
+# TODO: 
+print zoomify_descriptor
 

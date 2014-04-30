@@ -1,7 +1,7 @@
 
 import sys
 import os
-import json
+from PIL import Image
 
 # you need to install this library yourself
 # recent versions handle bigtiff too...
@@ -38,7 +38,6 @@ except:
 
 dir_template = '%(outdir)s/TileGroup%(groupno)d'
 tile_template = dir_template + '/%(zoomno)d-%(tcolno)d-%(trowno)d.jpg'
-info_template = '%(outdir)s/image_info.json'
 
 tiff = tifffile.TiffFile(fname)
 pages = list(tiff)
@@ -60,18 +59,27 @@ if hasattr(outpages[0].tags, 'tile_offsets') and len(outpages[0].tags.tile_offse
     zoomno = 1
     group_file_count = 1
     total_tiles = 1
+    need_to_build_0 = True
 
-    # TODO: compute this tile automatically?
 else:
     # input includes first zoom level already
     zoomno = 0
     group_file_count = 0
     total_tiles = 0
+    need_to_build_0 = False
 
 # remember values for debugging sanity checks
 prev_page = None
 tile_width = None
 tile_length = None
+
+def jpeg_assemble(jpeg_tables_bytes, jpeg_bytes):
+    # start-image + tables + rest of image to end-image
+    return jpeg_bytes[0:2] + jpeg_tables_bytes + jpeg_bytes[2:]
+
+def load_tile(tile_offset, tile_length):
+    infile.seek(tile_offset)
+    return infile.read(tile_length)
 
 def dump_tile(tileno, trow, tcol, jpeg_tables_bytes, tile_offset, tile_length):
     """Output one tile.  Note this manages global state for tile grouping in subdirs."""
@@ -97,9 +105,6 @@ def dump_tile(tileno, trow, tcol, jpeg_tables_bytes, tile_offset, tile_length):
         # create tile group dir on demand
         os.makedirs(dirname, mode=0755)
 
-    infile.seek(tile_offset)
-    buf = infile.read(tile_length)
-
     outname = tile_template % dict(
         outdir = outdir,
         groupno = tile_group,
@@ -109,13 +114,31 @@ def dump_tile(tileno, trow, tcol, jpeg_tables_bytes, tile_offset, tile_length):
         )
     
     outfile = open(outname, 'wb')
-    # assemble JPEG from tile abbreviated jpeg and shared table bytes
-    outfile.write( buf[0:2] )            # start-image marker
-    outfile.write( jpeg_tables_bytes )   # common tables
-    outfile.write( buf[2:] )             # end-image marker
+    outfile.write( jpeg_assemble(jpeg_tables_bytes, load_tile(tile_offset, tile_length)) )
     outfile.close()
 
 outinfo = []
+
+def get_page_info(page):
+    pxsize = page.tags.image_width.value
+    pysize = page.tags.image_length.value
+
+    # get common JPEG tables to insert into all tiles
+    if hasattr(page.tags, 'jpeg_tables'):
+        # trim off start-image/end-image byte markers at prefix and suffix
+        jpeg_tables_bytes = bytes(bytearray(page.tags.jpeg_tables.value))[2:-2]
+    else:
+        # no common tables to insert?
+        jpeg_tables_bytes = bytes(bytearray([]))
+
+    # this page has multiple JPEG tiles
+    txsize = page.tags.tile_width.value
+    tysize = page.tags.tile_length.value
+
+    tcols = pxsize / txsize + (pxsize % txsize > 0)
+    trows = pysize / tysize + (pysize % tysize > 0)
+
+    return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
 
 for page in outpages:
     # panic if these change from reverse-engineered samples
@@ -127,27 +150,9 @@ for page in outpages:
         assert prev_page.tags.image_width.value == (page.tags.image_width.value / 2)
         assert prev_page.tags.image_length.value == (page.tags.image_length.value / 2)
 
-    # find shape of tile array
-    pxsize = page.tags.image_width.value
-    pysize = page.tags.image_length.value
-
-    # get common JPEG tables to insert into all tiles
-    if hasattr(page.tags, 'jpeg_tables'):
-        # trim off start-image/end-image byte markers at prefix and suffix
-        jpeg_tables_bytes = bytes(bytearray(page.tags.jpeg_tables.value))[2:-3]
-    else:
-        # no common tables to insert?
-        jpeg_tables_bytes = bytes(bytearray([]))
-
-    # this page has multiple JPEG tiles
-    txsize = page.tags.tile_width.value
-    tysize = page.tags.tile_length.value
-
-    tcols = pxsize / txsize + (pxsize % txsize > 0)
-    trows = pysize / tysize + (pysize % tysize > 0)
+    pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
     
     for tileno in range(0, len(page.tags.tile_offsets.value)):
-
         # figure position of tile within tile array
         trow = tileno / tcols
         tcol = tileno % tcols
@@ -182,22 +187,43 @@ for page in outpages:
 
 infile.close()
 
-dump_image_json = False
+if need_to_build_0:
+    # tier 0 was missing from input image, so built it from tier 1 data
+    page = outpages[0]
 
-if dump_image_json:
-    infofile = open( info_template % dict(outdir=outdir), 'w' )
-    json.dump(outinfo[-1], infofile, indent=2)
-    infofile.write('\n')
-    infofile.close()
+    pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
 
-# TODO: make this proper content
-zoomify_descriptor = """<Foo>
+    tier1 = None
+
+    for tileno in range(0, len(page.tags.tile_offsets.value)):
+        trow = tileno / tcols
+        tcol = tileno % tcols
+
+        image = Image.open(tile_template % dict(zoomno=1, tcolno=tcol, trowno=trow, outdir=outdir, groupno=0))
+
+        if tier1 is None:
+            # lazily create with proper pixel data type
+            tier1 = Image.new(image.mode, (tcols * txsize, trows * tysize))
+
+        # accumulate tile into tier1 image
+        tier1.paste(image, (tcol * txsize, trow * tysize))
+
+    # generate reduced resolution tier
+    tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS )
+    assert tier0.size[0] <= txsize
+    assert tier0.size[1] <= tysize
+
+    # write final tile
+    tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, groupno=0), 'JPEG')
+
+zoomify_descriptor = """
+TODO: someone should turn this into real zoomify descriptor and write to properly named file
+<Foo>
   <tilesize>%(tile_width)d</tilesize>
   <numtiles>%(total_tile_count)d</numtiles>
   <width>%(image_width_padded)d</width>
   <height>%(image_length_padded)d</height>
 </Foo>""" % outinfo[-1]
 
-# TODO: 
 print zoomify_descriptor
 

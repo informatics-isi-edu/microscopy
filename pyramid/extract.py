@@ -53,6 +53,7 @@ tiles_per_group = 256
 outpages = [ page for page in pages if hasattr(page.tags, 'tile_offsets') ]
 if type(outpages[0].tags.tile_offsets.value) is int:
     outpages[0].tags.tile_offsets.value=[outpages[0].tags.tile_offsets.value]
+    outpages[0].tags.tile_byte_counts.value=[outpages[0].tags.tile_byte_counts.value]
 
 if hasattr(outpages[0].tags, 'tile_offsets') and len(outpages[0].tags.tile_offsets.value) > 1:
     # first input zoom level is multi-tile

@@ -221,13 +221,9 @@ if need_to_build_0:
     tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, groupno=0), 'JPEG')
 
 zoomify_descriptor = """
-TODO: someone should turn this into real zoomify descriptor and write to properly named file
-<Foo>
-  <tilesize>%(tile_width)d</tilesize>
-  <numtiles>%(total_tile_count)d</numtiles>
-  <width>%(image_width_padded)d</width>
-  <height>%(image_length_padded)d</height>
-</Foo>""" % outinfo[-1]
+<IMAGE_PROPERTIES WIDTH="%(image_width_padded)d" HEIGHT="%(image_length_padded)d" NUMTILES="%(total_tile_count)d" NUMIMAGES="1" VERSION="1.8" TILESIZE="%(tile_width)d" />
+""" % outinfo[-1]
 
-print zoomify_descriptor
-
+f = open('"%s/ImageProperties.xml"' % outdir, 'w')
+f.write(zoomify_descriptor)
+f.close

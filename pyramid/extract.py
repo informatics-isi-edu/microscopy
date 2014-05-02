@@ -224,6 +224,6 @@ zoomify_descriptor = """
 <IMAGE_PROPERTIES WIDTH="%(image_width_padded)d" HEIGHT="%(image_length_padded)d" NUMTILES="%(total_tile_count)d" NUMIMAGES="1" VERSION="1.8" TILESIZE="%(tile_width)d" />
 """ % outinfo[-1]
 
-f = open('"%s/ImageProperties.xml"' % outdir, 'w')
+f = open('%s/ImageProperties.xml' % outdir, 'w')
 f.write(zoomify_descriptor)
 f.close

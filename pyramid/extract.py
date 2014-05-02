@@ -52,13 +52,11 @@ tiles_per_group = 256
 # skip pages that aren't tiled... thumbnails?!
 outpages = [ page for page in pages if hasattr(page.tags, 'tile_offsets') ]
 if type(outpages[0].tags.tile_offsets.value) is int:
-    firstoutpage = [outpages[0].tags.tile_offsets.value]
-else:
-    firstoutpage=outpages[0]
+    outpages[0].tags.tile_offsets.value=[outpages[0].tags.tile_offsets.value]
 
-if hasattr(outpages[0].tags, 'tile_offsets') and len(firstoutpage.tags.tile_offsets.value) > 1:
+if hasattr(outpages[0].tags, 'tile_offsets') and len(outpages[0].tags.tile_offsets.value) > 1:
     # first input zoom level is multi-tile
-    assert len(firstoutpage.tags.tile_offsets.value) <= 4
+    assert len(outpages[0].tags.tile_offsets.value) <= 4
 
     # so leave space for tile 0-0-0
     zoomno = 1
@@ -194,7 +192,7 @@ infile.close()
 
 if need_to_build_0:
     # tier 0 was missing from input image, so built it from tier 1 data
-    page = firstoutpage
+    page = outpages[0]
 
     pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
 

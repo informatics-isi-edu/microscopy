@@ -192,16 +192,6 @@ class ErmrestClient (object):
         finally:
             self.webconn = None
 
-    def prepareFiles(self, sha256sum, slide_id):
-        shutil.copytree('C:\\Users\\serban\\Documents\\cirm_templates\\tiles_sample', 'C:\\Users\\serban\\Documents\\cirm_temp\\%s' % sha256sum)
-        shutil.copyfile('C:\\Users\\serban\\Documents\\cirm_templates\\thumbnail_sample.jpeg', 'C:\\Users\\serban\\Documents\\cirm_temp\\%s.jpeg' % sha256sum)
-        self.prepareHTMLFile(sha256sum, slide_id)
-        
-    def cleanupFiles(self, sha256sum):
-        shutil.rmtree('C:\\Users\\serban\\Documents\\cirm_temp\\%s' % sha256sum)
-        os.remove('C:\\Users\\serban\\Documents\\cirm_temp\\%s.jpeg' % sha256sum)
-        os.remove('C:\\Users\\serban\\Documents\\cirm_temp\\%s.html' % sha256sum)
-        
     def writeHTMLFile(self, slide_id, scan_id):
         outdir = '%s/%s' % (self.html, slide_id)
         if not os.path.exists(outdir):
@@ -246,13 +236,12 @@ class ErmrestClient (object):
             f = self.getTiffFile(slideId, scanId)
             if f:
                 args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f), '%s/%s/%s' % (self.tiles, slideId, scanId)]
-                print args
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()
                 returncode = p.returncode
                 if returncode != 0:
-                    print stdoutdata
-                    print stderrdata
+                    self.logger.error('Can not extract tiles for the file "%s/%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.tiff, slideId, scanId, f, stdoutdata, stderrdata)) 
+                    continue
                 self.writeHTMLFile(slideId, scanId)
                 self.writeThumbnailFile(slideId, scanId)
                 url = '%s/attribute/Scan/ID=:ID/Thumbnail,Zoomify' % self.path
@@ -264,6 +253,7 @@ class ErmrestClient (object):
                 body.append(obj)
                 headers = {'Content-Type': 'application/json'}
                 self.send_request('PUT', url, json.dumps(body), headers)
+                self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was craeted.\n' % (slideId, scanId))
         print 'OK'
         
     def getTiffFile(self, slideId, scanId):
@@ -271,6 +261,7 @@ class ErmrestClient (object):
             scanDir = '%s/%s/%s' % (self.tiff, slideId, scanId)
             tifFiles = [ f for f in os.listdir(scanDir) if os.path.isfile(os.path.join(scanDir,f)) ]
             if len(tifFiles) > 0:
-                return tifFiles[0]
+                f = tifFiles[0]
+                return f
         return None
         

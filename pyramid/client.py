@@ -223,6 +223,12 @@ class ErmrestClient (object):
                 self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
 
     def start(self):
+        ready = False
+        while ready == False:
+            self.processScans()
+            time.sleep(self.timeout)
+        
+    def processScans(self):
         url = '%s/entity/Scan/Zoomify::null::' % self.path
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers)
@@ -255,14 +261,14 @@ class ErmrestClient (object):
                 self.send_request('PUT', url, json.dumps(body), headers)
                 self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".\n' % (slideId, scanId)) 
                 self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
-        print 'OK'
         
     def getTiffFile(self, slideId, scanId):
         if scanId == 'ce64ff3e7da84d659867e9eb3da02e937af7b2e0b270e640776961b44da15e58':
             scanDir = '%s/%s/%s' % (self.tiff, slideId, scanId)
-            tifFiles = [ f for f in os.listdir(scanDir) if os.path.isfile(os.path.join(scanDir,f)) ]
-            if len(tifFiles) > 0:
-                f = tifFiles[0]
-                return f
+            if os.path.isdir(scanDir):
+                tifFiles = [ f for f in os.listdir(scanDir) if os.path.isfile(os.path.join(scanDir,f)) ]
+                if len(tifFiles) > 0:
+                    f = tifFiles[0]
+                    return f
         return None
         

@@ -146,6 +146,7 @@ def load(config_filename):
                                cirm_path=cirm_path, \
                                http_storage=http_storage, \
                                timeout=timeout, \
+                               mail_server=mail_server, \
                                mail_sender=mail_sender, \
                                mail_receiver=mail_receiver,
                                logger=logger,

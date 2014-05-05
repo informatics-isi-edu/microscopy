@@ -253,7 +253,8 @@ class ErmrestClient (object):
                 body.append(obj)
                 headers = {'Content-Type': 'application/json'}
                 self.send_request('PUT', url, json.dumps(body), headers)
-                self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was craeted.\n' % (slideId, scanId))
+                self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".\n' % (slideId, scanId)) 
+                self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
         print 'OK'
         
     def getTiffFile(self, slideId, scanId):

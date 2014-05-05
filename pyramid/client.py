@@ -237,7 +237,6 @@ class ErmrestClient (object):
         for scan in scans:
             if os.path.isdir('%s/%s' % (self.tiff, scan['Slide ID'])):
                 scanids.append((scan['Slide ID'], scan['ID']))
-        self.logger.debug("scans: %s" % scanids)
         for slideId,scanId in scanids:
             f = self.getTiffFile(slideId, scanId)
             if f:

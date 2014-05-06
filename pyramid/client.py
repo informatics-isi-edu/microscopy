@@ -262,12 +262,11 @@ class ErmrestClient (object):
                 self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
         
     def getTiffFile(self, slideId, scanId):
-        if scanId == 'ce64ff3e7da84d659867e9eb3da02e937af7b2e0b270e640776961b44da15e58':
-            scanDir = '%s/%s/%s' % (self.tiff, slideId, scanId)
-            if os.path.isdir(scanDir):
-                tifFiles = [ f for f in os.listdir(scanDir) if os.path.isfile(os.path.join(scanDir,f)) ]
-                if len(tifFiles) > 0:
-                    f = tifFiles[0]
-                    return f
+        scanDir = '%s/%s/%s' % (self.tiff, slideId, scanId)
+        if os.path.isdir(scanDir):
+            tifFiles = [ f for f in os.listdir(scanDir) if os.path.isfile(os.path.join(scanDir,f)) ]
+            if len(tifFiles) > 0:
+                f = tifFiles[0]
+                return f
         return None
         

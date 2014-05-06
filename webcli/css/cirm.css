@@ -503,3 +503,13 @@ td.file_size, th.file_size {
 	white-space:nowrap;
 }
 
+.deleteButton {
+	border-style:solid;
+	border-width:3px;
+	border-color:red;
+}
+
+.alert_background {
+	background-color: yellow;
+}
+

@@ -2456,7 +2456,8 @@ function initCenterPanelButtons(panel) {
 	button.attr('id', 'deleteExperimentButton');
 	button.attr('context', 'centerPanelBottom');
 	button.html('Delete Experiment');
-	button.button({icons: {primary: 'ui-icon-trash'}}).click(function(event) {deleteExperiment();});
+	button.button({icons: {secondary: 'ui-icon-alert alert_background'}}).click(function(event) {deleteExperiment();});
+	button.addClass('deleteButton');
 
 	button = $('<button>');
 	panel.append(button);
@@ -2513,7 +2514,8 @@ function initCenterPanelButtons(panel) {
 	button.attr('id', 'deleteScanButton');
 	button.attr('context', 'centerPanelBottom');
 	button.html('Delete Scan');
-	button.button({icons: {primary: 'ui-icon-trash'}}).click(function(event) {deleteScan();});
+	button.button({icons: {secondary: 'ui-icon-alert alert_background'}}).click(function(event) {deleteScan();});
+	button.addClass('deleteButton');
 
 	button = $('<button>');
 	panel.append(button);
@@ -2534,7 +2536,8 @@ function initCenterPanelButtons(panel) {
 	button.attr('id', 'deleteSlideButton');
 	button.attr('context', 'centerPanelBottom');
 	button.html('Delete Slide');
-	button.button({icons: {primary: 'ui-icon-trash'}}).click(function(event) {deleteSlide();});
+	button.button({icons: {secondary: 'ui-icon-alert alert_background'}}).click(function(event) {deleteSlide();});
+	button.addClass('deleteButton');
 
 	button = $('<button>');
 	panel.append(button);
@@ -2567,7 +2570,8 @@ function initBottomPanel(panel) {
 	panel.append(button);
 	button.attr('id', 'deleteBoxButton');
 	button.html('Delete Box');
-	button.button({icons: {primary: 'ui-icon-trash'}}).click(function(event) {deleteBox();});
+	button.button({icons: {secondary: 'ui-icon-alert alert_background'}}).click(function(event) {deleteBox();});
+	button.addClass('deleteButton');
 
 	$('#deleteBoxButton').hide();
 

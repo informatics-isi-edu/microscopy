@@ -83,6 +83,11 @@ def load(config_filename):
     
     goauthtoken = cfg.get('goauthtoken', None)
     
+    czi = cfg.get('czi', None)
+    if not czi or not os.path.isdir(czi):
+        logger.error('CZI directory must be given and exist.')
+        return None
+
     tiles = cfg.get('tiles', None)
     if not tiles or not os.path.isdir(tiles):
         logger.error('Tiles directory must be given and exist.')
@@ -118,6 +123,16 @@ def load(config_filename):
         logger.error('Extract application must be given and exist.')
         return None
 
+    czirules = cfg.get('czirules', None)
+    if not czirules or not os.path.isfile(czirules):
+        logger.error('CZI rules file must be given and exist.')
+        return None
+
+    showinf = cfg.get('showinf', None)
+    if not showinf:
+        logger.error('Extract metadata application must be given.')
+        return None
+
     username = cfg.get('username', None)
     if not username:
         logger.error('Ermrest username must be given.')
@@ -140,9 +155,12 @@ def load(config_filename):
                                password=password, \
                                tiles=tiles, \
                                thumbnails=thumbnails, \
+                               czi=czi, \
                                tiff=tiff, \
                                html=html, \
                                extract=extract, \
+                               czirules=czirules, \
+                               showinf=showinf, \
                                cirm_path=cirm_path, \
                                http_storage=http_storage, \
                                timeout=timeout, \

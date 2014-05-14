@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<OME>
+   <Microscope>
+      <Attribute>Model</Attribute>
+      <Map>Microscope</Map>
+   </Microscope>
+   <OriginalMetadata>
+      <Key>Information|Instrument|Objective|Name</Key>
+      <Map>Objective</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Information|Image|Channel|ContrastMethod|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>Contrast Method</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>DisplaySetting|Channel|DyeName|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>Dye Name</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|Name</Key>
+      <Map>Channel Name</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>HardwareSetting|ReflectorChanger|Reflector|Name</Key>
+      <Map>Reflector</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>HardwareSetting|CameraAdapter|Name</Key>
+      <Map>Camera Adapter</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>HardwareSetting|Camera|Name</Key>
+      <Map>Camera</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Information|Image|Channel|EMGain|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>EM Gain</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Information|Image|Channel|Binning|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>Binning Mode</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Experiment|AcquisitionBlock|FocusSetup|DepthOfFocus|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>Depth of Focus</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Information|Image|Channel|ExposureTime|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>Exposure Time</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Scaling|Distance|Value|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>Scaling (per pixel)</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Experiment|AcquisitionBlock|RegionsSetup|SampleHolder|StageReferencePoint|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>Stage position</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Experiment|AcquisitionBlock|AcquisitionModeSetup|Camera|Frame|</Key>
+      <Pattern><![CDATA[\[[0-9]*[,][0-9]*[,](?P<X>[0-9]*)[,](?P<Y>[0-9]*)\]]]></Pattern>
+      <Template><![CDATA[X x Y]]></Template>
+      <Map>Image Size</Map>
+   </OriginalMetadata>
+</OME>
+
+

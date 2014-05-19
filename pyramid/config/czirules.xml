@@ -37,13 +37,13 @@
       <Map>Camera</Map>
    </OriginalMetadata>
    <OriginalMetadata>
-      <Key>Information|Image|Channel|EMGain|</Key>
+      <Key>Experiment|AcquisitionBlock|AcquisitionModeSetup|Camera|EMGain|</Key>
       <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
       <Template><![CDATA[X]]></Template>
       <Map>EM Gain</Map>
    </OriginalMetadata>
    <OriginalMetadata>
-      <Key>Information|Image|Channel|Binning|</Key>
+      <Key>Experiment|AcquisitionBlock|AcquisitionModeSetup|Camera|Binning|</Key>
       <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
       <Template><![CDATA[X]]></Template>
       <Map>Binning Mode</Map>
@@ -55,7 +55,7 @@
       <Map>Depth of Focus</Map>
    </OriginalMetadata>
    <OriginalMetadata>
-      <Key>Information|Image|Channel|ExposureTime|</Key>
+      <Key>Experiment|AcquisitionBlock|AcquisitionModeSetup|Camera|ExposureTime|</Key>
       <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
       <Template><![CDATA[X]]></Template>
       <Map>Exposure Time</Map>

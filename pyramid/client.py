@@ -244,7 +244,7 @@ class ErmrestClient (object):
         for slideId,scanId in scanids:
             f = self.getTiffFile(slideId, scanId)
             if f:
-                self.logger.debug('Extracting tiles for slide "%s", scan "%s"\n' % str(slideId, scanId)) 
+                self.logger.debug('Extracting tiles for slide "%s", scan "%s"\n' % (slideId, scanId)) 
                 args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()
@@ -254,7 +254,7 @@ class ErmrestClient (object):
                     continue
                 self.writeHTMLFile(slideId, scanId)
                 self.writeThumbnailFile(slideId, scanId)
-                self.logger.debug('Extracting metadata for slide "%s", scan "%s"\n' % str(slideId, scanId)) 
+                self.logger.debug('Extracting metadata for slide "%s", scan "%s"\n' % (slideId, scanId)) 
                 bioformatsClient = BioformatsClient(showinf=self.showinf, \
                                                     czirules=self.czirules, \
                                                     czifile='%s/%s/%s.czi' % (self.czi, slideId, scanId))

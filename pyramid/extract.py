@@ -212,13 +212,17 @@ if need_to_build_0:
         # accumulate tile into tier1 image
         tier1.paste(image, (tcol * txsize, trow * tysize))
 
-    # generate reduced resolution tier
-    tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS )
+    # generate reduced resolution tier and crop to real page size
+    tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS ).crop((0, pxsize / 2, 0, pysize / 2))
     assert tier0.size[0] <= txsize
     assert tier0.size[1] <= tysize
 
     # write final tile
     tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, groupno=0), 'JPEG')
+else:
+    # tier 0 is probably the wrong size...
+    sys.stderr.write('warning: confirm that zoomify navigation thumbnail works correctly!')
+
 
 zoomify_descriptor = """
 <IMAGE_PROPERTIES WIDTH="%(image_width_padded)d" HEIGHT="%(image_length_padded)d" NUMTILES="%(total_tile_count)d" NUMIMAGES="1" VERSION="1.8" TILESIZE="%(tile_width)d" />

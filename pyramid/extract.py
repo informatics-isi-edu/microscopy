@@ -213,7 +213,7 @@ if need_to_build_0:
         tier1.paste(image, (tcol * txsize, trow * tysize))
 
     # generate reduced resolution tier and crop to real page size
-    tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS ).crop((0, pxsize / 2, 0, pysize / 2))
+    tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS ).crop((0, 0, pxsize / 2, pysize / 2))
     assert tier0.size[0] <= txsize
     assert tier0.size[1] <= tysize
 

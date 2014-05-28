@@ -33,6 +33,7 @@ tiff_files = []
 tiff_outpages = []
 tiff_tifffile = []
 tiff_infile = []
+tiff_maxval = []
 
 try:
     dname = sys.argv[1]
@@ -63,8 +64,8 @@ except:
 dir_template = '%(outdir)s/TileGroup%(groupno)d'
 tile_template = dir_template + '/%(zoomno)d-%(tcolno)d-%(trowno)d.jpg'
 
-for i in range(0, len(tiff_files)):
-    tiff = tifffile.TiffFile(tiff_files[i])
+for file in range(0, len(tiff_files)):
+    tiff = tifffile.TiffFile(tiff_files[file])
     tiff_tifffile.append(tiff)
     pages = list(tiff)
     pages.reverse()
@@ -73,7 +74,7 @@ for i in range(0, len(tiff_files)):
         outpages[0].tags.tile_offsets.value=[outpages[0].tags.tile_offsets.value]
         outpages[0].tags.tile_byte_counts.value=[outpages[0].tags.tile_byte_counts.value]
     tiff_outpages.append(outpages)
-    infile = open(tiff_files[i], 'rb')
+    infile = open(tiff_files[file], 'rb')
     tiff_infile.append(infile)
 
 tile_group = 0
@@ -169,7 +170,7 @@ def get_page_info(page):
 
     return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
 
-def getTile(page, infile, jpeg_tables_bytes):
+def getTile(page, infile, jpeg_tables_bytes, tileno):
     jpeg = jpeg_assemble(jpeg_tables_bytes, load_tile(infile, page.tags.tile_offsets.value[tileno], page.tags.tile_byte_counts.value[tileno]))
     outfile = StringIO.StringIO()
     outfile.write( jpeg )
@@ -179,8 +180,21 @@ def getTile(page, infile, jpeg_tables_bytes):
     outfile.close()
     return ret
     
-for i in range(0, len(tiff_outpages[0])):
-    page = tiff_outpages[0][i]
+def maxTile(page, infile):
+    pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
+    maxval = 0
+    for tileno in range(0, len(page.tags.tile_offsets.value)):
+        tile = getTile(page, infile, jpeg_tables_bytes, tileno)
+        maxval = max(maxval, tile.max())
+    return maxval
+
+for channelno in range(0, len(tiff_outpages)):
+    tiff_maxval.append([])
+    for pageno in range(0, len(tiff_outpages[0])):
+        tiff_maxval[channelno].append(max(0, maxTile(tiff_outpages[channelno][pageno], tiff_infile[channelno])))
+
+for pageno in range(0, len(tiff_outpages[0])):
+    page = tiff_outpages[0][pageno]
     # panic if these change from reverse-engineered samples
     assert page.tags.fill_order.value == 1
     assert page.tags.orientation.value == 1
@@ -191,14 +205,14 @@ for i in range(0, len(tiff_outpages[0])):
         assert prev_page.tags.image_length.value == (page.tags.image_length.value / 2)
 
     tiff_page_info = []
-    for j in range(0, len(tiff_outpages)):
-        tiff_page_info.append(tiff_outpages[j][i])
+    for channelno in range(0, len(tiff_outpages)):
+        tiff_page_info.append(tiff_outpages[channelno][pageno])
         
     
     for tileno in range(0, len(page.tags.tile_offsets.value)):
         tile_array = []
-        for j in range(0, len(tiff_outpages)):
-            tiffPage = tiff_outpages[j][i]
+        for channelno in range(0, len(tiff_outpages)):
+            tiffPage = tiff_outpages[channelno][pageno]
             pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(tiffPage)
             # figure position of tile within tile array
             trow = tileno / tcols
@@ -212,7 +226,9 @@ for i in range(0, len(tiff_outpages[0])):
             else:
                 tile_width = txsize
                 tile_length = tysize
-            tile_array.append(getTile(tiffPage, tiff_infile[j], jpeg_tables_bytes))
+            tile = getTile(tiffPage, tiff_infile[channelno], jpeg_tables_bytes, tileno)
+            tile_norm = (255 * (tile.astype('float') / tiff_maxval[channelno][pageno])).astype('uint8')
+            tile_array.append(tile_norm)
         rgb_array = numpy.dstack( tuple(tile_array) )
         rgb_image = Image.fromarray(rgb_array)
         write_tile(tileno, trow, tcol, rgb_image)

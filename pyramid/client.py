@@ -245,12 +245,17 @@ class ErmrestClient (object):
             f = self.getTiffFile(slideId, scanId)
             if f:
                 self.logger.debug('Extracting tiles for slide "%s", scan "%s"\n' % (slideId, scanId)) 
-                args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f), '%s/%s/%s' % (self.tiles, slideId, scanId)]
+                if len(f) == 1:
+                    f = f[0]
+                    args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f), '%s/%s/%s' % (self.tiles, slideId, scanId)]
+                else:
+                    f = ''
+                    args = [self.extract_rgb, '%s/%s/%s' % (self.tiff, slideId, scanId), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()
                 returncode = p.returncode
                 if returncode != 0:
-                    self.logger.error('Can not extract tiles for the file "%s/%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.tiff, slideId, scanId, f, stdoutdata, stderrdata)) 
+                    self.logger.error('Can not extract tiles for "%s/%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.tiff, slideId, scanId, f, stdoutdata, stderrdata)) 
                     continue
                 self.writeHTMLFile(slideId, scanId)
                 self.writeThumbnailFile(slideId, scanId)
@@ -276,9 +281,10 @@ class ErmrestClient (object):
     def getTiffFile(self, slideId, scanId):
         scanDir = '%s/%s/%s' % (self.tiff, slideId, scanId)
         if os.path.isdir(scanDir):
-            tifFiles = [ f for f in os.listdir(scanDir) if os.path.isfile(os.path.join(scanDir,f)) ]
-            if len(tifFiles) > 0:
-                f = tifFiles[0]
-                return f
+            # allow 30 minutes for GO transfer to be be completed
+            if (time.time() - os.path.getmtime(scanDir)) > 1800:
+                tifFiles = [ f for f in os.listdir(scanDir) if os.path.isfile(os.path.join(scanDir,f)) ]
+                if len(tifFiles) > 0:
+                    return tifFiles
         return None
         

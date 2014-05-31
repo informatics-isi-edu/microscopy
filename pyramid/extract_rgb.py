@@ -35,32 +35,57 @@ tiff_tifffile = []
 tiff_infile = []
 tiff_maxval = []
 
+redColors = ['Rhodamine', 'RFP', 'Alexa Fluor 594']
+greenColors = ['FITC', 'Alexa 488', 'EGFP']
+blueColors = ['DAPI']
+
+tiff_colors = [redColors, greenColors, blueColors]
+
+def colorFile(files, colors, pattern):
+    for color in colors:
+        colorFiles = [ f for f in files if re.match('.*[-]%s%s' % (color, pattern), f) ]
+        if len(colorFiles) == 1:
+            return colorFiles[0]
+    return None
+    
+def getTiffFiles(dname):
+    global tiff_files
+    files = os.listdir(dname)
+    z1 = [f for f in files if re.match('.*[-]Z1[.tif]', f)]
+    if len(z1) > 0:
+        stacks = len(files) / len(z1)
+        stackNo = stacks / 2
+        if stackNo * 2 < stacks:
+            stackNo += 1
+        stackPattern = '[-]Z%d[.tif]' % stackNo
+    else:
+        stackPattern = '[.tif]'
+    for colors in tiff_colors:
+        file = colorFile(files, colors, stackPattern)
+        if file:
+            tiff_files.append('%s%s%s' % (dname, os.sep, file))
+    if len(tiff_files) == 0:
+        tiff_files = [ '%s%s%s' % (dname, os.sep, f) for f in files if re.match('.*%s' % stackPattern, f) ]
+    
 try:
     dname = sys.argv[1]
     outdir = sys.argv[2]
 
     if not os.path.exists(dname) or not os.path.isdir(dname):
         sys.stderr.write('Pyramid directory must be given and exist')
-        sys.exit()
+        sys.exit(1)
 
-    files = [f for f in os.listdir(dname) if re.match('.*Rhodamine[-]Z3[.tif]', f)]
-    for f in files:
-        tiff_files.append('%s%s%s' % (dname, os.sep, f))
-    files = [f for f in os.listdir(dname) if re.match('.*FITC[-]Z3[.tif]', f)]
-    for f in files:
-        tiff_files.append('%s%s%s' % (dname, os.sep, f))
-    files = [f for f in os.listdir(dname) if re.match('.*DAPI[-]Z3[.tif]', f)]
-    for f in files:
-        tiff_files.append('%s%s%s' % (dname, os.sep, f))
-    if len(tiff_files) == 0:
-        print 'Nothing to do'
-        sys.exit()
+    getTiffFiles(dname)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 except:
-    sys.stderr.write('\nusage: extract.py pyramid-directory dest-dir\n\n')
+    sys.stderr.write('\nusage: extract_rgb.py pyramid-directory dest-dir\n\n')
     raise
 
+if len(tiff_files) == 0:
+    print 'Nothing to do'
+    sys.exit()
+    
 dir_template = '%(outdir)s/TileGroup%(groupno)d'
 tile_template = dir_template + '/%(zoomno)d-%(tcolno)d-%(trowno)d.jpg'
 

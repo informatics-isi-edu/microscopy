@@ -78,6 +78,18 @@
       <Template><![CDATA[X x Y]]></Template>
       <Map>Image Size</Map>
    </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>HardwareSetting|ObjectiveChanger|Objective|Magnification|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>Magnification</Map>
+   </OriginalMetadata>
+   <OriginalMetadata>
+      <Key>Information|Image|Channel|Intensity|</Key>
+      <Pattern><![CDATA[\[(?P<X>.*)\]]]></Pattern>
+      <Template><![CDATA[X]]></Template>
+      <Map>Light Source Intensity</Map>
+   </OriginalMetadata>
 </OME>
 
 

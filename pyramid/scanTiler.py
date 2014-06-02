@@ -114,13 +114,18 @@ def load(config_filename):
         return None
 
     http_storage = cfg.get('http_storage', None)
-    if not cirm_path:
+    if not http_storage:
         logger.error('HTTP Storage must be given.')
         return None
 
     extract = cfg.get('extract', None)
     if not extract or not os.path.isfile(extract):
         logger.error('Extract application must be given and exist.')
+        return None
+
+    extract_rgb = cfg.get('extract_rgb', None)
+    if not extract_rgb or not os.path.isfile(extract_rgb):
+        logger.error('Extract RGB application must be given and exist.')
         return None
 
     czirules = cfg.get('czirules', None)
@@ -159,6 +164,7 @@ def load(config_filename):
                                tiff=tiff, \
                                html=html, \
                                extract=extract, \
+                               extract_rgb=extract_rgb, \
                                czirules=czirules, \
                                showinf=showinf, \
                                cirm_path=cirm_path, \

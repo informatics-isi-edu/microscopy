@@ -141,6 +141,7 @@ class ErmrestClient (object):
         self.tiff = kwargs.get("tiff")
         self.html = kwargs.get("html")
         self.extract = kwargs.get("extract")
+        self.extract_rgb = kwargs.get("extract_rgb")
         self.czi = kwargs.get("czi")
         self.czirules = kwargs.get("czirules")
         self.showinf = kwargs.get("showinf")

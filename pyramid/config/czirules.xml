@@ -21,10 +21,6 @@
       <Map>Dye Name</Map>
    </OriginalMetadata>
    <OriginalMetadata>
-      <Key>Experiment|AcquisitionBlock|RegionsSetup|TilesSetup|MultiTrackSetup|Track|Channel|Name</Key>
-      <Map>Channel Name</Map>
-   </OriginalMetadata>
-   <OriginalMetadata>
       <Key>HardwareSetting|ReflectorChanger|Reflector|Name</Key>
       <Map>Reflector</Map>
    </OriginalMetadata>

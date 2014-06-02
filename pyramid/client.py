@@ -245,13 +245,13 @@ class ErmrestClient (object):
         for slideId,scanId in scanids:
             f = self.getTiffFile(slideId, scanId)
             if f:
-                self.logger.debug('Extracting tiles for slide "%s", scan "%s"\n' % (slideId, scanId)) 
                 if len(f) == 1:
                     f = f[0]
                     args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 else:
                     f = ''
                     args = [self.extract_rgb, '%s/%s/%s' % (self.tiff, slideId, scanId), '%s/%s/%s' % (self.tiles, slideId, scanId)]
+                self.logger.debug('Extracting tiles with "%s" for slide "%s", scan "%s"' % (args[0], slideId, scanId)) 
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()
                 returncode = p.returncode
@@ -260,12 +260,12 @@ class ErmrestClient (object):
                     continue
                 self.writeHTMLFile(slideId, scanId)
                 self.writeThumbnailFile(slideId, scanId)
-                self.logger.debug('Extracting metadata for slide "%s", scan "%s"\n' % (slideId, scanId)) 
+                self.logger.debug('Extracting metadata for slide "%s", scan "%s"' % (slideId, scanId)) 
                 bioformatsClient = BioformatsClient(showinf=self.showinf, \
                                                     czirules=self.czirules, \
                                                     czifile='%s/%s/%s.czi' % (self.czi, slideId, scanId))
                 metadata = bioformatsClient.getMetadata()
-                self.logger.debug('Metadata: "%s"\n' % str(metadata)) 
+                self.logger.debug('Metadata: "%s"' % str(metadata)) 
                 os.remove('temp.xml')
                 url = '%s/attribute/Scan/ID=:ID/Thumbnail,Zoomify' % self.path
                 body = []
@@ -276,7 +276,7 @@ class ErmrestClient (object):
                 body.append(obj)
                 headers = {'Content-Type': 'application/json'}
                 self.send_request('PUT', url, json.dumps(body), headers)
-                self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".\n' % (slideId, scanId)) 
+                self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".' % (slideId, scanId)) 
                 self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
         
     def getTiffFile(self, slideId, scanId):

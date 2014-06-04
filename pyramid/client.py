@@ -269,7 +269,8 @@ class ErmrestClient (object):
                 metadata = bioformatsClient.getMetadata()
                 self.logger.debug('Metadata: "%s"' % str(metadata)) 
                 os.remove('temp.xml')
-                columns = ["Thumbnail","Zoomify"].extend(self.metadata)
+                columns = ["Thumbnail","Zoomify"]
+                columns.extend(self.metadata)
                 columns = ','.join([urllib.quote(col, safe='') for col in columns])
                 url = '%s/attribute/Scan/ID=:ID/%s' % (self.path, columns)
                 body = []

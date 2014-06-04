@@ -120,6 +120,7 @@ class ErmrestClient (object):
     ## Derived from the ermrest iobox service client
 
     def __init__(self, **kwargs):
+        self.metadata = kwargs.get("metadata")
         self.baseuri = kwargs.get("baseuri")
         o = urlparse.urlparse(self.baseuri)
         self.scheme = o[0]
@@ -265,6 +266,11 @@ class ErmrestClient (object):
                                                     czirules=self.czirules, \
                                                     czifile='%s/%s/%s.czi' % (self.czi, slideId, scanId))
                 metadata = bioformatsClient.getMetadata()
+                if (len(self.metadata) > 0):
+                    data = {}
+                    for col in self.metadata:
+                        data[col] = metadata[col]
+                    metadata = data
                 self.logger.debug('Metadata: "%s"' % str(metadata)) 
                 os.remove('temp.xml')
                 url = '%s/attribute/Scan/ID=:ID/Thumbnail,Zoomify' % self.path

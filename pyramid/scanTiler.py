@@ -76,6 +76,7 @@ def load(config_filename):
         return None
     
     # Ermrest settings
+    metadata = cfg.get('metadata', [])
     url = cfg.get('url', None)
     if not url:
         logger.error('Ermrest URL must be given.')
@@ -155,7 +156,8 @@ def load(config_filename):
 
     # Establish Ermrest client connection
     try:
-        client = ErmrestClient(baseuri=url, \
+        client = ErmrestClient(metadata=metadata, \
+                               baseuri=url, \
                                username=username, \
                                password=password, \
                                tiles=tiles, \

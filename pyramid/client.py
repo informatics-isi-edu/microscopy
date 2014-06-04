@@ -266,11 +266,6 @@ class ErmrestClient (object):
                                                     czirules=self.czirules, \
                                                     czifile='%s/%s/%s.czi' % (self.czi, slideId, scanId))
                 metadata = bioformatsClient.getMetadata()
-                if (len(self.metadata) > 0):
-                    data = {}
-                    for col in self.metadata:
-                        data[col] = metadata[col]
-                    metadata = data
                 self.logger.debug('Metadata: "%s"' % str(metadata)) 
                 os.remove('temp.xml')
                 url = '%s/attribute/Scan/ID=:ID/Thumbnail,Zoomify' % self.path
@@ -279,6 +274,9 @@ class ErmrestClient (object):
                        'Thumbnail': '%s/%s/thumbnails/%s/%s.jpg' % (self.http_storage, self.cirm_path, slideId, scanId),
                        'Zoomify': '%s/%s/html/%s/%s.html' % (self.http_storage, self.cirm_path, slideId, scanId)
                        }
+                for col in self.metadata:
+                    if metadata[col] != None:
+                        obj[col] = metadata[col]
                 body.append(obj)
                 headers = {'Content-Type': 'application/json'}
                 self.send_request('PUT', url, json.dumps(body), headers)

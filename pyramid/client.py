@@ -248,17 +248,18 @@ class ErmrestClient (object):
             f = self.getTiffFile(slideId, scanId)
             if f:
                 if len(f) == 1:
-                    f = f[0]
-                    args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f), '%s/%s/%s' % (self.tiles, slideId, scanId)]
+                    args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f[0]), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 else:
-                    f = ''
                     args = [self.extract_rgb, '%s/%s/%s' % (self.tiff, slideId, scanId), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 self.logger.debug('Extracting tiles with "%s" for slide "%s", scan "%s"' % (args[0], slideId, scanId)) 
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()
                 returncode = p.returncode
                 if returncode != 0:
-                    self.logger.error('Can not extract tiles for "%s/%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.tiff, slideId, scanId, f, stdoutdata, stderrdata)) 
+                    self.logger.error('Can not extract tiles for "%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.tiff, slideId, scanId, stdoutdata, stderrdata)) 
+                    self.sendMail('FAILURE Tiles', 'Can not extract tiles for "%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.tiff, slideId, scanId, stdoutdata, stderrdata))
+                    for file in f:
+                        os.rename('%s/%s/%s/%s' % (self.tiff, slideId, scanId, file), '%s/%s/%s/%s.err' % (self.tiff, slideId, scanId, file))
                     continue
                 self.writeHTMLFile(slideId, scanId)
                 self.writeThumbnailFile(slideId, scanId)
@@ -292,7 +293,7 @@ class ErmrestClient (object):
         if os.path.isdir(scanDir):
             # allow 30 minutes for GO transfer to be be completed
             if (time.time() - os.path.getmtime(scanDir)) > 1800:
-                tifFiles = [ f for f in os.listdir(scanDir) if os.path.isfile(os.path.join(scanDir,f)) ]
+                tifFiles = [ f for f in os.listdir(scanDir) if os.path.isfile(os.path.join(scanDir,f)) and not re.match('.*[.]err$', f) ]
                 if len(tifFiles) > 0:
                     return tifFiles
         return None

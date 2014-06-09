@@ -51,15 +51,15 @@ def colorFile(files, colors, pattern):
 def getTiffFiles(dname):
     global tiff_files
     files = os.listdir(dname)
-    z1 = [f for f in files if re.match('.*[-]Z1[.tif]', f)]
+    z1 = [f for f in files if re.match('.*[-]Z1[.]tif', f)]
     if len(z1) > 0:
         stacks = len(files) / len(z1)
         stackNo = stacks / 2
         if stackNo * 2 < stacks:
             stackNo += 1
-        stackPattern = '[-]Z%d[.tif]' % stackNo
+        stackPattern = '[-]Z%d[.]tif' % stackNo
     else:
-        stackPattern = '[.tif]'
+        stackPattern = '[.]tif'
     for colors in tiff_colors:
         file = colorFile(files, colors, stackPattern)
         if file:

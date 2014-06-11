@@ -220,8 +220,12 @@ if need_to_build_0:
     # write final tile
     tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, groupno=0), 'JPEG')
 else:
-    # tier 0 is probably the wrong size...
-    sys.stderr.write('warning: confirm that zoomify navigation thumbnail works correctly!')
+    # tier 0 must be cropped down to the page size...
+    page = outpages[0]
+    pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
+    image = Image.open(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, groupno=0))
+    image = image.crop((0,0, pxsize,pysize))
+    image.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, groupno=0), 'JPEG')
 
 
 zoomify_descriptor = """

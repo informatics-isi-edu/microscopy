@@ -35,24 +35,43 @@ tiff_tifffile = []
 tiff_infile = []
 tiff_maxval = []
 
-redColors = ['Rhodamine', 'RFP', 'Alexa Fluor 594']
-greenColors = ['FITC', 'Alexa 488', 'EGFP']
+redColors = ['Rhodamine', 'RFP', 'Alexa Fluor 594', 'tdTomato', 'Alexa Fluor 633']
+greenColors = ['FITC', 'Alexa 488', 'EGFP', 'Alexa Fluor 488']
 blueColors = ['DAPI']
 
 tiff_colors = [redColors, greenColors, blueColors]
 
+def checkFileColors(files):
+    for file in files:
+        colorMatched = None
+        for colors in tiff_colors:
+            for color in colors:
+                if re.match('.*[-]%s[-]Z1[.]tif' % color, file):
+                    colorMatched = True
+                    break
+            if colorMatched:
+                break
+        if not colorMatched:
+            sys.stderr.write('Unknown color for file "%s" \n' % file)
+            sys.exit(1)
+    
 def colorFile(files, colors, pattern):
+    tifFiles = []
     for color in colors:
         colorFiles = [ f for f in files if re.match('.*[-]%s%s' % (color, pattern), f) ]
         if len(colorFiles) == 1:
-            return colorFiles[0]
-    return None
+            tifFiles.append(colorFiles[0])
+    if len(tifFiles) > 0:
+        return tifFiles
+    else:
+        return None
     
 def getTiffFiles(dname):
     global tiff_files
     files = os.listdir(dname)
     z1 = [f for f in files if re.match('.*[-]Z1[.]tif', f)]
     if len(z1) > 0:
+        checkFileColors(z1)
         stacks = len(files) / len(z1)
         stackNo = stacks / 2
         if stackNo * 2 < stacks:
@@ -61,9 +80,10 @@ def getTiffFiles(dname):
     else:
         stackPattern = '[.]tif'
     for colors in tiff_colors:
-        file = colorFile(files, colors, stackPattern)
-        if file:
-            tiff_files.append('%s%s%s' % (dname, os.sep, file))
+        colorFiles = colorFile(files, colors, stackPattern)
+        if colorFiles:
+            for file in colorFiles:
+                tiff_files.append('%s%s%s' % (dname, os.sep, file))
     if len(tiff_files) == 0:
         tiff_files = [ '%s%s%s' % (dname, os.sep, f) for f in files if re.match('.*%s' % stackPattern, f) ]
     
@@ -78,6 +98,8 @@ try:
     getTiffFiles(dname)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
+except SystemExit:
+    raise
 except:
     sys.stderr.write('\nusage: extract_rgb.py pyramid-directory dest-dir\n\n')
     raise

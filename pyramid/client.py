@@ -281,7 +281,7 @@ class ErmrestClient (object):
                        'Zoomify': '%s/%s/html/%s/%s.html' % (self.http_storage, self.cirm_path, slideId, scanId)
                        }
                 for col in self.metadata:
-                    if metadata[col] != None:
+                    if col in metadata and metadata[col] != None:
                         obj[col] = metadata[col]
                 body.append(obj)
                 headers = {'Content-Type': 'application/json'}

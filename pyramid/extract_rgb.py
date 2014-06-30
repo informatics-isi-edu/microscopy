@@ -35,7 +35,7 @@ tiff_tifffile = []
 tiff_infile = []
 tiff_maxval = []
 
-redColors = ['Rhodamine', 'RFP', 'Alexa Fluor 594', 'tdTomato', 'Alexa Fluor 633']
+redColors = ['Rhodamine', 'RFP', 'Alexa Fluor 555', 'Alexa Fluor 594', 'tdTomato', 'Alexa Fluor 633', 'Alexa Fluor 647']
 greenColors = ['FITC', 'Alexa 488', 'EGFP', 'Alexa Fluor 488']
 blueColors = ['DAPI']
 

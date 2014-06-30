@@ -233,8 +233,14 @@ class ErmrestClient (object):
     def start(self):
         ready = False
         while ready == False:
-            self.processScans()
-            time.sleep(self.timeout)
+            try:
+                self.processScans()
+                time.sleep(self.timeout)
+            except:
+                et, ev, tb = sys.exc_info()
+                self.logger.error('got unexpected exception "%s"' % str(ev))
+                self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+                pass
         
     def processScans(self):
         url = '%s/entity/Scan/Zoomify::null::' % self.path

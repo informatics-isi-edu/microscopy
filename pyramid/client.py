@@ -240,7 +240,8 @@ class ErmrestClient (object):
                 et, ev, tb = sys.exc_info()
                 self.logger.error('got unexpected exception "%s"' % str(ev))
                 self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
-                pass
+                self.sendMail('FAILURE Tiles: unexpected exception', '%s\nThe process might have been stopped\n' % str(traceback.format_exception(et, ev, tb)))
+                raise
         
     def processScans(self):
         url = '%s/entity/Scan/Zoomify::null::' % self.path

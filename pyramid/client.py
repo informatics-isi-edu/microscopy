@@ -23,7 +23,7 @@ import subprocess
 import json
 import base64
 import urlparse
-from httplib import HTTPConnection, HTTPSConnection, HTTPException, OK, CREATED, ACCEPTED, NO_CONTENT, CONFLICT
+from httplib import HTTPConnection, HTTPSConnection, HTTPException, OK, CREATED, ACCEPTED, NO_CONTENT, CONFLICT, FORBIDDEN
 import sys
 import traceback
 import time
@@ -160,6 +160,12 @@ class ErmrestClient (object):
             headers.update(self.header)
         self.webconn.request(method, url, body, headers)
         resp = self.webconn.getresponse()
+        if resp.status == FORBIDDEN:
+            self.close()
+            self.connect()
+            self.sendMail('WARNING Tiles: FORBIDDEN exception', 'The HTTPSConnection has been restarted\n')
+            self.webconn.request(method, url, body, headers)
+            resp = self.webconn.getresponse()
         if resp.status not in [OK, CREATED, ACCEPTED, NO_CONTENT]:
             raise ErmrestHTTPException("Error response (%i) received: %s" % (resp.status, resp.read()), resp.status)
         return resp

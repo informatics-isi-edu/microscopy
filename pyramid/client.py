@@ -163,7 +163,7 @@ class ErmrestClient (object):
         if resp.status == FORBIDDEN or resp.status == INTERNAL_SERVER_ERROR:
             self.close()
             self.connect()
-            self.sendMail('WARNING Tiles: FORBIDDEN exception', 'The HTTPSConnection has been restarted\n')
+            self.sendMail('WARNING Tiles: HTTP exception', 'The HTTPSConnection has been restarted\n')
             self.webconn.request(method, url, body, headers)
             resp = self.webconn.getresponse()
         if resp.status not in [OK, CREATED, ACCEPTED, NO_CONTENT]:

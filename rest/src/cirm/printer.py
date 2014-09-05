@@ -28,7 +28,7 @@ class Printer:
     def setPrinter(self, id, printer):
         self.printer_id, self.printer_port = printer
         if self.printers != None:
-            if id=='box':
+            if id=='specimen':
                 self.printer_id, self.printer_port = (self.printers['box_addr'], self.printers['box_port'])
             elif id=='slide':
                 self.printer_id, self.printer_port = (self.printers['slide_addr'], self.printers['slide_port'])
@@ -108,14 +108,14 @@ class PrintJob (Printer):
         json_data = json.load(input_data)
         if len(json_data) > 0:
             self.setPrinter(entity, (json_data[0]['printer_id'], json_data[0]['printer_port']))
-        if entity == 'box':
-            box = json_data[0]
-            id = box['ID']
-            section_date = box['Section Date']
-            sample_name = box['Sample Name']
-            initials = box['Initials']
-            disambiguator = box['Disambiguator']
-            comment = box['Comment']
+        if entity == 'specimen':
+            specimen = json_data[0]
+            id = specimen['ID']
+            section_date = specimen['Section Date']
+            sample_name = specimen['Sample Name']
+            initials = specimen['Initials']
+            disambiguator = specimen['Disambiguator']
+            comment = specimen['Comment']
             try:
                 res = cxi.utils.makeBoxLabel(self.printer_id, self.printer_port, section_date, sample_name, initials, disambiguator, self.uri, id, comment)
             except:

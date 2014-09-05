@@ -6,7 +6,7 @@ Array.prototype.contains = function (elem) {
 };
 
 var slideExperimentColumn = 'Experiment ID';
-var cirm_tables = ['Box', 'Experiment', 'Slide', 'Scan'];
+var cirm_tables = ['Specimen', 'Experiment', 'Slide', 'Scan'];
 var cirm_tables_columns = {};
 var debug = false;
 var selectedEndpoint = null;
@@ -21,8 +21,8 @@ var GUEST_PASSWORD = '********';
 var GLOBUS_AUTHN = true;
 var SLIDE_PRINTER_ADDR = 'slidecode.hsc.usc.edu';
 var SLIDE_PRINTER_PORT = 9100;
-var BOX_PRINTER_ADDR = 'boxcode.hsc.usc.edu';
-var BOX_PRINTER_PORT = 9100;
+var SPECIMEN_PRINTER_ADDR = 'boxcode.hsc.usc.edu';
+var SPECIMEN_PRINTER_PORT = 9100;
 var PRINTER_ADDR = null;
 var PRINTER_PORT = 0;
 var HOME;
@@ -43,12 +43,12 @@ var CIRM_NO_SLIDES_INFO = '<p class="intro">No slides are available.</p>';
 var CIRM_NO_UNASSIGNED_SLIDES_INFO = '<p class="intro">No slides are available to be assigned.</p>';
 var CIRM_UNASSIGNED_SLIDES_INFO = '<p class="intro">Slides available to be assigned:</p>';
 var CIRM_NEW_EXPERIMENT = '<p class="intro">New Experiment</p>';
-var CIRM_NEW_BOX = '<p class="intro">New Box</p>';
+var CIRM_NEW_SPECIMEN = '<p class="intro">New Specimen</p>';
 var cirm_mobile = false;
 var mobileParams = null;
-var newBoxId = null;
+var newSpecimenId = null;
 var newExperimentId = null;
-var boxActive = false;
+var specimenActive = false;
 var experimentActive = false;
 var newSlideId = null;
 var newSearchKeywords = null;
@@ -72,12 +72,12 @@ var fileDisplayValue = {'Thumbnail': getFileThumbnail, 'File Size': getFileSize}
 var fileClassValue = {'Thumbnail': 'thumbnail', 'File Size': 'file_size'};
 var filesDict = {};
 
-var boxColumns = null;
-var boxEditColumns = ['Comment', 'Tags'];
-var boxMultiValuesColumns = ['Tags'];
-var boxesDict = {};
-var boxesList = [];
-// {"ID":"20131108-wnt1creZEGG-RES-0","Section Date":"2013-11-08","Sample Name":"wnt1creZEGG","Initials":"RES","Disambiguator":"0","Comment":"This is a box of origin"}
+var specimenColumns = null;
+var specimenEditColumns = ['Comment', 'Tags'];
+var specimenMultiValuesColumns = ['Tags'];
+var specimensDict = {};
+var specimensList = [];
+// {"ID":"20131108-wnt1creZEGG-RES-0","Section Date":"2013-11-08","Sample Name":"wnt1creZEGG","Initials":"RES","Disambiguator":"0","Comment":"This is a specimen of origin"}
 
 var experimentColumns = null;
 var experimentEditColumns = ['Comment', 'Tags'];
@@ -87,19 +87,19 @@ var experimentsList = [];
 // {"ID":"20131115-myantibody2-KC-0","Experiment Date":"2013-11-15","Experiment Description":"myantibody2","Initials":"KC","Disambiguator":"0","Comment":"This is Karl's experiment"}
 
 var slideNoDisplayColumns = ['ID'];
-var slideClassColumns = {'Box ID': 'Box', 'Experiment ID': 'Experiment', 'Seq.': 'center', 'Rev.': 'center', 'Thumbnail': 'center', 'Scans': 'center'};
-var slideTableColumns = ['ID', 'Seq.', 'Rev.', 'Thumbnail', 'Scans', 'Box ID', 'Experiment ID', 'Comment', 'Tags'];
-var slideDisplayValue = {'ID': getSlideIdValue, 'Seq.': getSlideColumnValue, 'Rev.': getSlideColumnValue, 'Box ID': getSlideBoxValue, 'Experiment ID': getSlideExperimentValue, 'Comment': getSlideColumnValue, 'Tags': getSlideColumnValue, 'Thumbnail': getSlideThumbnail, 'Scans': getSlideScansNumber};
+var slideClassColumns = {'Specimen ID': 'Specimen', 'Experiment ID': 'Experiment', 'Seq.': 'center', 'Rev.': 'center', 'Thumbnail': 'center', 'Scans': 'center'};
+var slideTableColumns = ['ID', 'Seq.', 'Rev.', 'Thumbnail', 'Scans', 'Specimen ID', 'Experiment ID', 'Comment', 'Tags'];
+var slideDisplayValue = {'ID': getSlideIdValue, 'Seq.': getSlideColumnValue, 'Rev.': getSlideColumnValue, 'Specimen ID': getSlideSpecimenValue, 'Experiment ID': getSlideExperimentValue, 'Comment': getSlideColumnValue, 'Tags': getSlideColumnValue, 'Thumbnail': getSlideThumbnail, 'Scans': getSlideScansNumber};
 
 var slideColumns = null;
 var slideEditColumns = ['Comment', 'Tags'];
 var slideMultiValuesColumns = ['Tags'];
 var slidesDict = {};
 var slidesList = [];
-//{"ID":"20131108-wnt1creZEGG-RES-0-09-000","Seq.":9,"Rev.":0,"Box ID":"20131108-wnt1creZEGG-RES-0","Experiment ID":"20131115-myantibody2-KC-0","Comment":"This is a slide"}
+//{"ID":"20131108-wnt1creZEGG-RES-0-09-000","Seq.":9,"Rev.":0,"Specimen ID":"20131108-wnt1creZEGG-RES-0","Experiment ID":"20131115-myantibody2-KC-0","Comment":"This is a slide"}
 var unassignedSlidesDict = {};
 var unassignedSlidesList = [];
-//{"ID":"20131108-wnt1creZEGG-RES-0-09-000","Seq.":9,"Rev.":0,"Box ID":"20131108-wnt1creZEGG-RES-0","Experiment ID":null,"Comment":"This is a slide"}
+//{"ID":"20131108-wnt1creZEGG-RES-0-09-000","Seq.":9,"Rev.":0,"Specimen ID":"20131108-wnt1creZEGG-RES-0","Experiment ID":null,"Comment":"This is a slide"}
 
 var scanColumns = null;
 var scanEditColumns = ['Comment', 'Tags'];
@@ -116,7 +116,7 @@ var timestampsColumns = ['completion_time', 'deadline', 'request_time'];
 
 var viewsList = ['Transfer', 'Printers'];
 var slidesViewList = ['All', 'Unassigned'];
-var SCAN_HISTORY = ['Box', 'Experiment', 'Slide', 'search'];
+var SCAN_HISTORY = ['Specimen', 'Experiment', 'Slide', 'search'];
 
 var containerLayout = null;
 
@@ -335,7 +335,7 @@ function initCIRMMobile() {
 	var params = window.location.search;
 	if (params != null && params.length > 0) {
 		var isSlide = ('' + window.location).indexOf('mobile.html') >= 0;
-		var isBox = ('' + window.location).indexOf('box.html') >= 0;
+		var isSpecimen = ('' + window.location).indexOf('specimen.html') >= 0;
 		params = params.substring(1);
 		var arr = params.split('&');
 		$.each(arr, function(i, param) {
@@ -376,9 +376,9 @@ function initCIRMMobile() {
 						imgDiv.append(img);
 					});
 				}
-			} else if (isBox) {
+			} else if (isSpecimen) {
 				if (values[0] == 'ID') {
-					$('#boxDiv').html('Box ID: ' + decodeURIComponent(values[1]));
+					$('#specimenDiv').html('Specimen ID: ' + decodeURIComponent(values[1]));
 				} else if (values[0] == 'date') {
 					$('#dateDiv').html('Section Date: ' + decodeURIComponent(values[1]));
 				} else if (values[0] == 'genotype') {
@@ -398,7 +398,7 @@ function isMobileSearch() {
 	var userAgent = navigator.userAgent; 
 	cirm_mobile = (userAgent.indexOf('iPhone') != -1 || userAgent.indexOf('Mobile') != -1);
 	return cirm_mobile && 
-		((('' + window.location).indexOf('/cirm/slide') >= 0) || (('' + window.location).indexOf('/cirm/box') >= 0));
+		((('' + window.location).indexOf('/cirm/slide') >= 0) || (('' + window.location).indexOf('/cirm/specimen') >= 0));
 }
 
 function initCIRM() {
@@ -420,9 +420,9 @@ function initCIRM() {
 			if (('' + window.location).indexOf('/cirm/slide') >= 0) {
 				mobileParams = {};
 				getSlide(label);
-			} else if (('' + window.location).indexOf('/cirm/box') >= 0) {
+			} else if (('' + window.location).indexOf('/cirm/specimen') >= 0) {
 				mobileParams = {};
-				getBox(label);
+				getSpecimen(label);
 			}
 			return;
 		}
@@ -455,11 +455,11 @@ function initCIRM() {
 		getMetadata(table);
 		cirm_tables_columns[table] = getTableColumns(table);
 	});
-	boxColumns = cirm_tables_columns['Box'];
+	specimenColumns = cirm_tables_columns['Specimen'];
 	experimentColumns = cirm_tables_columns['Experiment'];
 	slideColumns = cirm_tables_columns['Slide'];
 	scanColumns = cirm_tables_columns['Scan'];
-	getBoxes(null);
+	getSpecimens(null);
 }
 
 function mobileRequest() {
@@ -472,7 +472,7 @@ function mobileRequest() {
 			experiment = encodeSafeURIComponent(mobileParams['Experiment']['Experiment Description']);
 			experimentDate = encodeSafeURIComponent(mobileParams['Experiment']['Experiment Date']);
 		}
-		var genotype = encodeSafeURIComponent(mobileParams['Box']['Sample Name']);
+		var genotype = encodeSafeURIComponent(mobileParams['Specimen']['Sample Name']);
 		var img = [];
 		$.each(mobileParams['scans'], function(i, scan) {
 			img.push(encodeSafeURIComponent(scan['Thumbnail']));
@@ -484,13 +484,13 @@ function mobileRequest() {
 		if (img.length > 0) {
 			url += '&img=' + img.join(',');
 		}
-	} else if (mobileParams['Box'] != null) {
-		var id = encodeSafeURIComponent(mobileParams['Box']['ID']);
-		var sectionDate = encodeSafeURIComponent(mobileParams['Box']['Section Date']);
-		var genotype = encodeSafeURIComponent(mobileParams['Box']['Sample Name']);
-		var initials = encodeSafeURIComponent(mobileParams['Box']['Initials']);
-		var disambiguator = encodeSafeURIComponent(mobileParams['Box']['Disambiguator']);
-		url = '/cirm/box.html?ID='+id+
+	} else if (mobileParams['Specimen'] != null) {
+		var id = encodeSafeURIComponent(mobileParams['Specimen']['ID']);
+		var sectionDate = encodeSafeURIComponent(mobileParams['Specimen']['Section Date']);
+		var genotype = encodeSafeURIComponent(mobileParams['Specimen']['Sample Name']);
+		var initials = encodeSafeURIComponent(mobileParams['Specimen']['Initials']);
+		var disambiguator = encodeSafeURIComponent(mobileParams['Specimen']['Disambiguator']);
+		url = '/cirm/specimen.html?ID='+id+
 		'&disambiguator='+disambiguator+
 		'&date='+sectionDate+
 		'&initials='+initials+
@@ -501,37 +501,37 @@ function mobileRequest() {
 	}
 }
 
-function getBox(id) {
-	var url = ERMREST_HOME + '/Box/ID=' + encodeSafeURIComponent(id);
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBox, {'ID': id}, null, 0);
+function getSpecimen(id) {
+	var url = ERMREST_HOME + '/Specimen/ID=' + encodeSafeURIComponent(id);
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimen, {'ID': id}, null, 0);
 }
 
-function postGetBox(data, textStatus, jqXHR, param) {
+function postGetSpecimen(data, textStatus, jqXHR, param) {
 	if (data.length == 0) {
-		alert('Box not found.');
+		alert('Specimen not found.');
 		submitLogout();
 		return;
 	}
-	mobileParams['Box'] = data[0];
+	mobileParams['Specimen'] = data[0];
 	submitLogout();
 }
 
-function getBoxes(id) {
-	var url = ERMREST_HOME + '/Box';
+function getSpecimens(id) {
+	var url = ERMREST_HOME + '/Specimen';
 	if (id != null) {
 		url += '/ID=' + encodeSafeURIComponent(id);
 	}
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxes, {'ID': id}, null, 0);
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimens, {'ID': id}, null, 0);
 }
 
-function postGetBoxes(data, textStatus, jqXHR, param) {
+function postGetSpecimens(data, textStatus, jqXHR, param) {
 	if (mobileParams != null) {
-		mobileParams['Box'] = data[0];
+		mobileParams['Specimen'] = data[0];
 	} else {
-		boxesList = data;
-		boxesDict = {};
+		specimensList = data;
+		specimensDict = {};
 		$.each(data, function(i, item) {
-			boxesDict[item['ID']] = item;
+			specimensDict[item['ID']] = item;
 		});
 	}
 	
@@ -597,16 +597,16 @@ function postGetSlide(data, textStatus, jqXHR, param) {
 		return;
 	}
 	mobileParams['Slide'] = data[0];
-	getBoxes(data[0]['Box ID']);
+	getSpecimens(data[0]['Specimen ID']);
 }
 
-function getBoxesSlides(view) {
+function getSpecimensSlides(view) {
 	var url = ERMREST_HOME + '/Scan';
 	var params = {'view': view};
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxesSlides, params, null, 0);
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimensSlides, params, null, 0);
 }
 
-function postGetBoxesSlides(data, textStatus, jqXHR, param) {
+function postGetSpecimensSlides(data, textStatus, jqXHR, param) {
 	scansDict = {};
 	scansList = data;
 	$.each(data, function(i, item) {
@@ -664,9 +664,9 @@ function postGetExperimentScans(data, textStatus, jqXHR, param) {
 	selectNewSlide();
 }
 
-function getSlides(boxId) {
-	var url = ERMREST_HOME + '/Box/ID=' + encodeSafeURIComponent(boxId) + '/Slide';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlides, {'boxId': boxId}, null, 0);
+function getSlides(specimenId) {
+	var url = ERMREST_HOME + '/Specimen/ID=' + encodeSafeURIComponent(specimenId) + '/Slide';
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlides, {'specimenId': specimenId}, null, 0);
 }
 
 function postGetSlides(data, textStatus, jqXHR, param) {
@@ -675,22 +675,22 @@ function postGetSlides(data, textStatus, jqXHR, param) {
 	$.each(data, function(i, item) {
 		slidesDict[item['ID']] = item;
 	});
-	getBoxScans(param['boxId']);
+	getSpecimenScans(param['specimenId']);
 }
 
-function getBoxScans(boxId) {
-	var url = ERMREST_HOME + '/Scan/' + encodeSafeURIComponent('Slide ID') + '::regexp::' + encodeSafeURIComponent(boxId) + '*';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxScans, {'ID': boxId}, null, 0);
+function getSpecimenScans(specimenId) {
+	var url = ERMREST_HOME + '/Scan/' + encodeSafeURIComponent('Slide ID') + '::regexp::' + encodeSafeURIComponent(specimenId) + '*';
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimenScans, {'ID': specimenId}, null, 0);
 }
 
-function postGetBoxScans(data, textStatus, jqXHR, param) {
+function postGetSpecimenScans(data, textStatus, jqXHR, param) {
 	scansList = data;
 	scansDict = {};
 	$.each(data, function(i, item) {
 		scansDict[item['ID']] = item;
 	});
-	pushHistoryState('Box', '', 'query=Box&ID='+encodeSafeURIComponent(param['ID']), {'ID': param['ID']});
-	appendSlides('Box');
+	pushHistoryState('Specimen', '', 'query=Specimen&ID='+encodeSafeURIComponent(param['ID']), {'ID': param['ID']});
+	appendSlides('Specimen');
 	selectNewSlide();
 }
 
@@ -888,7 +888,7 @@ function submitGlobusLogin(username, password) {
 }
 
 function checkGlobusAuthorization() {
-	var url = ERMREST_HOME + '/Box';
+	var url = ERMREST_HOME + '/Specimen';
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitLogin, null, errorGlobusAuthorization, 0);
 }
 
@@ -897,7 +897,7 @@ function errorGlobusAuthorization(jqXHR, textStatus, errorThrown) {
 		alert('You are not authorized to use this application.');
 		submitLogout();
 	} else {
-		handleError(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, ERMREST_HOME + '/Box', 'application/json', true, null, true, postSubmitLogin, null, null,  MAX_RETRIES+1);
+		handleError(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, ERMREST_HOME + '/Specimen', 'application/json', true, null, true, postSubmitLogin, null, null,  MAX_RETRIES+1);
 		postSubmitLogin();
 	}
 }
@@ -1221,24 +1221,24 @@ function drawPanels() {
 		west: {size: westSize},
 		north: {resizable: false},
 		south: {resizable: false}});
-	selectNewBox();
+	selectNewSpecimen();
 	selectNewExperiment();
-	if (boxActive || experimentActive) {
+	if (specimenActive || experimentActive) {
 		setTimeout('openAccordion()', 1);
 	}
 	$('#centerPanel').css('max-height', $('#centerPanel').css('height'));
 }
 
 function openAccordion() {
-	$('#leftPanel').accordion( "option", "active", boxActive ? 0 : 1 );
-	boxActive = experimentActive = false;
+	$('#leftPanel').accordion( "option", "active", specimenActive ? 0 : 1 );
+	specimenActive = experimentActive = false;
 }
 
-function selectNewBox() {
-	if (newBoxId != null) {
-		$.each($('li', $('#BoxUL')), function(i, box) {
-			if ($(box).attr('entityId') == newBoxId) {
-				$(box).click();
+function selectNewSpecimen() {
+	if (newSpecimenId != null) {
+		$.each($('li', $('#SpecimenUL')), function(i, specimen) {
+			if ($(specimen).attr('entityId') == newSpecimenId) {
+				$(specimen).click();
 				return false;
 			}
 		});
@@ -1313,11 +1313,11 @@ function initPanels() {
 	initTopPanel();
 	var leftPanel = $('#leftPanel');
 	leftPanel.html('');
-	var boxesContent = getEntityContent(boxesList, 'Boxes', 'Box', displayBox, createBox, compareBoxes, boxNode);
-	loadLeftPanel(leftPanel, boxesContent);
+	var specimensContent = getEntityContent(specimensList, 'Specimens', 'Specimen', displaySpecimen, createSpecimen, compareSpecimens, specimenNode);
+	loadLeftPanel(leftPanel, specimensContent);
 	var experimentsContent = getEntityContent(experimentsList, 'Experiments', 'Experiment', displayExperiment, createExperiment, compareExperiments, experimentNode);
 	loadLeftPanel(leftPanel, experimentsContent);
-	var slidesContent = getEntityContent(slidesViewList, 'Slides', 'Slide', displayBoxesSlides, null, null, entityNode);
+	var slidesContent = getEntityContent(slidesViewList, 'Slides', 'Slide', displaySpecimensSlides, null, null, entityNode);
 	loadLeftPanel(leftPanel, slidesContent);
 	var searchContent = getEntityContent(searchList, 'Recent Searches', 'Search', displaySearch, null, null, entityNode);
 	loadLeftPanel(leftPanel, searchContent);
@@ -1328,7 +1328,7 @@ function initPanels() {
 		active = 3;
 	} else if (newExperimentId != null || experimentActive) {
 		active = 1;
-	} else if (newBoxId != null || boxActive) {
+	} else if (newSpecimenId != null || specimenActive) {
 		active = 0;
 	}
 	leftPanel.accordion({ 'header': 'h4',
@@ -1360,20 +1360,20 @@ function getSlideIdValue(slide, td, val, index) {
 	td.append(a);
 }
 
-function getSlideBoxValue(slide, td, val, index) {
+function getSlideSpecimenValue(slide, td, val, index) {
 	var a = $('<a>');
 	a.addClass('link-style banner-text');
-	a.attr('href', 'javascript:selectSlideBox("' + val + '")');
+	a.attr('href', 'javascript:selectSlideSpecimen("' + val + '")');
 	a.click(function(event) {event.stopPropagation();});
 	a.html(val);
 	td.append(a);
 }
 
-function selectSlideBox(boxId) {
+function selectSlideSpecimen(specimenId) {
 	$('#leftPanel').accordion( "option", "active", 0 );
-	$.each($('li', $('#BoxUL')), function(i, box) {
-		if ($(box).attr('entityId') == boxId) {
-			$(box).click();
+	$.each($('li', $('#SpecimenUL')), function(i, specimen) {
+		if ($(specimen).attr('entityId') == specimenId) {
+			$(specimen).click();
 			return false;
 		}
 	});
@@ -1735,8 +1735,8 @@ function appendSlides(item) {
 		var p = $('<p>');
 		p.addClass('intro');
 		centerPanel.append(p);
-		if (item == 'Box') {
-			p.html('Box Slides');
+		if (item == 'Specimen') {
+			p.html('Specimen Slides');
 		} else if (item == 'Experiment') {
 			p.html('Experiment Slides');
 		} else if (item == 'search') {
@@ -1823,25 +1823,25 @@ function appendSlides(item) {
 		$('#printSlideButton').addClass('disabledButton');
 	}
 	$('button[context="centerPanelBottom"]').hide();
-	if (item == 'Box') {
+	if (item == 'Specimen') {
 		$('#createSlideButton').show();
-		$('#printBoxButton').show();
-		$('#deleteBoxButton').show();
+		$('#printSpecimenButton').show();
+		$('#deleteSpecimenButton').show();
 		if ($('tbody tr', $('#slidesTable')).length > 0) {
-			$('#deleteBoxButton').attr('disabled', 'disabled');
-			$('#deleteBoxButton').addClass('disabledButton');
+			$('#deleteSpecimenButton').attr('disabled', 'disabled');
+			$('#deleteSpecimenButton').addClass('disabledButton');
 		} else {
-			$('#deleteBoxButton').removeAttr('disabled');
-			$('#deleteBoxButton').removeClass('disabledButton');
+			$('#deleteSpecimenButton').removeAttr('disabled');
+			$('#deleteSpecimenButton').removeClass('disabledButton');
 		}
-		if (newBoxId != null) {
+		if (newSpecimenId != null) {
 			$('#createSlideButton').click();
-			newBoxId = null;
+			newSpecimenId = null;
 		}
 	}
 	if (item == 'Experiment') {
-		$('#printBoxButton').hide();
-		$('#deleteBoxButton').hide();
+		$('#printSpecimenButton').hide();
+		$('#deleteSpecimenButton').hide();
 		$('#addSlidesButton').show();
 		$('#deleteExperimentButton').show();
 		if (arr.length > 0) {
@@ -2020,17 +2020,17 @@ function postGetExperimentSearchSlides(data, textStatus, jqXHR, param) {
 	$.each(data, function(i, item) {
 		slidesDict[item['ID']] = item;
 	});
-	getBoxSearchSlides(param['keywords'], param['originalValue']);
+	getSpecimenSearchSlides(param['keywords'], param['originalValue']);
 }
 
-function getBoxSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/Box/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/Slide';
+function getSpecimenSearchSlides(keywords, originalValue) {
+	var url = ERMREST_HOME + '/Specimen/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/Slide';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetBoxSearchSlides, params, null, 0);
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimenSearchSlides, params, null, 0);
 }
 
-function postGetBoxSearchSlides(data, textStatus, jqXHR, param) {
+function postGetSpecimenSearchSlides(data, textStatus, jqXHR, param) {
 	$.each(data, function(i, item) {
 		slidesDict[item['ID']] = item;
 	});
@@ -2128,7 +2128,7 @@ function postGetScans(data, textStatus, jqXHR, param) {
 }
 
 function appendImage(images) {
-	var item = 'Box';
+	var item = 'Specimen';
 	if ($('.highlighted', $('#ExperimentDiv')).length > 0) {
 		item = 'Experiment';
 	}
@@ -2154,8 +2154,8 @@ function appendImage(images) {
 		}
 	});
 	$('button[context="centerPanelBottom"]').hide();
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 }
@@ -2183,9 +2183,9 @@ function displayEntity(itemType, item) {
 	} else if (itemType == 'Slide') {
 		updateItem = 'updateSlide';
 		cols = slideColumns;
-	} else if (itemType == 'Box') {
-		updateItem = 'updateBox';
-		cols = boxColumns;
+	} else if (itemType == 'Specimen') {
+		updateItem = 'updateSpecimen';
+		cols = specimenColumns;
 	} else if (itemType == 'Experiment') {
 		updateItem = 'updateExperiment';
 		cols = experimentColumns;
@@ -2204,10 +2204,10 @@ function displayItem(cols, item, itemType) {
 	rightPanel.html('');
 	var p = $('<p>');
 	p.addClass('intro');
-	if (itemType == 'Box') {
-		p.html('Box Attributes');
-		editColumns = boxEditColumns;
-		multiValuesColumns = boxMultiValuesColumns;
+	if (itemType == 'Specimen') {
+		p.html('Specimen Attributes');
+		editColumns = specimenEditColumns;
+		multiValuesColumns = specimenMultiValuesColumns;
 	} else if (itemType == 'Experiment') {
 		p.html('Experiment Attributes');
 		editColumns = experimentEditColumns;
@@ -2568,20 +2568,20 @@ function initBottomPanel(panel) {
 
 	var button = $('<button>');
 	panel.append(button);
-	button.attr('id', 'deleteBoxButton');
-	button.html('Delete Box');
-	button.button({icons: {secondary: 'ui-icon-alert alert_background'}}).click(function(event) {deleteBox();});
+	button.attr('id', 'deleteSpecimenButton');
+	button.html('Delete Specimen');
+	button.button({icons: {secondary: 'ui-icon-alert alert_background'}}).click(function(event) {deleteSpecimen();});
 	button.addClass('deleteButton');
 
-	$('#deleteBoxButton').hide();
+	$('#deleteSpecimenButton').hide();
 
 	var button = $('<button>');
 	panel.append(button);
-	button.attr('id', 'printBoxButton');
-	button.html('Print Box');
-	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintBox();});
+	button.attr('id', 'printSpecimenButton');
+	button.html('Print Specimen');
+	button.button({icons: {primary: 'ui-icon-tag'}}).click(function(event) {submitPrintSpecimen();});
 
-	$('#printBoxButton').hide();
+	$('#printSpecimenButton').hide();
 }
 
 function editEntity(item) {
@@ -2590,8 +2590,8 @@ function editEntity(item) {
 		cols = scanEditColumns;
 	} else if (item == 'Slide') {
 		cols = slideEditColumns;
-	} else if (item == 'Box') {
-		cols = boxEditColumns;
+	} else if (item == 'Specimen') {
+		cols = specimenEditColumns;
 	} else if (item == 'Experiment') {
 		cols = experimentEditColumns;
 	}
@@ -2601,8 +2601,8 @@ function editEntity(item) {
 		$('#' + makeId(col) + 'Label').hide();
 	});
 
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 }
 
 function updateEntity(item, column, isMultiValue) {
@@ -2628,9 +2628,9 @@ function proceedUpdateEntity(item, column, isMultiValue, answer) {
 	} else if (item == 'Slide') {
 		cols = slideColumns;
 		editCols = slideEditColumns;
-	} else if (item == 'Box') {
-		cols = boxColumns;
-		editCols = boxEditColumns;
+	} else if (item == 'Specimen') {
+		cols = specimenColumns;
+		editCols = specimenEditColumns;
 	} else if (item == 'Experiment') {
 		cols = experimentColumns;
 		editCols = experimentEditColumns;
@@ -2689,10 +2689,10 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 		colDict = slidesDict;
 		colList = slidesList;
 		cols = slideColumns;
-	} else if (item == 'Box') {
-		colDict = boxesDict;
-		colList = boxesList;
-		cols = boxColumns;
+	} else if (item == 'Specimen') {
+		colDict = specimensDict;
+		colList = specimensList;
+		cols = specimenColumns;
 	} else if (item == 'Experiment') {
 		colDict = experimentsDict;
 		colList = experimentsList;
@@ -2711,21 +2711,21 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 		updateRowData(slideColumns, slideEditColumns, data);
 	}
 	displayEntity(item, data[0]);
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	if (item == 'Scan') {
 		$('#transferButton').show();
 		$('#enlargeButton').show();
 		$('#deleteScanButton').show();
-	} else if (item == 'Box') {
-		$('#printBoxButton').show();
-		$('#deleteBoxButton').show();
+	} else if (item == 'Specimen') {
+		$('#printSpecimenButton').show();
+		$('#deleteSpecimenButton').show();
 		if ($('tbody tr', $('#slidesTable')).length > 0) {
-			$('#deleteBoxButton').attr('disabled', 'disabled');
-			$('#deleteBoxButton').addClass('disabledButton');
+			$('#deleteSpecimenButton').attr('disabled', 'disabled');
+			$('#deleteSpecimenButton').addClass('disabledButton');
 		} else {
-			$('#deleteBoxButton').removeAttr('disabled');
-			$('#deleteBoxButton').removeClass('disabledButton');
+			$('#deleteSpecimenButton').removeAttr('disabled');
+			$('#deleteSpecimenButton').removeClass('disabledButton');
 		}
 	}
 }
@@ -2776,9 +2776,9 @@ function entityNode(entity) {
 		'display': entity};
 }
 
-function boxNode(box) {
-	return {'entityId': box['ID'],
-		'display': boxDisplayName(box)};
+function specimenNode(specimen) {
+	return {'entityId': specimen['ID'],
+		'display': specimenDisplayName(specimen)};
 }
 
 function experimentNode(experiment) {
@@ -2786,17 +2786,17 @@ function experimentNode(experiment) {
 		'display': experimentDisplayName(experiment)};
 }
 
-function boxDisplayName(box) {
-	return box['Sample Name'] + '-' + box['Initials'] + '-' + box['Section Date'];
+function specimenDisplayName(specimen) {
+	return specimen['Sample Name'] + '-' + specimen['Initials'] + '-' + specimen['Section Date'];
 }
 
 function experimentDisplayName(experiment) {
 	return experiment['Experiment Description'] + '-' + experiment['Initials'] + '-' + experiment['Experiment Date'];
 }
 
-function compareBoxes(item1, item2) {
-	var val1 = boxDisplayName(item1);
-	var val2 = boxDisplayName(item2);
+function compareSpecimens(item1, item2) {
+	var val1 = specimenDisplayName(item1);
+	var val2 = specimenDisplayName(item2);
 	return compareIgnoreCase(val1, val2);
 }
 
@@ -2963,14 +2963,14 @@ function createSlide() {
 	$('#createButton').click(function(event) {saveSlide();});
 	$('#createButton').show();
 	$('#cancelCreateButton').unbind('click');
-	$('#cancelCreateButton').click(function(event) {backupRightPanel(); appendSlides('Box');});
+	$('#cancelCreateButton').click(function(event) {backupRightPanel(); appendSlides('Specimen');});
 	$('#cancelCreateButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
 	$('#deleteSlideButton').hide();
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 }
 
 function checkSubmitGetEndpointData(event) {
@@ -3241,8 +3241,8 @@ function renderTransferFiles(files) {
 	$('#refreshActivityButton').attr('disabled', 'disabled');
 	$('#refreshActivityButton').addClass('disabledButton');
 	$('#refreshActivityButton').show();
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	selectedEndpoint = null;
 }
 
@@ -3329,8 +3329,8 @@ function checkFilesTransferButton() {
 
 function getSlidesType() {
 	var ret = null;
-	if ($('.highlighted', $('#BoxDiv')).length > 0) {
-		ret = 'Box';
+	if ($('.highlighted', $('#SpecimenDiv')).length > 0) {
+		ret = 'Specimen';
 	} else if ($('.highlighted', $('#ExperimentDiv')).length > 0) {
 		ret = 'Experiment';
 	} else if ($('.highlighted', $('#SearchDiv')).length > 0) {
@@ -3342,8 +3342,8 @@ function getSlidesType() {
 function globusTasks(fromRefresh) {
 	if (!fromRefresh) {
 		$('#rightPanelTop').html('');
-		$('#printBoxButton').hide();
-		$('#deleteBoxButton').hide();
+		$('#printSpecimenButton').hide();
+		$('#deleteSpecimenButton').hide();
 	}
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
@@ -3363,8 +3363,8 @@ function printersManaging() {
 	$('#rightPanelTop').html('');
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('<p class="intro"></p>');
 	var p = $('<p>');
@@ -3372,8 +3372,8 @@ function printersManaging() {
 	centerPanel.append(p);
 	var button = $('<button>');
 	p.append(button);
-	button.html('Box Labels Printer');
-	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printerManaging('Box');});
+	button.html('Specimen Labels Printer');
+	button.button({icons: {primary: 'ui-icon-print'}}).click(function(event) {printerManaging('Specimen');});
 	var p = $('<p>');
 	p.addClass('center');
 	centerPanel.append(p);
@@ -3391,9 +3391,9 @@ function printerManaging(printer) {
 		PRINTER_PORT = SLIDE_PRINTER_PORT;
 		centerPanel.html('<p class="intro">Slide Labels Printer</p>');
 	} else {
-		PRINTER_ADDR = BOX_PRINTER_ADDR;
-		PRINTER_PORT = BOX_PRINTER_PORT;
-		centerPanel.html('<p class="intro">Box Labels Printer</p>');
+		PRINTER_ADDR = SPECIMEN_PRINTER_ADDR;
+		PRINTER_PORT = SPECIMEN_PRINTER_PORT;
+		centerPanel.html('<p class="intro">Specimen Labels Printer</p>');
 	}
 	var printTable = $('<table>');
 	centerPanel.append(printTable);
@@ -3526,8 +3526,8 @@ function printerManaging(printer) {
 	$('#backButton').unbind('click');
 	$('#backButton').click(function(event) {printersManaging();});
 	$('#backButton').show();
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 }
@@ -3573,8 +3573,8 @@ function printerSettings() {
 	$('#saveButton').removeClass('disabledButton');
 	$('#cancelButton').show();
 	$('#saveButton').show();
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 }
 
 function updatePrinterSettings() {
@@ -3584,8 +3584,8 @@ function updatePrinterSettings() {
 		SLIDE_PRINTER_ADDR = PRINTER_ADDR;
 		SLIDE_PRINTER_PORT = PRINTER_PORT;
 	} else {
-		BOX_PRINTER_ADDR = PRINTER_ADDR;
-		BOX_PRINTER_PORT = PRINTER_PORT;
+		SPECIMEN_PRINTER_ADDR = PRINTER_ADDR;
+		SPECIMEN_PRINTER_PORT = PRINTER_PORT;
 	}
 	cancelPrinterSettings();
 }
@@ -3594,12 +3594,12 @@ function cancelPrinterSettings() {
 	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
 	$('button', $('#rightPanelBottom')).hide();
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 }
 
 function managePrinter(param) {
-	var url = PRINTER_HOME + (isSlidePrinter ? 'Slide' : 'Box') + '/control/' + encodeSafeURIComponent(param) + '/';
+	var url = PRINTER_HOME + (isSlidePrinter ? 'Slide' : 'Specimen') + '/control/' + encodeSafeURIComponent(param) + '/';
 	var arr = [];
 	var obj = new Object();
 	obj['printer_id'] = PRINTER_ADDR;
@@ -3743,8 +3743,8 @@ function createExperiment() {
 	$('#cancelCreateButton').unbind('click');
 	$('#cancelCreateButton').click(function(event) {clear();});
 	$('#cancelCreateButton').show();
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
@@ -3775,12 +3775,12 @@ function displayView(ul, li) {
 	}
 }
 
-function displayBox(ul, li) {
+function displaySpecimen(ul, li) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	li.addClass('highlighted');
 	$('#centerPanelTop').html('');
 	$('button[context="centerPanelBottom"]').hide();
-	displayEntity('Box', boxesDict[li.attr('entityId')]);
+	displayEntity('Specimen', specimensDict[li.attr('entityId')]);
 	entityStack = [];
 	getSlides(li.attr('entityId'));
 }
@@ -3800,32 +3800,32 @@ function displaySearch(ul, li) {
 	li.addClass('highlighted');
 	$('#rightPanelTop').html('');
 	$('#centerPanelTop').html('');
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
 	entityStack = [];
 	getSearchSlides(getSearchExpression(li.html(), '&'), li.html());
 }
 
-function displayBoxesSlides(ul, li) {
+function displaySpecimensSlides(ul, li) {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	li.addClass('highlighted');
 	$('#rightPanelTop').html('');
 	$('#centerPanelTop').html('');
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	$('button', $('#rightPanelBottom')).hide();
 	$('button[context="centerPanelBottom"]').hide();
 	entityStack = [];
-	getBoxesSlides(li.html());
+	getSpecimensSlides(li.html());
 }
 
-function checkBoxSaveButton() {
-	if ($('#boxDate').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#boxGenotype').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#boxRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#boxDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
+function checkSpecimenSaveButton() {
+	if ($('#specimenDate').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+		$('#specimenGenotype').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+		$('#specimenRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+		$('#specimenDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#createButton').removeAttr('disabled');
 		$('#createButton').removeClass('disabledButton');
 	} else {
@@ -3834,13 +3834,13 @@ function checkBoxSaveButton() {
 	}
 }
 
-function createBox() {
+function createSpecimen() {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	$('#rightPanelTop').html('');
 	$('button', $('#rightPanelBottom')).hide();
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('');
-	centerPanel.append(CIRM_NEW_BOX);
+	centerPanel.append(CIRM_NEW_SPECIMEN);
 	centerPanel.show();
 	var table = $('<table>');
 	centerPanel.append(table);
@@ -3855,7 +3855,7 @@ function createBox() {
 	var td = $('<td>');
 	tr.append(td);
 	var input = $('<input>');
-	input.attr({'id': 'boxDate',
+	input.attr({'id': 'specimenDate',
 		'type': 'text'});
 	input.addClass('datepicker');
 	td.append(input);
@@ -3867,7 +3867,7 @@ function createBox() {
 		showHour: false,
 		showMinute: false
 	});
-	input.change(function(event) {checkBoxSaveButton();});
+	input.change(function(event) {checkSpecimenSaveButton();});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -3878,11 +3878,11 @@ function createBox() {
 	var td = $('<td>');
 	tr.append(td);
 	var input = $('<input>');
-	input.attr({'id': 'boxGenotype',
+	input.attr({'id': 'specimenGenotype',
 		'maxlength': '15',
 		'type': 'text'});
 	td.append(input);
-	input.keyup(function(event) {checkBoxSaveButton();});
+	input.keyup(function(event) {checkSpecimenSaveButton();});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -3893,11 +3893,11 @@ function createBox() {
 	var td = $('<td>');
 	tr.append(td);
 	var input = $('<input>');
-	input.attr({'id': 'boxRI',
+	input.attr({'id': 'specimenRI',
 		'maxlength': '3',
 		'type': 'text'});
 	td.append(input);
-	input.keyup(function(event) {checkBoxSaveButton();});
+	input.keyup(function(event) {checkSpecimenSaveButton();});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -3908,12 +3908,12 @@ function createBox() {
 	var td = $('<td>');
 	tr.append(td);
 	var input = $('<input>');
-	input.attr({'id': 'boxDisambiguator',
+	input.attr({'id': 'specimenDisambiguator',
 		'maxlength': '1',
 		'type': 'text'});
 	td.append(input);
 	input.val('0');
-	input.keyup(function(event) {checkBoxSaveButton();});
+	input.keyup(function(event) {checkSpecimenSaveButton();});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -3924,7 +3924,7 @@ function createBox() {
 	var td = $('<td>');
 	tr.append(td);
 	var input = $('<input>');
-	input.attr({'id': 'boxComment',
+	input.attr({'id': 'specimenComment',
 		'type': 'text'});
 	td.append(input);
 
@@ -3933,38 +3933,38 @@ function createBox() {
 	$('#cancelCreateButton').click(function(event) {clear();});
 	$('#cancelCreateButton').show();
 	$('#createButton').unbind('click');
-	$('#createButton').click(function(event) {saveBox();});
+	$('#createButton').click(function(event) {saveSpecimen();});
 	$('#createButton').show();
 	$('#createButton').attr('disabled', 'disabled');
 	$('#createButton').addClass('disabledButton');
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
 	$('#globusTransferButton').hide();
 	$('#deleteSlideButton').hide();
 }
 
-function saveBox() {
-	var boxDate = $('#boxDate').val().split('-').join('');
-	var url = ERMREST_HOME + '/Box';
+function saveSpecimen() {
+	var specimenDate = $('#specimenDate').val().split('-').join('');
+	var url = ERMREST_HOME + '/Specimen';
 	var arr = [];
 	var obj = new Object();
-	obj['Section Date'] = $('#boxDate').val();
-	obj['Sample Name'] = $('#boxGenotype').val();
-	obj['Initials'] = $('#boxRI').val();
-	obj['Disambiguator'] = $('#boxDisambiguator').val();
-	obj['Comment'] = $('#boxComment').val();
-	var id = [boxDate, $('#boxGenotype').val(), $('#boxRI').val(), $('#boxDisambiguator').val()].join('-');
+	obj['Section Date'] = $('#specimenDate').val();
+	obj['Sample Name'] = $('#specimenGenotype').val();
+	obj['Initials'] = $('#specimenRI').val();
+	obj['Disambiguator'] = $('#specimenDisambiguator').val();
+	obj['Comment'] = $('#specimenComment').val();
+	var id = [specimenDate, $('#specimenGenotype').val(), $('#specimenRI').val(), $('#specimenDisambiguator').val()].join('-');
 	obj['ID'] = id;
 	arr.push(obj);
-	cirmAJAX.POST(url, 'application/json', false, arr, true, postSaveBox, null, null, 0);
+	cirmAJAX.POST(url, 'application/json', false, arr, true, postSaveSpecimen, null, null, 0);
 }
 
-function postSaveBox(data, textStatus, jqXHR, param) {
+function postSaveSpecimen(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data);
-	newBoxId = data[0]['ID'];
-	getBoxes(null);
+	newSpecimenId = data[0]['ID'];
+	getSpecimens(null);
 }
 
 function saveExperiment() {
@@ -3986,7 +3986,7 @@ function saveExperiment() {
 function postSaveExperiment(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data);
 	newExperimentId = data[0]['ID'];
-	getBoxes(null);
+	getSpecimens(null);
 }
 
 function saveSlide() {
@@ -4003,12 +4003,12 @@ function saveSlide() {
 			alert('Invalid value for the Revision: "' + $('#slideRevision').val() + '".');
 			return;
 	}
-	var id = $($('.highlighted', $('#BoxDiv'))[0]).attr('entityId');
+	var id = $($('.highlighted', $('#SpecimenDiv'))[0]).attr('entityId');
 	var url = ERMREST_HOME + '/Slide';
 	var arr = [];
 	for (var i=0; i < slidesCount; i++) {
 		var obj = new Object();
-		obj['Box ID'] = id;
+		obj['Specimen ID'] = id;
 		obj['Seq.'] = sequence_num;
 		obj['Rev.'] = $('#slideRevision').val();
 		obj['Comment'] = $('#slideComment').val();
@@ -4150,14 +4150,14 @@ function submitPrintSlide() {
 	var arr = [];
 	$.each($('td', $('#slidesTable')).find('input:checked'), function(i, checkbox) {
 		var slide = slidesDict[$(checkbox).attr('slideId')];
-		var box = boxesDict[slide['Box ID']];
+		var specimen = specimensDict[slide['Specimen ID']];
 		var experiment = experimentsDict[slide[slideExperimentColumn]];
 		var obj = new Object();
 		obj['Rev.'] = slide['Rev.'];
 		obj['Seq.'] = slide['Seq.'];
 		obj['Experiment'] = slide[slideExperimentColumn];
 		obj['Experiment Date'] = experiment['Experiment Date'];
-		obj['Sample Name'] = box['Sample Name'];
+		obj['Sample Name'] = specimen['Sample Name'];
 		obj['Experiment Description'] = experiment['Experiment Description'];
 		obj['Initials'] = experiment['Initials'];
 		obj['ID'] = slide['ID'];
@@ -4177,26 +4177,26 @@ function postSubmitPrintSlide(data, textStatus, jqXHR, param) {
 	}
 }
 
-function submitPrintBox() {
-	var url = PRINTER_HOME + 'box/job';
+function submitPrintSpecimen() {
+	var url = PRINTER_HOME + 'specimen/job';
 	var arr = [];
-	var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).attr('entityId')];
+	var specimen = specimensDict[$($('.highlighted', $('#SpecimenDiv'))[0]).attr('entityId')];
 	var obj = {};
-	$.each(boxColumns, function(i, col) {
-		obj[col] = box[col];
+	$.each(specimenColumns, function(i, col) {
+		obj[col] = specimen[col];
 	});
-	obj['printer_id'] = BOX_PRINTER_ADDR;
-	obj['printer_port'] = BOX_PRINTER_PORT;
+	obj['printer_id'] = SPECIMEN_PRINTER_ADDR;
+	obj['printer_port'] = SPECIMEN_PRINTER_PORT;
 	arr.push(obj);
-	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintBox, null, null, 0);
+	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintSpecimen, null, null, 0);
 }
 
-function postSubmitPrintBox(data, textStatus, jqXHR, param) {
+function postSubmitPrintSpecimen(data, textStatus, jqXHR, param) {
 	data = $.parseJSON(data)[0];
 	if (data[CXI_RET] <= 0) {
-		alert('An error was reported in sending the request for printing the box label.\nReason: '+data[CXI_MSG]);
+		alert('An error was reported in sending the request for printing the specimen label.\nReason: '+data[CXI_MSG]);
 	} else {
-		alert('The request for printing the box label was submitted successfully.');
+		alert('The request for printing the specimen label was submitted successfully.');
 	}
 }
 
@@ -4266,8 +4266,8 @@ function clear() {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	$('#rightPanelTop').html('');
 	$('#centerPanelTop').html(CIRM_START_INFO);
-	$('#printBoxButton').hide();
-	$('#deleteBoxButton').hide();
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
 	$('button[context="centerPanelBottom"]').hide();
 	$('button', $('#rightPanelBottom')).hide();
 	$('#search').val('');
@@ -4364,8 +4364,8 @@ function renderQuery(state) {
 			newSearchKeywords = null;
 			selectNewSearch();
 		}
-	} else if (query == 'Box') {
-		selectSlideBox(state['ID']);
+	} else if (query == 'Specimen') {
+		selectSlideSpecimen(state['ID']);
 	} else if (query == 'Experiment') {
 		selectSlideExperiment(state['ID']) ;
 	} else if (query == 'search') {
@@ -4471,20 +4471,20 @@ function makeId(id) {
 	return parts.join('_');
 }
 
-function deleteBox() {
-	var name = $($('.highlighted', $('#BoxDiv'))[0]).html();
-	var answer = confirm ('Are you sure you want to delete the box "' + name + '"?');
+function deleteSpecimen() {
+	var name = $($('.highlighted', $('#SpecimenDiv'))[0]).html();
+	var answer = confirm ('Are you sure you want to delete the specimen "' + name + '"?');
 	if (answer) {
-		var box = boxesDict[$($('.highlighted', $('#BoxDiv'))[0]).attr('entityId')]['ID'];
-		var url = ERMREST_HOME + '/Box/ID=' + encodeSafeURIComponent(box);
-		cirmAJAX.DELETE(url, true, postDeleteBox, {'name': name}, null, 0);
+		var specimen = specimensDict[$($('.highlighted', $('#SpecimenDiv'))[0]).attr('entityId')]['ID'];
+		var url = ERMREST_HOME + '/Specimen/ID=' + encodeSafeURIComponent(specimen);
+		cirmAJAX.DELETE(url, true, postDeleteSpecimen, {'name': name}, null, 0);
 	}
 }
 
-function postDeleteBox(data, textStatus, jqXHR, param) {
-	alert('The box "' + param['name'] + '" was successfully deleted.');
-	boxActive = true;
-	getBoxes(null);
+function postDeleteSpecimen(data, textStatus, jqXHR, param) {
+	alert('The specimen "' + param['name'] + '" was successfully deleted.');
+	specimenActive = true;
+	getSpecimens(null);
 }
 
 function deleteExperiment() {
@@ -4500,7 +4500,7 @@ function deleteExperiment() {
 function postDeleteExperiment(data, textStatus, jqXHR, param) {
 	alert('The experiment "' + param['name'] + '" was successfully deleted.');
 	experimentActive = true;
-	getBoxes(null);
+	getSpecimens(null);
 }
 
 function deleteScan() {
@@ -4582,8 +4582,8 @@ function postDeleteSlide(data, textStatus, jqXHR, param) {
 	$('#deleteSlideButton').attr('disabled', 'disabled');
 	$('#deleteSlideButton').addClass('disabledButton');
 	if ($('tbody tr', $('.fancyTable')).length == 0) {
-		$('#deleteBoxButton').removeAttr('disabled');
-		$('#deleteBoxButton').removeClass('disabledButton');
+		$('#deleteSpecimenButton').removeAttr('disabled');
+		$('#deleteSpecimenButton').removeClass('disabledButton');
 	}
 }
 

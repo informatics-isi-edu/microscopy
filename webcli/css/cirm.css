@@ -513,3 +513,7 @@ td.file_size, th.file_size {
 	background-color: yellow;
 }
 
+ul.ui-autocomplete .ui-menu-item {
+    height:18px;
+    font-size:11px;
+}

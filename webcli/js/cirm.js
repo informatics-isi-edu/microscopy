@@ -2293,7 +2293,9 @@ function displayItem(cols, item, itemType) {
 					minLength: 0,
 					select: function (event, ui) {$('#' + makeId(col) + 'Input').val(ui.item.value);updateEntity(itemType, col, false);},
 					change: function (event, ui) {if ($('#' + makeId(col) + 'Input').val() == '') updateEntity(itemType, col, false);},
-					source: selectColumns[col]['list']
+					source: function(request, response) {
+						response(getGeneSuggestions(request.term, selectColumns[col]['list']));
+					}
 				});
 				input.val(item[col]);
 				div.append(input);
@@ -3998,10 +4000,10 @@ function checkTermSaveButton() {
 	}
 }
 
-function getGeneSuggestions(input) {
+function getGeneSuggestions(input, table) {
 	var ret = [];
 	var pattern = new RegExp('^' + input, 'i');
-	$.each(geneList, function(i, val) {
+	$.each(table, function(i, val) {
 		if (pattern.test(val)) {
 			ret.push(val);
 		}
@@ -4198,7 +4200,7 @@ function createSpecimen() {
 		select: function (event, ui) {$('#specimenGenotype').val(genSampleName(ui.item.value));},
 		minLength: 0,
 		source: function(request, response) {
-			response(getGeneSuggestions(request.term));
+			response(getGeneSuggestions(request.term, geneList));
 		}
 	});
 

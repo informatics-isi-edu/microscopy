@@ -5037,6 +5037,16 @@ function termsManaging(table) {
 }
 
 function postTermsManaging(data, textStatus, jqXHR, param) {
+	var termList = specimenDropDown[param['table']]['list'];
+	var termDict = specimenDropDown[param['table']]['dict'];
+	termList.length = 0;
+	$.each(termDict, function(key, value) {
+		delete termDict[key];
+	});
+	$.each(data, function(i, term) {
+		termList.push(term['ID']);
+		termDict[term['ID']] = term;
+	});
 	$('#rightPanelTop').html('');
 	$('#printSpecimenButton').hide();
 	$('#deleteSpecimenButton').hide();

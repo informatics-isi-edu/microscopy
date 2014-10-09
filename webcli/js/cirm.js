@@ -44,6 +44,7 @@ var CIRM_NO_UNASSIGNED_SLIDES_INFO = '<p class="intro">No slides are available t
 var CIRM_UNASSIGNED_SLIDES_INFO = '<p class="intro">Slides available to be assigned:</p>';
 var CIRM_NEW_EXPERIMENT = '<p class="intro">New Experiment</p>';
 var CIRM_NEW_SPECIMEN = '<p class="intro">New Specimen</p>';
+var CIRM_NEW_TERM = '<p class="intro">New Term</p>';
 var cirm_mobile = false;
 var mobileParams = null;
 var newSpecimenId = null;
@@ -115,7 +116,7 @@ var isSlidePrinter = false;
 var entityStack = [];
 var timestampsColumns = ['completion_time', 'deadline', 'request_time'];
 
-var viewsList = ['Transfer', 'Printers'];
+var viewsList = ['Transfer', 'Printers', '+/- Age', '+/- Gene', '+/- Species', '+/- Tissue'];
 var slidesViewList = ['All', 'Unassigned'];
 var SCAN_HISTORY = ['Specimen', 'Experiment', 'Slide', 'search'];
 
@@ -143,7 +144,8 @@ var buttonsEnableFunction = {
 		'globusTransferButton': hasScans,
 		'printSlideButton': hasExperiments,
 		'addButton': hasCheckedEntries,
-		'submitButton': hasCheckedFiles
+		'submitButton': hasCheckedFiles,
+		'deleteTermButton': hasCheckedEntries
 };
 
 var updateEntityParameters = null;
@@ -2592,6 +2594,28 @@ function initCenterPanelButtons(panel) {
 
 	button = $('<button>');
 	panel.append(button);
+	button.attr('id', 'createTermButton');
+	button.attr('context', 'centerPanelBottom');
+	button.html('New Term');
+	button.button({icons: {primary: 'ui-icon-newwin'}}).click(function(event) {createTerm();});
+
+	var button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'deleteTermButton');
+	button.attr('context', 'centerPanelBottom');
+	button.html('Delete Term');
+	button.button({icons: {secondary: 'ui-icon-alert alert_background'}}).click(function(event) {deleteTerm();});
+	button.addClass('deleteButton');
+
+	var button = $('<button>');
+	panel.append(button);
+	button.attr('id', 'saveTermButton');
+	button.attr('context', 'centerPanelBottom');
+	button.html('Create');
+	button.button({icons: {secondary: 'ui-icon-newwin'}}).click(function(event) {saveTerm();});
+
+	button = $('<button>');
+	panel.append(button);
 	button.attr('id', 'printSlideButton');
 	button.attr('context', 'centerPanelBottom');
 	button.html('Print Slide(s)');
@@ -3899,6 +3923,8 @@ function displayView(ul, li) {
 		globusTasks(false);
 	} else if (li.html() == 'Printers') {
 		printersManaging();
+	} else {
+		termsManaging(li.html().split(' ')[1]);
 	}
 }
 
@@ -3958,6 +3984,17 @@ function checkSpecimenSaveButton() {
 	} else {
 		$('#createButton').attr('disabled', 'disabled');
 		$('#createButton').addClass('disabledButton');
+	}
+}
+
+function checkTermSaveButton() {
+	if ($('#termLabel').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+		$('#termCode').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
+		$('#saveTermButton').removeAttr('disabled');
+		$('#saveTermButton').removeClass('disabledButton');
+	} else {
+		$('#saveTermButton').attr('disabled', 'disabled');
+		$('#saveTermButton').addClass('disabledButton');
 	}
 }
 
@@ -4729,6 +4766,24 @@ function makeId(id) {
 	return parts.join('_');
 }
 
+function deleteTerm() {
+	var answer = confirm ('Are you sure you want to delete the selected terms?');
+	if (answer) {
+		var table = $($('.highlighted', $('#ViewDiv'))[0]).html().split(' ')[1];
+		var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table) + '/';
+		var arr = [];
+		$.each($('td', $('#termsTable')).find('input:checked'), function(i, input) {
+			arr.push('ID=' + encodeSafeURIComponent($(input).parent().next().html()))
+		});
+		url += arr.join(';');
+		cirmAJAX.DELETE(url, true, postDeleteTerm, null, null, 0);
+	}
+}
+
+function postDeleteTerm(data, textStatus, jqXHR, param) {
+	$($('.highlighted', $('#ViewDiv'))[0]).click();
+}
+
 function deleteSpecimen() {
 	var name = $($('.highlighted', $('#SpecimenDiv'))[0]).html();
 	var answer = confirm ('Are you sure you want to delete the specimen "' + name + '"?');
@@ -4918,3 +4973,137 @@ function genSampleName(selectedItem) {
 	}
 	return ret;
 }
+
+function saveTerm() {
+	var table = $($('.highlighted', $('#ViewDiv'))[0]).html();
+	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table.split(' ')[1]);
+	var arr = [];
+	var obj = new Object();
+	obj['ID'] = $('#termLabel').val();
+	obj['Code'] = $('#termCode').val();
+	arr.push(obj);
+	cirmAJAX.POST(url, 'application/json', false, arr, true, postSaveTerm, null, null, 0);
+}
+
+function postSaveTerm(data, textStatus, jqXHR, param) {
+	$($('.highlighted', $('#ViewDiv'))[0]).click();
+}
+
+function createTerm() {
+	$('button[context="centerPanelBottom"]').hide();
+	$('#saveTermButton').show();
+	$('#saveTermButton').attr('disabled', 'disabled');
+	$('#saveTermButton').addClass('disabledButton');
+	var centerPanel = $('#centerPanelTop');
+	centerPanel.html('');
+	centerPanel.append(CIRM_NEW_TERM);
+	centerPanel.show();
+	var table = $('<table>');
+	centerPanel.append(table);
+	table.addClass('define_term');
+	
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Label:');
+	var td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'id': 'termLabel',
+		'type': 'text'});
+	td.append(input);
+	input.keyup(function(event) {checkTermSaveButton();});
+
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Code:');
+	var td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'id': 'termCode',
+		'type': 'text'});
+	td.append(input);
+	input.keyup(function(event) {checkTermSaveButton();});
+}
+
+function termsManaging(table) {
+	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table);
+	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postTermsManaging, {'table': table}, null, 0);
+}
+
+function postTermsManaging(data, textStatus, jqXHR, param) {
+	$('#rightPanelTop').html('');
+	$('#printSpecimenButton').hide();
+	$('#deleteSpecimenButton').hide();
+	var centerPanel = $('#centerPanelTop');
+	centerPanel.html('');
+	centerPanel.show();
+	var p = $('<p>');
+	p.addClass('intro');
+	centerPanel.append(p);
+	p.html(param['table'] + ' Terms');
+	centerPanel.append($('<br>'));
+	var containerDiv = $('<div>');
+	centerPanel.append(containerDiv);
+	containerDiv.addClass('container_div');
+	var gridDiv = $('<div>');
+	containerDiv.append(gridDiv);
+	gridDiv.addClass('grid_div height_table_div');
+	gridDiv.height($('#centerPanel').height()*90/100);
+	var termsTable = $('<table>');
+	gridDiv.append(termsTable);
+	termsTable.attr('id', 'termsTable');
+	termsTable.attr({'cellpadding': '0', 'cellspacing': '0'});
+	termsTable.addClass('fancyTable center');
+	var thead = $('<thead>');
+	termsTable.append(thead);
+	var tr = $('<tr>');
+	thead.append(tr);
+	var th = $('<th>');
+	tr.append(th);
+	var input = $('<input>');
+	input.attr({'type': 'checkbox',
+		'id': 'selectAllTermsTh'});
+	input.click(function(event) {checkUncheckAll('termsTable', 'selectAllTermsTh', ['deleteTermButton']);});
+	th.append(input);
+	var th = $('<th>');
+	tr.append(th);
+	th.html('Label');
+	var th = $('<th>');
+	tr.append(th);
+	th.html('Code');
+	var tbody = $('<tbody>');
+	termsTable.append(tbody);
+	$.each(data, function(i, row) {
+		var tr = $('<tr>');
+		if (i%2 == 1) {
+			tr.addClass('odd');
+		}
+		tbody.append(tr);
+		var td = $('<td>');
+		td.addClass('center');
+		tr.append(td);
+		var input = $('<input>');
+		input.attr({'type': 'checkbox',
+			'termId': row['ID']});
+		input.click(function(event) {checkAvailableSlides(event, 'termsTable', 'selectAllTermsTh', ['deleteTermButton']);});
+		td.append(input);
+		var td = $('<td>');
+		tr.append(td);
+		td.html(row['ID']);
+		var td = $('<td>');
+		tr.append(td);
+		td.html(row['Code']);
+	});
+	$('button[context="centerPanelBottom"]').hide();
+	$('#createTermButton').show();
+	$('#deleteTermButton').show();
+	$('#deleteTermButton').attr('disabled', 'disabled');
+	$('#deleteTermButton').addClass('disabledButton');
+}
+

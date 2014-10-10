@@ -31,6 +31,7 @@ var CIRM_HOME;
 var PAGE_URL = null;
 var USER;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
+var CATALOG_HOME = '/ermrest/catalog/1';
 var WEBAUTHN_HOME = '/ermrest/authn/session';
 var PRINTER_HOME = '/ermrest/printer/';
 var GLOBUS_TRANSFER_HOME = '/ermrest/transfer';
@@ -149,6 +150,9 @@ var buttonsEnableFunction = {
 };
 
 var updateEntityParameters = null;
+
+var specimensInitialsList = [];
+var experimentsInitialsList = [];
 
 var cirmAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
@@ -539,6 +543,9 @@ function getSpecimens(id) {
 	var url = ERMREST_HOME + '/Specimen';
 	if (id != null) {
 		url += '/ID=' + encodeSafeURIComponent(id);
+	} else {
+		getResearchersInitials('Specimen', specimensInitialsList)
+		getResearchersInitials('Experiment', experimentsInitialsList)
 	}
 	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimens, {'ID': id}, null, 0);
 }
@@ -723,6 +730,7 @@ function renderLogin() {
 	var index = HOME.lastIndexOf('/cirm');
 	HOME = HOME.substring(0, index);
 	ERMREST_HOME = HOME + ERMREST_HOME;
+	CATALOG_HOME = HOME + CATALOG_HOME;
 	WEBAUTHN_HOME = HOME + WEBAUTHN_HOME;
 	PRINTER_HOME = HOME + PRINTER_HOME;
 	GLOBUS_TRANSFER_HOME = HOME + GLOBUS_TRANSFER_HOME;
@@ -2294,7 +2302,7 @@ function displayItem(cols, item, itemType) {
 					select: function (event, ui) {$('#' + makeId(col) + 'Input').val(ui.item.value);updateEntity(itemType, col, false);},
 					change: function (event, ui) {if ($('#' + makeId(col) + 'Input').val() == '') updateEntity(itemType, col, false);},
 					source: function(request, response) {
-						response(getGeneSuggestions(request.term, selectColumns[col]['list']));
+						response(getSuggestions(request.term, selectColumns[col]['list']));
 					}
 				});
 				input.val(item[col]);
@@ -3856,7 +3864,14 @@ function createExperiment() {
 		'maxlength': '3',
 		'type': 'text'});
 	td.append(input);
-	input.keyup(function(event) {checkExperimentSaveButton();});
+	input.autocomplete({
+		select: function (event, ui) {$('#experimentRI').val(ui.item.value);checkExperimentSaveButton();},
+		search: function (event, ui) {checkExperimentSaveButton();},
+		minLength: 0,
+		source: function(request, response) {
+			response(getSuggestions(request.term, experimentsInitialsList));
+		}
+	});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4000,7 +4015,7 @@ function checkTermSaveButton() {
 	}
 }
 
-function getGeneSuggestions(input, table) {
+function getSuggestions(input, table) {
 	var ret = [];
 	var pattern = new RegExp('^' + input, 'i');
 	$.each(table, function(i, val) {
@@ -4059,7 +4074,14 @@ function createSpecimen() {
 		'maxlength': '3',
 		'type': 'text'});
 	td.append(input);
-	input.keyup(function(event) {checkSpecimenSaveButton();});
+	input.autocomplete({
+		select: function (event, ui) {$('#specimenRI').val(ui.item.value);checkSpecimenSaveButton();},
+		search: function (event, ui) {checkSpecimenSaveButton();},
+		minLength: 0,
+		source: function(request, response) {
+			response(getSuggestions(request.term, specimensInitialsList));
+		}
+	});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4200,7 +4222,7 @@ function createSpecimen() {
 		select: function (event, ui) {$('#specimenGenotype').val(genSampleName(ui.item.value));},
 		minLength: 0,
 		source: function(request, response) {
-			response(getGeneSuggestions(request.term, geneList));
+			response(getSuggestions(request.term, geneList));
 		}
 	});
 
@@ -5117,5 +5139,18 @@ function postTermsManaging(data, textStatus, jqXHR, param) {
 	$('#deleteTermButton').show();
 	$('#deleteTermButton').attr('disabled', 'disabled');
 	$('#deleteTermButton').addClass('disabledButton');
+}
+
+function getResearchersInitials(table, initialsList) {
+	var url = CATALOG_HOME + '/attributegroup/' + encodeSafeURIComponent(table) + '/Initials@sort(Initials)';
+	cirmAJAX.GET(url, 'application/json', true, postGetResearchersInitials, {'initialsList': initialsList}, null, MAX_RETRIES+1);
+}
+
+function postGetResearchersInitials(data, textStatus, jqXHR, param) {
+	var initialsList = param['initialsList'];
+	initialsList.length = 0;
+	$.each(data, function(i, value) {
+		initialsList.push(value['Initials']);
+	});
 }
 

@@ -1,8 +1,34 @@
+COPY "CIRM"."Species" ("ID", "Code") from stdin with csv delimiter ',' quote '"';
+Human,h
+Mouse,m
+Chick,c
+Zebrafish,z
+Other,o
+\.
 
-COPY "CIRM"."Box" ("ID", "Section Date", "Sample Name", "Initials", "Disambiguator", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
+COPY "CIRM"."Age" ("ID", "Code") from stdin with csv delimiter ',' quote '"';
+days,d
+weeks,w
+months,m
+\.
+
+COPY "CIRM"."Tissue" ("ID", "Code") from stdin with csv delimiter ',' quote '"';
+Kidney,KD
+Bone,BN
+Neural Tube,NT
+Other,O
+\.
+
+COPY "CIRM"."Gene" ("ID", "Code") from stdin with csv delimiter ',' quote '"';
+Cre,C
+GFP Cre,GC
+GFP Cre Ert2,GCE
+\.
+
+COPY "CIRM"."Specimen" ("ID", "Section Date", "Sample Name", "Initials", "Disambiguator", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
 20131108-wnt1creZEGG-RES-0,2013-11-08,wnt1creZEGG,RES,0,"My sectioned sample returned from lab",""
 20131110-wnt1creZEGG-RES-0,2013-12-01,wnt1creZEGG,RES,0,"Another of my boxes back from lab",""
-20140130-wnt1creZEGG-RES-0,2014-01-30,wnt1creZEGG,RES,0,"Box from lab",""
+20140130-wnt1creZEGG-RES-0,2014-01-30,wnt1creZEGG,RES,0,"Specimen from lab",""
 \.
 
 COPY "CIRM"."Experiment" ("ID", "Experiment Date", "Experiment Description", "Initials", "Disambiguator", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
@@ -11,7 +37,7 @@ COPY "CIRM"."Experiment" ("ID", "Experiment Date", "Experiment Description", "In
 20140130-myantibody3-RS-0,2014-01-30,myantibody3,RS,0,"This is Rob's experiment",""
 \.
 
-COPY "CIRM"."Slide" ("ID", "Box ID", "Experiment ID", "Seq.", "Rev.", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
+COPY "CIRM"."Slide" ("ID", "Specimen ID", "Experiment ID", "Seq.", "Rev.", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
 20131108-wnt1creZEGG-RES-0-09-000,20131108-wnt1creZEGG-RES-0,20131115-myantibody2-KC-0,9,0,"under further review",""
 20131108-wnt1creZEGG-RES-0-12-000,20131108-wnt1creZEGG-RES-0,20131112-myantibody1-SV-0,12,0,"using in experiment",""
 20131108-wnt1creZEGG-RES-0-38-000,20131108-wnt1creZEGG-RES-0,20131112-myantibody1-SV-0,38,0,"looks interesting",""
@@ -27,7 +53,7 @@ COPY "CIRM"."Slide" ("ID", "Box ID", "Experiment ID", "Seq.", "Rev.", "Comment",
 20131108-wnt1creZEGG-RES-0-84-000,20131108-wnt1creZEGG-RES-0,,84,0,"--",""
 \.
 
-COPY "CIRM"."Slide" ("ID", "Box ID", "Experiment ID", "Seq.", "Rev.", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
+COPY "CIRM"."Slide" ("ID", "Specimen ID", "Experiment ID", "Seq.", "Rev.", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
 20131110-wnt1creZEGG-RES-0-06-000,20131110-wnt1creZEGG-RES-0,20131115-myantibody2-KC-0,6,0,"slide to be reviewed further",""
 20131110-wnt1creZEGG-RES-0-12-000,20131110-wnt1creZEGG-RES-0,20131112-myantibody1-SV-0,12,0,"assigned to my experiment",""
 20131110-wnt1creZEGG-RES-0-25-000,20131110-wnt1creZEGG-RES-0,,25,0,"--",""
@@ -43,7 +69,7 @@ COPY "CIRM"."Slide" ("ID", "Box ID", "Experiment ID", "Seq.", "Rev.", "Comment",
 20131110-wnt1creZEGG-RES-0-53-000,20131110-wnt1creZEGG-RES-0,,53,0,"--",""
 \.
 
-COPY "CIRM"."Slide" ("ID", "Box ID", "Experiment ID", "Seq.", "Rev.", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
+COPY "CIRM"."Slide" ("ID", "Specimen ID", "Experiment ID", "Seq.", "Rev.", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
 20140130-wnt1creZEGG-RES-0-01-000,20140130-wnt1creZEGG-RES-0,20140130-myantibody3-RS-0,1,0,"slide to be reviewed further",""
 20140130-wnt1creZEGG-RES-0-02-000,20140130-wnt1creZEGG-RES-0,20140130-myantibody3-RS-0,2,0,"slide to be reviewed further",""
 20140130-wnt1creZEGG-RES-0-03-000,20140130-wnt1creZEGG-RES-0,20140130-myantibody3-RS-0,3,0,"slide to be reviewed further",""

@@ -138,7 +138,7 @@ var specimenDropDown = {
 		'Species': {'list': speciesList, 'dict': speciesDict},
 		'Age': {'list': ageList, 'dict': ageDict, 'input': true},
 		'Tissue': {'list': tissueList, 'dict': tissueDict},
-		'Gene': {'list': geneList, 'dict': geneDict, 'autocomplete': true}
+		'Gene': {'list': geneList, 'dict': geneDict, 'autocomplete': true, 'multivalue': true}
 };
 
 var buttonsEnableFunction = {
@@ -2290,7 +2290,42 @@ function displayItem(cols, item, itemType) {
 			label.click(function(event) {editItem(col);});
 		}
 		div.append(label);
-		if (selectColumns != null && selectColumns[col] != null) {
+		if (selectColumns != null && selectColumns[col] != null && selectColumns[col]['multivalue'] != null) {
+			if (item[col] != null && item[col] !== '') {
+				var input = $('<input>');
+				input.attr({'type': 'text',
+					'id': makeId(col) + 'Input',
+					'size': 30});
+				input.autocomplete({
+					minLength: 0,
+					select: function (event, ui) {$('#' + makeId(col) + 'Input').val(ui.item.value);updateMultiSelectValue(itemType, col, true);},
+					source: function(request, response) {
+						response(getSuggestions(request.term, selectColumns[col]['list']));
+					}
+				});
+				div.append(input);
+				var multiValues = item[col].split(';');
+				var multiTable = $('<table>');
+				div.append(multiTable);
+				multiTable.attr('id', makeId(col) + 'MultiTable');
+				multiTable.addClass('multiValues');
+				$.each(multiValues, function(i, value) {
+					var tr = $('<tr>');
+					tr.attr('id', makeId(col)+'multiValuesTr'+i);
+					multiTable.append(tr);
+					var td = $('<td>');
+					tr.append(td);
+					td.html(value);
+					var td = $('<td>');
+					tr.append(td);
+					var span = $('<span>');
+					td.append(span);
+					span.addClass('ui-icon ui-icon-circle-minus');
+					span.click(function(event) {removeMultiSelectValue(event, itemType, col, makeId(col)+'multiValuesTr'+i);});
+				});
+			}
+			label.hide();
+		} else if (selectColumns != null && selectColumns[col] != null) {
 			label.hide();
 			if (selectColumns[col]['autocomplete']) {
 				var input = $('<input>');
@@ -3993,7 +4028,7 @@ function displaySpecimensSlides(ul, li) {
 
 function checkSpecimenSaveButton() {
 	if ($('#specimenDate').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#specimenGenotype').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+		$('tr', $('#geneTable')).length > 0 &&
 		$('#specimenRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#specimenDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#createButton').removeAttr('disabled');
@@ -4196,11 +4231,17 @@ function createSpecimen() {
 	var tr = $('<tr>');
 	table.append(tr);
 	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
+	td.addClass('tag top');
 	td.html('Gene:');
+	tr.append(td);
 	var td = $('<td>');
 	tr.append(td);
+	var geneValuesTable = $('<table>');
+	td.append(geneValuesTable);
+	var geneTr = $('<tr>');
+	geneValuesTable.append(geneTr);
+	var geneTd = $('<td>');
+	geneTr.append(geneTd);
 	
 	/*
 	var select = $('<select>');
@@ -4217,14 +4258,23 @@ function createSpecimen() {
 	var input = $('<input>');
 	input.attr({	id: 'specimenGene',
 		name: 'specimenGene' });
-	td.append(input);
+	geneTd.append(input);
 	input.autocomplete({
-		select: function (event, ui) {$('#specimenGenotype').val(genSampleName(ui.item.value));},
+		select: function (event, ui) {addGene(ui.item.value);},
+		close: function (event, ui) {$('#specimenGene').val('');},
 		minLength: 0,
 		source: function(request, response) {
 			response(getSuggestions(request.term, geneList));
 		}
 	});
+	var geneTr = $('<tr>');
+	geneValuesTable.append(geneTr);
+	var geneTd = $('<td>');
+	geneTr.append(geneTd);
+	var geneTable = $('<table>');
+	geneTable.attr('id', 'geneTable');
+	geneTable.addClass('normal');
+	geneTd.append(geneTable);
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4260,6 +4310,11 @@ function createSpecimen() {
 }
 
 function saveSpecimen() {
+	var gene = [];
+	$.each($('tr', $('#geneTable')), function(i, tr) {
+		gene.push($($('td', $(tr))[0]).html());
+	});
+	gene = gene.join(';');
 	var specimenDate = $('#specimenDate').val().split('-').join('');
 	var url = ERMREST_HOME + '/Specimen';
 	var arr = [];
@@ -4273,7 +4328,7 @@ function saveSpecimen() {
 	obj['Species'] = $('#specimenSpecies').val();
 	obj['Age'] = $('#specimenAgeNumber').val().replace(/^\s*/, "").replace(/\s*$/, "") + ' ' + $('#specimenAge').val();
 	obj['Tissue'] = $('#specimenTissue').val();
-	obj['Gene'] = $('#specimenGene').val();
+	obj['Gene'] = gene;
 	var id = [specimenDate, $('#specimenGenotype').val(), $('#specimenRI').val(), $('#specimenDisambiguator').val()].join('-');
 	obj['ID'] = id;
 	arr.push(obj);
@@ -4992,10 +5047,11 @@ function genSampleName(selectedItem) {
 	if (val != '') {
 		ret += $('#specimenAgeNumber').val().replace(/^\s*/, "").replace(/\s*$/, "") + specimenDropDown['Age']['dict'][val]['Code'];
 	}
-	if (selectedItem != null && specimenDropDown['Gene']['dict'][selectedItem] != null) {
-		ret += specimenDropDown['Gene']['dict'][selectedItem]['Code'];
-	}
-	return ret;
+	$.each($('tr', $('#geneTable')), function(i, tr) {
+		ret += specimenDropDown['Gene']['dict'][$($('td', $(tr))[0]).html()]['Code'];
+	});
+	
+	return ret.substr(0,15);
 }
 
 function saveTerm() {
@@ -5154,3 +5210,51 @@ function postGetResearchersInitials(data, textStatus, jqXHR, param) {
 	});
 }
 
+function addGene(selectedItem) {
+	if (selectedItem != null && specimenDropDown['Gene']['dict'][selectedItem] != null) {
+		var table = $('#geneTable');
+		var tr = $('<tr>');
+		table.append(tr);
+		var td = $('<td>');
+		tr.append(td);
+		td.html(selectedItem);
+		var td = $('<td>');
+		tr.append(td);
+		var span = $('<span>');
+		td.append(span);
+		span.addClass('ui-icon ui-icon-circle-minus');
+		span.click(function(event) {removeGeneValue(event, $(this));});
+		$('#specimenGenotype').val(genSampleName(selectedItem));
+		checkSpecimenSaveButton();
+	}
+	
+}
+
+function removeGeneValue(event, item) {
+	item.parent().parent().remove();
+	var selectedItem = item.parent().prev().html();
+	$('#specimenGenotype').val(genSampleName(selectedItem));
+	checkSpecimenSaveButton();
+}
+
+function getMultiSelectValue(col) {
+	var values = [];
+	$.each($('tr', $('#'+makeId(col)+'MultiTable')), function(i, tr) {
+		values.push($($('td', $(tr))[0]).html());
+	});
+	return values;
+}
+
+function removeMultiSelectValue(event, itemType, col, trId) {
+	$('#'+trId).remove();
+	var values = getMultiSelectValue(col);
+	$('#'+makeId(col) + 'Label').html(values.join(';'));
+	updateEntity(itemType, col, true);
+}
+
+function updateMultiSelectValue(itemType, col, isMultiValue) {
+	var values = getMultiSelectValue(col);
+	values.push($('#' + makeId(col) + 'Input').val());
+	$('#'+makeId(col) + 'Label').html(values.join(';'));
+	updateEntity(itemType, col, true);
+}

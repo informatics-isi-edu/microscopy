@@ -531,3 +531,11 @@ table.define_term {
 	margin-right:auto;
 }
 
+td.top {
+	vertical-align: top;
+}
+
+table.normal {
+	font-weight: normal;
+}
+

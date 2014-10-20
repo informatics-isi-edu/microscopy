@@ -753,6 +753,7 @@ function renderLoginForm() {
 	uiDiv.html('');
 	var logoDiv = $('<div>');
 	uiDiv.append(logoDiv);
+	/*
 	var img = $('<img>');
 	logoDiv.append(img);
 	img.attr({'alt': 'USC logo',
@@ -761,6 +762,11 @@ function renderLoginForm() {
 		'height': 100
 		});
 	img.addClass('center');
+	*/
+	var h1 = $('<h1>');
+	logoDiv.append(h1);
+	h1.html('Microscopy Image Manager');
+	h1.addClass('logo');
 	var fieldsetDiv = $('<div>');
 	uiDiv.append(fieldsetDiv);
 	fieldsetDiv.addClass('center_fieldset');

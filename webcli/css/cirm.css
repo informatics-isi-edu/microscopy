@@ -539,3 +539,14 @@ table.normal {
 	font-weight: normal;
 }
 
+h1.logo {
+	background-color: #507377;
+	text-align: center;
+	color: #FFF;
+	height: 100px;
+	padding-top: 80px;
+	margin-left: auto;
+	margin-right: auto;
+	width: 25%;
+}
+

@@ -1,0 +1,1 @@
+include wsgi_microscopy.conf microscopy_config.json

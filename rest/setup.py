@@ -17,9 +17,11 @@
 from distutils.core import setup
 
 setup(name="cirm-rest",
-      description="cirm web application",
       version="0.1",
-      package_dir={"": "src"},
+      description="cirm web application",
+      url='http://www.isi.edu',
+      maintainer='misd support',
+      maintainer_email='misd@isi.edu',
       packages=["cirm"],
       requires=["web.py", "psycopg2", "globusonline"],
       classifiers=[
@@ -27,6 +29,6 @@ setup(name="cirm-rest",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
         "Topic :: Internet :: WWW/HTTP",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        ],
+        "Topic :: Software Development :: Libraries :: Python Modules"
+        ]
      )

@@ -1,0 +1,22 @@
+To install the example database:
+
+1. Install ERMrest
+
+2. Follow ermrest instructions to create a new catalog and find its dbname
+
+3. Copy these files to the ermrest user
+
+   'cp *.sql ~ermrest/'
+
+4. Switch to the ermrest user
+
+   'sudo su - ermrest'
+
+5. Create schema and OPTIONALLY load sample data
+
+   'psql dbname < setup.sql'
+   'psql dbname < testdata.sql'
+
+6. Restart httpd
+
+   'sudo service httpd restart'

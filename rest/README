@@ -1,33 +1,25 @@
 To install this web serivce:
 
-1. First install all prerequisites for ERMrest
+1. Install this package
 
-   See https://confluence.misd.isi.edu:8443/display/MISD/ERMrest+Installation
+   python setup.py install
 
-2. Install Globus Online Transfer Client API
+2. Optionally, create the static dir
 
-   'easy_install globusonline-transfer-api-client'
+   mkdir -p /var/www/html/microscopy/static
 
-3. Install this package
+3. Install the wsgi configuration
 
-   'python setup.py install'
+   cp wsgi_microscopy.conf /etc/httpd/conf.d
 
-4. Optionally, create the static dir
+4. Update your httpd/conf with directives matching or similar to the examples
 
-   'mkdir -p /var/www/html/microscopy/static'
+   cat examples/httpd.conf
 
-5. Install the wsgi configuration
+5. Update your httpd/conf.d/ssl.conf with directives matching or similar to
 
-   'cp wsgi_microscopy.conf /etc/httpd/conf.d'
+   cat examples/ssl.conf
 
-6. Update your httpd/conf with directives matching or similar to the examples
+6. Restart httpd
 
-   'cat examples/httpd.conf'
-
-7. Update your httpd/conf.d/ssl.conf with directives matching or similar to
-
-   'cat examples/ssl.conf'
-
-8. Restart httpd
-
-   'service httpd restart'
+   service httpd restart

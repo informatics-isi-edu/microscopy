@@ -1,0 +1,30 @@
+# Installation Instructions
+
+1. First install all prerequisites for ERMrest
+
+   See https://confluence.misd.isi.edu:8443/display/MISD/ERMrest+Installation
+
+2. Install Globus Online Transfer Client API
+
+   easy_install globusonline-transfer-api-client
+
+3. Install printer and globuscli
+
+   cd printer && sudo python setup.py install
+   cd globuscli && sudo python setup.py install
+
+4. Setup the database
+
+   see config/README
+
+5. Setup the rest services
+
+   see rest/README
+
+6. Install the webcli
+
+   rsync -av --delete --exclude=".*" ./webcli /var/www/html/
+
+7. Restart httpd
+
+   sudo service httpd restart

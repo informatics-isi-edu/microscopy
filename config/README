@@ -1,4 +1,4 @@
-To install the example database:
+To install the microscopy database:
 
 1. Install ERMrest
 
@@ -6,17 +6,27 @@ To install the example database:
 
 3. Copy these files to the ermrest user
 
-   'cp *.sql ~ermrest/'
+   cp *.sql ~ermrest/
 
 4. Switch to the ermrest user
 
-   'sudo su - ermrest'
+   sudo su - ermrest
 
 5. Create schema and OPTIONALLY load sample data
 
-   'psql dbname < setup.sql'
-   'psql dbname < testdata.sql'
+   psql dbname < setup.sql
+   psql dbname < testdata.sql
 
-6. Restart httpd
+6. Set permissions in the catalog
 
-   'sudo service httpd restart'
+   psql dbname
+   dbname=> set search_path=_ermrest;
+   dbname=> update meta set value='*' where key='content_read_user' or key='read_user' or key='content_write_user';
+
+   NOTE: using '*' opens the catalog up to all users with valid globusonline
+         credentials. Replace '*' with the name of your globusonline group to
+         restrict the catalog usage.
+
+7. Restart httpd
+
+   sudo service httpd restart

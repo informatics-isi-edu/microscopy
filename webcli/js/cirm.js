@@ -117,7 +117,7 @@ var isSlidePrinter = false;
 var entityStack = [];
 var timestampsColumns = ['completion_time', 'deadline', 'request_time'];
 
-var viewsList = ['Transfer', 'Printers', '+/- Age', '+/- Gene', '+/- Species', '+/- Tissue'];
+var viewsList = ['Transfer', 'Printers', '+/- Age', '+/- Gene', '+/- Species', '+/- Specimen Identifier', '+/- Tissue'];
 var slidesViewList = ['All', 'Unassigned'];
 var SCAN_HISTORY = ['Specimen', 'Experiment', 'Slide', 'search'];
 
@@ -133,8 +133,11 @@ var tissueList = [];
 var tissueDict = {};
 var geneList = [];
 var geneDict = {};
+var speciemenIdentifierList = [];
+var speciemenIdentifierDict = {};
 
 var specimenDropDown = {
+		'Specimen Identifier': {'list': speciemenIdentifierList, 'dict': speciemenIdentifierDict},
 		'Species': {'list': speciesList, 'dict': speciesDict},
 		'Age': {'list': ageList, 'dict': ageDict, 'input': true},
 		'Tissue': {'list': tissueList, 'dict': tissueDict},
@@ -3982,7 +3985,8 @@ function displayView(ul, li) {
 	} else if (li.html() == 'Printers') {
 		printersManaging();
 	} else {
-		termsManaging(li.html().split(' ')[1]);
+		var index = li.html().indexOf(' ');
+		termsManaging(li.html().substr(index+1));
 	}
 }
 
@@ -4162,12 +4166,17 @@ function createSpecimen() {
 	td.html('Specimen Identifier:');
 	var td = $('<td>');
 	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'specimenIdentifier',
-		'maxlength': '4',
-		'type': 'text'});
-	input.keyup(function(event) {$('#specimenGenotype').val(genSampleName());checkSpecimenSaveButton();});
-	td.append(input);
+	var select = $('<select>');
+	select.attr({	id: 'specimenIdentifier',
+					name: 'specimenIdentifier' });
+	$.each(speciemenIdentifierList, function(i, value) {
+		var option = $('<option>');
+		option.text(value);
+		option.attr('value', value);
+		select.append(option);
+	});
+	select.change(function () {$('#specimenGenotype').val(genSampleName());});
+	td.append(select);
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4857,7 +4866,9 @@ function makeId(id) {
 function deleteTerm() {
 	var answer = confirm ('Are you sure you want to delete the selected terms?');
 	if (answer) {
-		var table = $($('.highlighted', $('#ViewDiv'))[0]).html().split(' ')[1];
+		var li = $($('.highlighted', $('#ViewDiv'))[0]);
+		var index = li.html().indexOf(' ');
+		var table = li.html().substr(index+1);
 		var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table) + '/';
 		var arr = [];
 		$.each($('td', $('#termsTable')).find('input:checked'), function(i, input) {
@@ -5060,14 +5071,16 @@ function genSampleName(selectedItem) {
 		ret += specimenDropDown['Gene']['dict'][$($('td', $(tr))[0]).html()]['Code'];
 	});
 	var val = $('#specimenIdentifier').val();
-	ret += $('#specimenIdentifier').val().replace(/^\s*/, "").replace(/\s*$/, "");
+	ret += specimenDropDown['Specimen Identifier']['dict'][val]['Code'];
 	
 	return ret.substr(0,15);
 }
 
 function saveTerm() {
-	var table = $($('.highlighted', $('#ViewDiv'))[0]).html();
-	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table.split(' ')[1]);
+	var li = $($('.highlighted', $('#ViewDiv'))[0]);
+	var index = li.html().indexOf(' ');
+	var table = li.html().substr(index+1);
+	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table);
 	var arr = [];
 	var obj = new Object();
 	obj['ID'] = $('#termLabel').val();

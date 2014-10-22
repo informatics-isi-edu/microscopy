@@ -4,9 +4,9 @@ To install this web serivce:
 
    python setup.py install
 
-2. Optionally, create the static dir
+2. Install the wsgi application
 
-   mkdir -p /var/www/html/microscopy/static
+   cp microscopy.wsgi ~ermrest/
 
 3. Install the wsgi configuration
 

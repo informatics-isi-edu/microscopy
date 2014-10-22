@@ -4035,6 +4035,7 @@ function displaySpecimensSlides(ul, li) {
 function checkSpecimenSaveButton() {
 	if ($('#specimenDate').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('tr', $('#geneTable')).length > 0 &&
+		$('#specimenIdentifier').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#specimenRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#specimenDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#createButton').removeAttr('disabled');
@@ -4163,7 +4164,9 @@ function createSpecimen() {
 	tr.append(td);
 	var input = $('<input>');
 	input.attr({'id': 'specimenIdentifier',
+		'maxlength': '4',
 		'type': 'text'});
+	input.keyup(function(event) {$('#specimenGenotype').val(genSampleName());checkSpecimenSaveButton();});
 	td.append(input);
 
 	var tr = $('<tr>');
@@ -5056,6 +5059,8 @@ function genSampleName(selectedItem) {
 	$.each($('tr', $('#geneTable')), function(i, tr) {
 		ret += specimenDropDown['Gene']['dict'][$($('td', $(tr))[0]).html()]['Code'];
 	});
+	var val = $('#specimenIdentifier').val();
+	ret += $('#specimenIdentifier').val().replace(/^\s*/, "").replace(/\s*$/, "");
 	
 	return ret.substr(0,15);
 }

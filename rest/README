@@ -8,6 +8,8 @@ To install this web serivce:
 
    cp microscopy.wsgi /usr/lib/python2.6/site-packages/cirm/microscopy.wsgi
 
+   NOTE: make sure that microscopy.wsgi has executable permission bit set
+
 3. Install the wsgi configuration
 
    cp wsgi_microscopy.conf /etc/httpd/conf.d

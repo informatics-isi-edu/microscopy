@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+import logging
+from logging.handlers import SysLogHandler
 import printer
 import zoomify
 import transfer
@@ -25,7 +27,7 @@ __all__ = [
     'transfer'
     ]
 
-# setup web service configuration data
+## setup web service configuration data
 global_env = webauthn2.merge_config(
     jsonFileName='microscopy_config.json',
     built_ins={
@@ -36,9 +38,19 @@ global_env = webauthn2.merge_config(
         }
     )
 
+## setup webauthn2 handler
 webauthn2_config = global_env.get('webauthn2', dict(web_cookie_name='ermrest'))
 webauthn2_config.update(dict(web_cookie_path='/ermrest'))
+webauthn2_manager = webauthn2.Manager(overrides=webauthn2_config)
+webauthn2_handler_factory = webauthn2.RestHandlerFactory(manager=webauthn2_manager)
+UserSession = webauthn2_handler_factory.UserSession
+UserPassword = webauthn2_handler_factory.UserPassword
+UserManage = webauthn2_handler_factory.UserManage
+AttrManage = webauthn2_handler_factory.AttrManage
+AttrAssign = webauthn2_handler_factory.AttrAssign
+AttrNest = webauthn2_handler_factory.AttrNest
 
+## setup web urls
 def web_urls():
     """Builds and returns the web_urls for web.py.
     """

@@ -1,0 +1,19 @@
+To install this web serivce:
+
+1. First install all prerequisites for ERMrest
+
+2. Install Globus Online Transfer Client API
+
+   'easy_install globusonline-transfer-api-client'
+
+3. Install this package
+
+   'python setup.py install'
+
+4. Optionally, create the static dir
+
+   'mkdir -p /var/www/html/microscopy/static'
+
+5. Install the wsgi configuration
+
+   'cp wsgi_microscopy.conf /etc/httpd/conf.d'

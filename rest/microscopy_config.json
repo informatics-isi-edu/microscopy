@@ -36,7 +36,12 @@
       "crowd_listgroups_scope": []
     },
 
-    "printer" : {},
+    "printers" : {
+      "slide_addr" : "dummy.example.com",
+      "slide_port" : 9100,
+      "box_addr" : "dummy.example.com",
+      "box_port": 9100
+    }
 
     "default_limit" : 100,
 }

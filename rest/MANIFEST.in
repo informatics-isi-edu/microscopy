@@ -1,1 +1,2 @@
-include wsgi_microscopy.conf microscopy_config.json
+include README wsgi_microscopy.conf microscopy_config.json
+include examples/*

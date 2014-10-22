@@ -2,6 +2,8 @@ To install this web serivce:
 
 1. First install all prerequisites for ERMrest
 
+   See https://confluence.misd.isi.edu:8443/display/MISD/ERMrest+Installation
+
 2. Install Globus Online Transfer Client API
 
    'easy_install globusonline-transfer-api-client'
@@ -17,3 +19,15 @@ To install this web serivce:
 5. Install the wsgi configuration
 
    'cp wsgi_microscopy.conf /etc/httpd/conf.d'
+
+6. Update your httpd/conf with directives matching or similar to the examples
+
+   'cat examples/httpd.conf'
+
+7. Update your httpd/conf.d/ssl.conf with directives matching or similar to
+
+   'cat examples/ssl.conf'
+
+8. Restart httpd
+
+   'service httpd restart'

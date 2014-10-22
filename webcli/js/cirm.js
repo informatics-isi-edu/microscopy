@@ -4177,6 +4177,15 @@ function createSpecimen() {
 	});
 	select.change(function () {$('#specimenGenotype').val(genSampleName());});
 	td.append(select);
+	var img = $('<img>');
+	td.append(img);
+	img.attr({'alt': 'New Specimen Identifier',
+		'src': '/cirm/images/new.jpeg',
+		'width': 20,
+		'height': 15
+		});
+	img.addClass('new');
+	img.click(function(event) {newTerm('Specimen Identifier');});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4200,6 +4209,15 @@ function createSpecimen() {
 	});
 	select.change(function () {$('#specimenGenotype').val(genSampleName());});
 	td.append(select);
+	var img = $('<img>');
+	td.append(img);
+	img.attr({'alt': 'New Species',
+		'src': '/cirm/images/new.jpeg',
+		'width': 20,
+		'height': 15
+		});
+	img.addClass('new');
+	img.click(function(event) {newTerm('Species');});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4220,6 +4238,15 @@ function createSpecimen() {
 	});
 	select.change(function () {$('#specimenGenotype').val(genSampleName());});
 	td.append(select);
+	var img = $('<img>');
+	td.append(img);
+	img.attr({'alt': 'New Tissue',
+		'src': '/cirm/images/new.jpeg',
+		'width': 20,
+		'height': 15
+		});
+	img.addClass('new');
+	img.click(function(event) {newTerm('Tissue');});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4245,6 +4272,15 @@ function createSpecimen() {
 	});
 	select.change(function () {$('#specimenGenotype').val(genSampleName());});
 	td.append(select);
+	var img = $('<img>');
+	td.append(img);
+	img.attr({'alt': 'New Age Unit',
+		'src': '/cirm/images/new.jpeg',
+		'width': 20,
+		'height': 15
+		});
+	img.addClass('new');
+	img.click(function(event) {newTerm('Age');});
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4285,6 +4321,15 @@ function createSpecimen() {
 			response(getSuggestions(request.term, geneList));
 		}
 	});
+	var img = $('<img>');
+	geneTd.append(img);
+	img.attr({'alt': 'New Gene',
+		'src': '/cirm/images/new.jpeg',
+		'width': 20,
+		'height': 15
+		});
+	img.addClass('new');
+	img.click(function(event) {newTerm('Gene');});
 	var geneTr = $('<tr>');
 	geneValuesTable.append(geneTr);
 	var geneTd = $('<td>');
@@ -5281,4 +5326,14 @@ function updateMultiSelectValue(itemType, col, isMultiValue) {
 	values.push($('#' + makeId(col) + 'Input').val());
 	$('#'+makeId(col) + 'Label').html(values.join(';'));
 	updateEntity(itemType, col, true);
+}
+
+function newTerm(table) {
+	var termTable = '+/- ' + table;
+	$.each($('li', $('#ViewDiv')), function(i, li) {
+		if ($(li).html() == termTable) {
+			$(li).click();
+			return false;
+		}
+	});
 }

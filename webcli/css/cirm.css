@@ -550,3 +550,7 @@ h1.logo {
 	width: 25%;
 }
 
+img.new {
+	cursor: pointer;
+	line-height: 17px;
+}

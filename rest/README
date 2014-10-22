@@ -6,7 +6,7 @@ To install this web serivce:
 
 2. Install the wsgi application
 
-   cp microscopy.wsgi ~ermrest/
+   cp microscopy.wsgi /usr/lib/python2.6/site-packages/cirm/microscopy.wsgi
 
 3. Install the wsgi configuration
 

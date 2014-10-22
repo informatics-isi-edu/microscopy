@@ -1,6 +1,5 @@
 {
     "webauthn2" : {
-      "require_client": true,
       "require_attributes": true,
       "listusers_permit": ["admin"],
       "listattributes_permit": ["admin"],
@@ -11,12 +10,16 @@
       "def_passwd_len": 10,
       "hash_passwd_reps": 1000,
 
-      "sessionids_provider": "webcookie",
-      "sessionstates_provider": "database",
-      "clients_provider": "database",
-      "attributes_provider": "database",
+      "sessionids_provider": "null",
+      "sessionstates_provider": "null",
+      "clients_provider": "globusonline",
+      "attributes_provider": "globusonline",
+      "extend_session": false,
+      "globusonline_nexus_host": "nexus.api.globusonline.org",
+      "globusonline_nexus_ca": ":INSECURE:",
+      "globusonline_admin_users": "serban",
 
-      "handler_uri_usersession": "/ermrest/authn/session",
+      "handler_uri_usersession": null,
 
       "web_cookie_name": "ermrest",
       "web_cookie_path": "/ermrest",
@@ -34,6 +37,17 @@
       "crowd_max_retries": 5,
       "crowd_listusers_scope": ["YOUR APP GROUP"],
       "crowd_listgroups_scope": []
+    },
+
+    "registry" : {
+      "type" : "database",
+      "database_name": "ermrest",
+      "database_schema": "ermrest"
+    },
+
+    "catalog_factory" : {
+      "type" : "database",
+      "database_name": "ermrest"
     },
 
     "printers" : {

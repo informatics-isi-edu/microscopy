@@ -76,14 +76,14 @@ var fileClassValue = {'Thumbnail': 'thumbnail', 'File Size': 'file_size'};
 var filesDict = {};
 
 var specimenColumns = null;
-var specimenEditColumns = ['Comment', 'Tags', 'Specimen Identifier', 'Sample Name'];
+var specimenEditColumns = ['Comment', 'Tags', 'Sample Name'];
 var specimenMultiValuesColumns = ['Tags'];
 var specimensDict = {};
 var specimensList = [];
 // {"ID":"20131108-wnt1creZEGG-RES-0","Section Date":"2013-11-08","Sample Name":"wnt1creZEGG","Initials":"RES","Disambiguator":"0","Comment":"This is a specimen of origin"}
 
 var experimentColumns = null;
-var experimentEditColumns = ['Comment', 'Tags'];
+var experimentEditColumns = ['Comment', 'Tags', 'Experiment Description'];
 var experimentMultiValuesColumns = ['Tags'];
 var experimentsDict = {};
 var experimentsList = [];
@@ -117,7 +117,8 @@ var isSlidePrinter = false;
 var entityStack = [];
 var timestampsColumns = ['completion_time', 'deadline', 'request_time'];
 
-var viewsList = ['Transfer', 'Printers', '+/- Age', '+/- Gene', '+/- Species', '+/- Specimen Identifier', '+/- Tissue'];
+var labelTerms = ['Experiment Type', 'Probe'];
+var viewsList = ['Transfer', 'Printers', '+/- Age', '+/- Experiment Type', '+/- Gene', '+/- Probe', '+/- Species', '+/- Specimen Identifier', '+/- Tissue'];
 var slidesViewList = ['All', 'Unassigned'];
 var SCAN_HISTORY = ['Specimen', 'Experiment', 'Slide', 'search'];
 
@@ -135,8 +136,14 @@ var geneList = [];
 var geneDict = {};
 var speciemenIdentifierList = [];
 var speciemenIdentifierDict = {};
+var experimentTypeList = [];
+var experimentTypeDict = {};
+var probeList = [];
+var probeDict = {};
 
 var specimenDropDown = {
+		'Probe': {'list': probeList, 'dict': probeDict},
+		'Experiment Type': {'list': experimentTypeList, 'dict': experimentTypeDict},
 		'Specimen Identifier': {'list': speciemenIdentifierList, 'dict': speciemenIdentifierDict},
 		'Species': {'list': speciesList, 'dict': speciesDict},
 		'Age': {'list': ageList, 'dict': ageDict, 'input': true},
@@ -2146,6 +2153,8 @@ function checkSlideSaveButton() {
 function checkExperimentSaveButton() {
 	if ($('#experimentDate').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+		$('#experimentType').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+		$('#probe').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentDescription').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#createButton').removeAttr('disabled');
@@ -2257,6 +2266,7 @@ function displayItem(cols, item, itemType) {
 		p.html('Experiment Attributes');
 		editColumns = experimentEditColumns;
 		multiValuesColumns = experimentMultiValuesColumns;
+		selectColumns = specimenDropDown;
 	} else if (itemType == 'Scan') {
 		p.html('Scan Attributes');
 		editColumns = scanEditColumns;
@@ -3885,21 +3895,6 @@ function createExperiment() {
 	var td = $('<td>');
 	tr.append(td);
 	td.addClass('tag');
-	td.html('Experiment Description:');
-	var td = $('<td>');
-	tr.append(td);
-	var input = $('<input>');
-	input.attr({'id': 'experimentDescription',
-		'maxlength': '15',
-		'type': 'text'});
-	td.append(input);
-	input.keyup(function(event) {checkExperimentSaveButton();});
-
-	var tr = $('<tr>');
-	table.append(tr);
-	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
 	td.html('Initials:');
 	var td = $('<td>');
 	tr.append(td);
@@ -3945,6 +3940,80 @@ function createExperiment() {
 	input.attr({'id': 'experimentComment',
 		'type': 'text'});
 	td.append(input);
+
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Experiment Type:');
+	var td = $('<td>');
+	tr.append(td);
+	var select = $('<select>');
+	select.attr({	id: 'experimentType',
+					name: 'experimentType' });
+	$.each(experimentTypeList, function(i, value) {
+		var option = $('<option>');
+		option.text(value);
+		option.attr('value', value);
+		select.append(option);
+	});
+	select.change(function () {$('#experimentDescription').val(genExperimentDescription()); checkExperimentSaveButton();});
+	td.append(select);
+	var img = $('<img>');
+	td.append(img);
+	img.attr({'alt': 'New Experiment Type',
+		'src': '/cirm/images/new.jpeg',
+		'width': 20,
+		'height': 15
+		});
+	img.addClass('new');
+	img.click(function(event) {newTerm('Experiment Type');});
+
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Probe:');
+	var td = $('<td>');
+	tr.append(td);
+	var select = $('<select>');
+	select.attr({	id: 'probe',
+					name: 'probe' });
+	$.each(probeList, function(i, value) {
+		var option = $('<option>');
+		option.text(value);
+		option.attr('value', value);
+		select.append(option);
+	});
+	select.change(function () {$('#experimentDescription').val(genExperimentDescription()); checkExperimentSaveButton();});
+	td.append(select);
+	var img = $('<img>');
+	td.append(img);
+	img.attr({'alt': 'New Probe',
+		'src': '/cirm/images/new.jpeg',
+		'width': 20,
+		'height': 15
+		});
+	img.addClass('new');
+	img.click(function(event) {newTerm('Probe');});
+
+	var tr = $('<tr>');
+	table.append(tr);
+	var td = $('<td>');
+	tr.append(td);
+	td.addClass('tag');
+	td.html('Experiment Description:');
+	var td = $('<td>');
+	tr.append(td);
+	var input = $('<input>');
+	input.attr({'id': 'experimentDescription',
+		'maxlength': '15',
+		'type': 'text'});
+	td.append(input);
+	input.keyup(function(event) {checkExperimentSaveButton();});
+	$('#experimentDescription').val(genExperimentDescription());
 
 	$('button[context="centerPanelBottom"]').hide();
 	$('#createButton').unbind('click');
@@ -4413,6 +4482,8 @@ function saveExperiment() {
 	obj['Initials'] = $('#experimentRI').val();
 	obj['Disambiguator'] = $('#experimentDisambiguator').val();
 	obj['Comment'] = $('#experimentComment').val();
+	obj['Experiment Type'] = $('#experimentType').val();
+	obj['Probe'] = $('#probe').val();
 	var experimentDate = $('#experimentDate').val().split('-').join('');
 	var id = [experimentDate, $('#experimentDescription').val(), $('#experimentRI').val(), $('#experimentDisambiguator').val()].join('-');
 	obj['ID'] = id;
@@ -5139,6 +5210,10 @@ function postSaveTerm(data, textStatus, jqXHR, param) {
 }
 
 function createTerm() {
+	var li = $($('.highlighted', $('#ViewDiv'))[0]);
+	var index = li.html().indexOf(' ');
+	var termTable = li.html().substr(index+1);
+
 	$('button[context="centerPanelBottom"]').hide();
 	$('#saveTermButton').show();
 	$('#saveTermButton').attr('disabled', 'disabled');
@@ -5163,7 +5238,11 @@ function createTerm() {
 	input.attr({'id': 'termLabel',
 		'type': 'text'});
 	td.append(input);
-	input.keyup(function(event) {checkTermSaveButton();});
+	if (labelTerms.contains(termTable)) {
+		input.keyup(function(event) {$('#termCode').val($('#termLabel').val()); checkTermSaveButton();});
+	} else {
+		input.keyup(function(event) {checkTermSaveButton();});
+	}
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -5177,7 +5256,11 @@ function createTerm() {
 	input.attr({'id': 'termCode',
 		'type': 'text'});
 	td.append(input);
-	input.keyup(function(event) {checkTermSaveButton();});
+	if (labelTerms.contains(termTable)) {
+		tr.hide();
+	} else {
+		input.keyup(function(event) {checkTermSaveButton();});
+	}
 }
 
 function termsManaging(table) {
@@ -5236,6 +5319,9 @@ function postTermsManaging(data, textStatus, jqXHR, param) {
 	var th = $('<th>');
 	tr.append(th);
 	th.html('Code');
+	if (labelTerms.contains(param['table'])) {
+		th.hide();
+	}
 	var tbody = $('<tbody>');
 	termsTable.append(tbody);
 	$.each(data, function(i, row) {
@@ -5258,6 +5344,9 @@ function postTermsManaging(data, textStatus, jqXHR, param) {
 		var td = $('<td>');
 		tr.append(td);
 		td.html(row['Code']);
+		if (labelTerms.contains(param['table'])) {
+			td.hide();
+		}
 	});
 	$('button[context="centerPanelBottom"]').hide();
 	$('#createTermButton').show();
@@ -5337,3 +5426,18 @@ function newTerm(table) {
 		}
 	});
 }
+
+function genExperimentDescription() {
+	var ret = '';
+	var val = $('#experimentType').val();
+	if (val != '') {
+		ret += specimenDropDown['Experiment Type']['dict'][val]['Code'];
+	}
+	var val = $('#probe').val();
+	if (val != '') {
+		ret += specimenDropDown['Probe']['dict'][val]['Code'];
+	}
+	
+	return ret.substr(0,15);
+}
+

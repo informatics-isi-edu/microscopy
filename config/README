@@ -6,7 +6,7 @@ To install the microscopy database:
 
 3. Copy these files to the ermrest user
 
-   cp *.sql ~ermrest/
+   sudo cp *.sql ~ermrest/
 
 4. Switch to the ermrest user
 
@@ -27,6 +27,13 @@ To install the microscopy database:
          credentials. Replace '*' with the name of your globusonline group to
          restrict the catalog usage.
 
-7. Restart httpd
+7. Deploy the ermrest_config.json
+
+   Note: you may want to edit these settings. You may want to backup the
+         original config.
+
+   sudo cp ermrest_config.json ~ermrest/
+
+8. Restart httpd
 
    sudo service httpd restart

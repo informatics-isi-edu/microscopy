@@ -55,7 +55,5 @@
       "slide_port" : 9100,
       "box_addr" : "boxcode.hsc.usc.edu",
       "box_port": 9100
-    },
-    
-    "deploy_cirm" : true
+    }
 }

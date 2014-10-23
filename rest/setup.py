@@ -16,13 +16,13 @@
 
 from distutils.core import setup
 
-setup(name="cirm-rest",
+setup(name="microscopy",
       version="0.1",
-      description="cirm web application",
+      description="microscopy web application",
       url='http://www.isi.edu',
       maintainer='misd support',
       maintainer_email='misd@isi.edu',
-      packages=["cirm"],
+      packages=["microscopy"],
       requires=["web.py", "psycopg2", "globusonline"],
       classifiers=[
         "Intended Audience :: Developers",

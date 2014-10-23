@@ -6,7 +6,7 @@ To install this web serivce:
 
 2. Install the wsgi application
 
-   cp microscopy.wsgi /usr/lib/python2.6/site-packages/cirm/microscopy.wsgi
+   cp microscopy.wsgi /usr/lib/python2.6/site-packages/microscopy/microscopy.wsgi
 
    NOTE: make sure that microscopy.wsgi has executable permission bit set
 

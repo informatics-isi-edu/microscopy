@@ -16,8 +16,8 @@
 
 from distutils.core import setup
 
-setup(name="cirm-globus",
-      description="cirm globus application",
+setup(name="microscopy-globus",
+      description="microscopy globus application",
       version="0.1",
       package_dir={"": "src"},
       packages=["globuscli"],

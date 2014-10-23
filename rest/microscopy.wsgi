@@ -15,7 +15,7 @@
 #
 
 import web
-import cirm
+import microscopy
 
 # this creates the WSGI app using the web_urls map and the web.py framework
-application = web.application(cirm.web_urls(), globals()).wsgifunc()
+application = web.application(microscopy.web_urls(), globals()).wsgifunc()

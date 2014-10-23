@@ -436,7 +436,7 @@ a test label
 """
 def testLabel_():
     sample_idString="20131108-wnt1creZEG-RES-0-38-000"
-    sample_pUrl="http://purl.org/usc-cirm"
+    sample_pUrl="http://purl.org/usc-microscopy"
     purl="%s/slide?id=%s" %(sample_pUrl,sample_idString)
     pclcmds = "! 0 100 240 1" + EOL + \
       "DRAW_BOX"+ pos(0,-5) +"235 235 4" + EOL +\
@@ -453,7 +453,7 @@ a test box label
 """
 def testBoxLabel_():
     sample_idString="20131108-wnt1creZEG-RES-0-38-000"
-    sample_pUrl="http://purl.org/usc-cirm"
+    sample_pUrl="http://purl.org/usc-microscopy"
     purl="%s/slide?id=%s" %(sample_pUrl,sample_idString)
     pclcmds = "! 0 100 300 1" + EOL + \
       "DRAW_BOX"+ pos(0,-5) +"580 280 4" + EOL +\

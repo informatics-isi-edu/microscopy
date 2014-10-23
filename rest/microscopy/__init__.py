@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-import logging
-from logging.handlers import SysLogHandler
 import printer
 import zoomify
 import transfer

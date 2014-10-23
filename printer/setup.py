@@ -16,7 +16,7 @@
 
 from distutils.core import setup
 
-setup(name='cirm-printer',
+setup(name='microscopy-printer',
       description='printer control package for HP cxi label printers',
       version='0.1',
       packages=['cxi'],

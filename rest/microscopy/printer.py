@@ -21,7 +21,7 @@ import cxi
 
 class Printer:
     def __init__(self):
-        self.uri = 'http://purl.org/usc-cirm'
+        self.uri = 'http://purl.org/usc-microscopy'
         self.CXI_RET = 'Return value'
         self.CXI_MSG = 'Return Message'
         

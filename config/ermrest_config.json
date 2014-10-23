@@ -51,9 +51,9 @@
     },
     
     "printers" : {
-      "slide_addr" : "slidecode.hsc.usc.edu",
+      "slide_addr" : "slide.example.org",
       "slide_port" : 9100,
-      "box_addr" : "boxcode.hsc.usc.edu",
+      "box_addr" : "box.example.org",
       "box_port": 9100
     }
 }

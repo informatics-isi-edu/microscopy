@@ -25,6 +25,24 @@ GFP Cre,GC
 GFP Cre Ert2,GCE
 \.
 
+COPY "CIRM"."Specimen Identifier" ("ID", "Code") from stdin with csv delimiter ',' quote '"';
+Control 34,Cn34
+Wax56a,W56a
+\.
+
+COPY "CIRM"."Probe" ("ID", "Code") from stdin with csv delimiter ',' quote '"';
+Phf19,Phf19
+\.
+
+COPY "CIRM"."Experiment Type" ("ID", "Code") from stdin with csv delimiter ',' quote '"';
+SISH,SISH
+IHC,IHC
+H&E,H&E
+LACZ,LACZ
+PAS,PAS
+TRI,TRI
+\.
+
 COPY "CIRM"."Specimen" ("ID", "Section Date", "Sample Name", "Initials", "Disambiguator", "Comment", "Tags") from stdin with csv delimiter ',' quote '"';
 20131108-wnt1creZEGG-RES-0,2013-11-08,wnt1creZEGG,RES,0,"My sectioned sample returned from lab",""
 20131110-wnt1creZEGG-RES-0,2013-12-01,wnt1creZEGG,RES,0,"Another of my boxes back from lab",""

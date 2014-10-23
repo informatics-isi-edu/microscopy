@@ -24,6 +24,21 @@ CREATE TABLE "CIRM"."Gene"
     "Code" text  NOT NULL
   );
 
+CREATE TABLE "Specimen Identifier" (
+    "ID" text NOT NULL PRIMARY KEY,
+    "Code" text NOT NULL
+);
+
+CREATE TABLE "Experiment Type" (
+    "ID" text NOT NULL PRIMARY KEY,
+    "Code" text NOT NULL
+);
+
+CREATE TABLE "Probe" (
+    "ID" text NOT NULL PRIMARY KEY,
+    "Code" text NOT NULL
+);
+
 CREATE TABLE "CIRM"."Specimen"
   (
     "ID" varchar(30) PRIMARY KEY,
@@ -37,7 +52,8 @@ CREATE TABLE "CIRM"."Specimen"
     "Age" text DEFAULT NULL,
     "Tissue" text DEFAULT NULL,
     "Gene" text DEFAULT NULL,
-    "Specimen Identifier" integer DEFAULT NULL,
+    "Specimen Identifier" text DEFAULT NULL,
+    FOREIGN KEY ("Specimen Identifier") REFERENCES "CIRM"."Specimen Identifier" ("ID"),
     FOREIGN KEY ("Species") REFERENCES "CIRM"."Species" ("ID"),
     FOREIGN KEY ("Age") REFERENCES "CIRM"."Age" ("ID"),
     FOREIGN KEY ("Tissue") REFERENCES "CIRM"."Tissue" ("ID"),
@@ -61,6 +77,7 @@ CREATE INDEX ON "CIRM"."Specimen" USING gin (
 	       || ' ' || COALESCE("Age"::text, ''::text)
 	       || ' ' || COALESCE("Tissue"::text, ''::text)
 	       || ' ' || COALESCE("Gene"::text, ''::text)
+	       || ' ' || COALESCE("Specimen Identifier"::text, ''::text)
 	      )
   ) 
 );
@@ -69,11 +86,15 @@ CREATE TABLE "CIRM"."Experiment"
   (
     "ID" varchar(30) PRIMARY KEY,
     "Experiment Date" date NOT NULL,
+    "Experiment Type" text DEFAULT NULL,
+    "Probe" text DEFAULT NULL,
     "Experiment Description" varchar(15) NOT NULL,
     "Initials" varchar(3) NOT NULL,
     "Disambiguator" char(1) NOT NULL,
     "Comment" text,
-    "Tags" text
+    "Tags" text,
+    FOREIGN KEY ("Experiment Type") REFERENCES "CIRM"."Experiment Type" ("ID"),
+    FOREIGN KEY ("Probe") REFERENCES "CIRM"."Probe" ("ID")
   );
 
 CREATE INDEX ON "CIRM"."Experiment" USING gin ( 
@@ -84,6 +105,8 @@ CREATE INDEX ON "CIRM"."Experiment" USING gin (
 	       || ' ' || COALESCE("Disambiguator"::text, ''::text) 
 	       || ' ' || COALESCE("Comment"::text, ''::text) 
 	       || ' ' || COALESCE("Tags"::text, ''::text)
+	       || ' ' || COALESCE("Experiment Type"::text, ''::text)
+	       || ' ' || COALESCE("Probe"::text, ''::text)
 	      )
   ) 
 );

@@ -24,17 +24,17 @@ CREATE TABLE "CIRM"."Gene"
     "Code" text  NOT NULL
   );
 
-CREATE TABLE "Specimen Identifier" (
+CREATE TABLE "CIRM"."Specimen Identifier" (
     "ID" text NOT NULL PRIMARY KEY,
     "Code" text NOT NULL
 );
 
-CREATE TABLE "Experiment Type" (
+CREATE TABLE "CIRM"."Experiment Type" (
     "ID" text NOT NULL PRIMARY KEY,
     "Code" text NOT NULL
 );
 
-CREATE TABLE "Probe" (
+CREATE TABLE "CIRM"."Probe" (
     "ID" text NOT NULL PRIMARY KEY,
     "Code" text NOT NULL
 );

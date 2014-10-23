@@ -3960,15 +3960,11 @@ function createExperiment() {
 	});
 	select.change(function () {$('#experimentDescription').val(genExperimentDescription()); checkExperimentSaveButton();});
 	td.append(select);
-	var img = $('<img>');
-	td.append(img);
-	img.attr({'alt': 'New Experiment Type',
-		'src': '/cirm/images/new.jpeg',
-		'width': 20,
-		'height': 15
-		});
-	img.addClass('new');
-	img.click(function(event) {newTerm('Experiment Type');});
+	var a = $('<a>');
+	td.append(a);
+    a.addClass('link-style banner-text');
+	a.attr({'href': 'javascript:newTerm("Experiment Type")'});
+	a.html('Add Experiment Type');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -3989,15 +3985,11 @@ function createExperiment() {
 	});
 	select.change(function () {$('#experimentDescription').val(genExperimentDescription()); checkExperimentSaveButton();});
 	td.append(select);
-	var img = $('<img>');
-	td.append(img);
-	img.attr({'alt': 'New Probe',
-		'src': '/cirm/images/new.jpeg',
-		'width': 20,
-		'height': 15
-		});
-	img.addClass('new');
-	img.click(function(event) {newTerm('Probe');});
+	var a = $('<a>');
+	td.append(a);
+    a.addClass('link-style banner-text');
+	a.attr({'href': 'javascript:newTerm("Probe")'});
+	a.html('Add Probe Term');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4246,15 +4238,11 @@ function createSpecimen() {
 	});
 	select.change(function () {$('#specimenGenotype').val(genSampleName());});
 	td.append(select);
-	var img = $('<img>');
-	td.append(img);
-	img.attr({'alt': 'New Specimen Identifier',
-		'src': '/cirm/images/new.jpeg',
-		'width': 20,
-		'height': 15
-		});
-	img.addClass('new');
-	img.click(function(event) {newTerm('Specimen Identifier');});
+	var a = $('<a>');
+	td.append(a);
+    a.addClass('link-style banner-text');
+	a.attr({'href': 'javascript:newTerm("Specimen Identifier")'});
+	a.html('Add Specimen Identifier');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4278,15 +4266,11 @@ function createSpecimen() {
 	});
 	select.change(function () {$('#specimenGenotype').val(genSampleName());});
 	td.append(select);
-	var img = $('<img>');
-	td.append(img);
-	img.attr({'alt': 'New Species',
-		'src': '/cirm/images/new.jpeg',
-		'width': 20,
-		'height': 15
-		});
-	img.addClass('new');
-	img.click(function(event) {newTerm('Species');});
+	var a = $('<a>');
+	td.append(a);
+    a.addClass('link-style banner-text');
+	a.attr({'href': 'javascript:newTerm("Species")'});
+	a.html('Add Species');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4307,15 +4291,11 @@ function createSpecimen() {
 	});
 	select.change(function () {$('#specimenGenotype').val(genSampleName());});
 	td.append(select);
-	var img = $('<img>');
-	td.append(img);
-	img.attr({'alt': 'New Tissue',
-		'src': '/cirm/images/new.jpeg',
-		'width': 20,
-		'height': 15
-		});
-	img.addClass('new');
-	img.click(function(event) {newTerm('Tissue');});
+	var a = $('<a>');
+	td.append(a);
+    a.addClass('link-style banner-text');
+	a.attr({'href': 'javascript:newTerm("Tissue")'});
+	a.html('Add Tissue');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4341,15 +4321,11 @@ function createSpecimen() {
 	});
 	select.change(function () {$('#specimenGenotype').val(genSampleName());});
 	td.append(select);
-	var img = $('<img>');
-	td.append(img);
-	img.attr({'alt': 'New Age Unit',
-		'src': '/cirm/images/new.jpeg',
-		'width': 20,
-		'height': 15
-		});
-	img.addClass('new');
-	img.click(function(event) {newTerm('Age');});
+	var a = $('<a>');
+	td.append(a);
+    a.addClass('link-style banner-text');
+	a.attr({'href': 'javascript:newTerm("Age")'});
+	a.html('Add Age');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4390,15 +4366,11 @@ function createSpecimen() {
 			response(getSuggestions(request.term, geneList));
 		}
 	});
-	var img = $('<img>');
-	geneTd.append(img);
-	img.attr({'alt': 'New Gene',
-		'src': '/cirm/images/new.jpeg',
-		'width': 20,
-		'height': 15
-		});
-	img.addClass('new');
-	img.click(function(event) {newTerm('Gene');});
+	var a = $('<a>');
+	td.append(a);
+    a.addClass('link-style banner-text');
+	a.attr({'href': 'javascript:newTerm("Gene")'});
+	a.html('Add Gene');
 	var geneTr = $('<tr>');
 	geneValuesTable.append(geneTr);
 	var geneTd = $('<td>');

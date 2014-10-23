@@ -26,7 +26,7 @@ var SPECIMEN_PRINTER_PORT = 9100;
 var PRINTER_ADDR = null;
 var PRINTER_PORT = 0;
 var HOME;
-var ERMREST_SCHEMA_HOME = '/ermrest/catalog/1/schema/CIRM/table/';
+var ERMREST_SCHEMA_HOME = '/ermrest/catalog/1/schema/Microscopy/table/';
 var APP_HOME;
 var PAGE_URL = null;
 var USER;

@@ -25,6 +25,19 @@
 
    rsync -av --delete --exclude=".*" ./webcli /var/www/html/
 
-7. Restart httpd
+7. Install Zoomify Viewer
+
+   Note: You will need a licensed verison of the Zoomify HTML5 Viewer.
+         For more information go to, www.zoomify.com
+
+   You will need to copy over the ZoomifyImageViewer.js and the Assets/
+   directory normally located in the same directory of the Zoomify
+   distribution zip file.
+
+   mkdir -p /var/www/html/webcli/zoomify
+   cp /path/to/ZoomifyImageViewer /var/www/html/webcli/zoomify/
+   cp -R /path/to/Assets /var/www/html/webcli/zoomify/
+
+8. Restart httpd
 
    sudo service httpd restart

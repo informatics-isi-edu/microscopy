@@ -6,8 +6,8 @@ Array.prototype.contains = function (elem) {
 };
 
 var slideExperimentColumn = 'Experiment ID';
-var cirm_tables = ['Specimen', 'Experiment', 'Slide', 'Scan'];
-var cirm_tables_columns = {};
+var db_tables = ['Specimen', 'Experiment', 'Slide', 'Scan'];
+var db_tables_columns = {};
 var debug = false;
 var selectedEndpoint = null;
 var endpointPath = [];
@@ -27,7 +27,7 @@ var PRINTER_ADDR = null;
 var PRINTER_PORT = 0;
 var HOME;
 var ERMREST_SCHEMA_HOME = '/ermrest/catalog/1/schema/CIRM/table/';
-var CIRM_HOME;
+var APP_HOME;
 var PAGE_URL = null;
 var USER;
 var ERMREST_HOME = '/ermrest/catalog/1/entity';
@@ -38,15 +38,15 @@ var GLOBUS_TRANSFER_HOME = '/ermrest/transfer';
 var SERVICE_TRANSFER_HOME = '/service/transfer/';
 var MAX_RETRIES = 10;
 var AJAX_TIMEOUT = 300000;
-var CIRM_START_INFO = '<p class="intro">Choose an entity from the left sidebar or use the search box to find relevant images.</p>';
-var CIRM_NO_SCANS_INFO = '<p class="intro">No images are available.</p>';
-var CIRM_NO_SLIDES_INFO = '<p class="intro">No slides are available.</p>';
-var CIRM_NO_UNASSIGNED_SLIDES_INFO = '<p class="intro">No slides are available to be assigned.</p>';
-var CIRM_UNASSIGNED_SLIDES_INFO = '<p class="intro">Slides available to be assigned:</p>';
-var CIRM_NEW_EXPERIMENT = '<p class="intro">New Experiment</p>';
-var CIRM_NEW_SPECIMEN = '<p class="intro">New Specimen</p>';
-var CIRM_NEW_TERM = '<p class="intro">New Term</p>';
-var cirm_mobile = false;
+var HTML_START_INFO = '<p class="intro">Choose an entity from the left sidebar or use the search box to find relevant images.</p>';
+var HTML_NO_SCANS_INFO = '<p class="intro">No images are available.</p>';
+var HTML_NO_SLIDES_INFO = '<p class="intro">No slides are available.</p>';
+var HTML_NO_UNASSIGNED_SLIDES_INFO = '<p class="intro">No slides are available to be assigned.</p>';
+var HTML_UNASSIGNED_SLIDES_INFO = '<p class="intro">Slides available to be assigned:</p>';
+var HTML_NEW_EXPERIMENT = '<p class="intro">New Experiment</p>';
+var HTML_NEW_SPECIMEN = '<p class="intro">New Specimen</p>';
+var HTML_NEW_TERM = '<p class="intro">New Term</p>';
+var is_mobile = false;
 var mobileParams = null;
 var newSpecimenId = null;
 var updatedSpecimenId = null;
@@ -164,7 +164,7 @@ var updateEntityParameters = null;
 var specimensInitialsList = [];
 var experimentsInitialsList = [];
 
-var cirmAJAX = {
+var webcliAJAX = {
 		POST: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 			document.body.style.cursor = 'wait';
 			$.ajax({
@@ -183,15 +183,15 @@ var cirmAJAX = {
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
 					if (errorCallback == null) {
-						handleError(jqXHR, textStatus, errorThrown, cirmAJAX.POST, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+						handleError(jqXHR, textStatus, errorThrown, webcliAJAX.POST, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 					} else {
-						errorCallback(jqXHR, textStatus, errorThrown, cirmAJAX.POST, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+						errorCallback(jqXHR, textStatus, errorThrown, webcliAJAX.POST, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 					}
 				}
 			});
 		},
 		GET: function(url, contentType, async, successCallback, param, errorCallback, count) {
-			cirmAJAX.fetch(url, contentType, true, [], async, successCallback, param, errorCallback, count);
+			webcliAJAX.fetch(url, contentType, true, [], async, successCallback, param, errorCallback, count);
 		},
 		fetch: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 			document.body.style.cursor = 'wait';
@@ -211,15 +211,15 @@ var cirmAJAX = {
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
 					if (errorCallback == null) {
-						handleError(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+						handleError(jqXHR, textStatus, errorThrown, webcliAJAX.fetch, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 					} else {
-						errorCallback(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+						errorCallback(jqXHR, textStatus, errorThrown, webcliAJAX.fetch, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 					}
 				}
 			});
 		},
 		DELETE: function(url, async, successCallback, param, errorCallback, count) {
-			cirmAJAX.remove(url, null, true, null, async, successCallback, param, errorCallback, count);
+			webcliAJAX.remove(url, null, true, null, async, successCallback, param, errorCallback, count);
 		},
 		remove: function(url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 			document.body.style.cursor = 'wait';
@@ -236,9 +236,9 @@ var cirmAJAX = {
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
 					if (errorCallback == null) {
-						handleError(jqXHR, textStatus, errorThrown, cirmAJAX.remove, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+						handleError(jqXHR, textStatus, errorThrown, webcliAJAX.remove, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 					} else {
-						errorCallback(jqXHR, textStatus, errorThrown, cirmAJAX.remove, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+						errorCallback(jqXHR, textStatus, errorThrown, webcliAJAX.remove, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 					}
 				}
 			});
@@ -261,9 +261,9 @@ var cirmAJAX = {
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
 					if (errorCallback == null) {
-						handleError(jqXHR, textStatus, errorThrown, cirmAJAX.PUT, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+						handleError(jqXHR, textStatus, errorThrown, webcliAJAX.PUT, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 					} else {
-						errorCallback(jqXHR, textStatus, errorThrown, cirmAJAX.PUT, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+						errorCallback(jqXHR, textStatus, errorThrown, webcliAJAX.PUT, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 					}
 				}
 			});
@@ -271,7 +271,7 @@ var cirmAJAX = {
 };
 
 function make_headers() {
-	var res = {'User-agent': 'CIRM/1.0'};
+	var res = {'User-agent': 'Microscopy.Webcli/1.0'};
 	token = $.cookie(goauth_cookie);
 	if (token != null) {
 		res['Authorization'] = 'Globus-Goauthtoken ' + token;
@@ -364,7 +364,7 @@ function init() {
 	setTimeout('renderLogin()', 1);
 }
 
-function initCIRMMobile() {
+function initMobile() {
 	var params = window.location.search;
 	if (params != null && params.length > 0) {
 		var isSlide = ('' + window.location).indexOf('mobile.html') >= 0;
@@ -429,16 +429,16 @@ function initCIRMMobile() {
 
 function isMobileSearch() {
 	var userAgent = navigator.userAgent; 
-	cirm_mobile = (userAgent.indexOf('iPhone') != -1 || userAgent.indexOf('Mobile') != -1);
-	return cirm_mobile && 
-		((('' + window.location).indexOf('/cirm/slide') >= 0) || (('' + window.location).indexOf('/cirm/specimen') >= 0));
+	is_mobile = (userAgent.indexOf('iPhone') != -1 || userAgent.indexOf('Mobile') != -1);
+	return is_mobile &&
+		((('' + window.location).indexOf('/webcli/slide') >= 0) || (('' + window.location).indexOf('/webcli/specimen') >= 0));
 }
 
-function initCIRM() {
+function initApp() {
 	// Mozilla/5.0 (iPhone; CPU iPhone OS 7_0_3 like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0 Mobile/11B511 Safari/9537.53
 	// Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20131029 Firefox/17.0
 	var params = window.location.search;
-	if (cirm_mobile && params != null && params.length > 0) {
+	if (is_mobile && params != null && params.length > 0) {
 		params = params.substring(1);
 		var arr = params.split('&');
 		var label = null;
@@ -450,10 +450,10 @@ function initCIRM() {
 			}
 		});
 		if (label != null) {
-			if (('' + window.location).indexOf('/cirm/slide') >= 0) {
+			if (('' + window.location).indexOf('/webcli/slide') >= 0) {
 				mobileParams = {};
 				getSlide(label);
-			} else if (('' + window.location).indexOf('/cirm/specimen') >= 0) {
+			} else if (('' + window.location).indexOf('/webcli/specimen') >= 0) {
 				mobileParams = {};
 				getSpecimen(label);
 			}
@@ -484,14 +484,14 @@ function initCIRM() {
 	window.onpopstate = function(event) {
 		goBack(event);
 	};
-	$.each(cirm_tables, function(i, table) {
+	$.each(db_tables, function(i, table) {
 		getMetadata(table);
-		cirm_tables_columns[table] = getTableColumns(table);
+		db_tables_columns[table] = getTableColumns(table);
 	});
-	specimenColumns = cirm_tables_columns['Specimen'];
-	experimentColumns = cirm_tables_columns['Experiment'];
-	slideColumns = cirm_tables_columns['Slide'];
-	scanColumns = cirm_tables_columns['Scan'];
+	specimenColumns = db_tables_columns['Specimen'];
+	experimentColumns = db_tables_columns['Experiment'];
+	slideColumns = db_tables_columns['Slide'];
+	scanColumns = db_tables_columns['Scan'];
 	getSpecimens(null);
 }
 
@@ -510,7 +510,7 @@ function mobileRequest() {
 		$.each(mobileParams['scans'], function(i, scan) {
 			img.push(encodeSafeURIComponent(scan['Thumbnail']));
 		});
-		url = '/cirm/mobile.html?Slide='+slide+
+		url = '/webcli/mobile.html?Slide='+slide+
 			'&Experiment='+experiment+
 			'&date='+experimentDate+
 			'&genotype='+genotype;
@@ -523,7 +523,7 @@ function mobileRequest() {
 		var genotype = encodeSafeURIComponent(mobileParams['Specimen']['Sample Name']);
 		var initials = encodeSafeURIComponent(mobileParams['Specimen']['Initials']);
 		var disambiguator = encodeSafeURIComponent(mobileParams['Specimen']['Disambiguator']);
-		url = '/cirm/specimen.html?ID='+id+
+		url = '/webcli/specimen.html?ID='+id+
 		'&disambiguator='+disambiguator+
 		'&date='+sectionDate+
 		'&initials='+initials+
@@ -536,7 +536,7 @@ function mobileRequest() {
 
 function getSpecimen(id) {
 	var url = ERMREST_HOME + '/Specimen/ID=' + encodeSafeURIComponent(id);
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimen, {'ID': id}, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimen, {'ID': id}, null, 0);
 }
 
 function postGetSpecimen(data, textStatus, jqXHR, param) {
@@ -557,7 +557,7 @@ function getSpecimens(id) {
 		getResearchersInitials('Specimen', specimensInitialsList)
 		getResearchersInitials('Experiment', experimentsInitialsList)
 	}
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimens, {'ID': id}, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimens, {'ID': id}, null, 0);
 }
 
 function postGetSpecimens(data, textStatus, jqXHR, param) {
@@ -579,7 +579,7 @@ function getExperiments(id) {
 	if (id != null) {
 		url += '/ID=' + encodeSafeURIComponent(id);
 	}
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperiments, null, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperiments, null, null, 0);
 }
 
 function postGetExperiments(data, textStatus, jqXHR, param) {
@@ -609,7 +609,7 @@ function postGetExperiments(data, textStatus, jqXHR, param) {
 
 function getUnassignedSlides() {
 	var url = ERMREST_HOME + '/Slide/'+encodeSafeURIComponent(slideExperimentColumn)+'::null::';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetUnassignedSlides, null, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetUnassignedSlides, null, null, 0);
 }
 
 function postGetUnassignedSlides(data, textStatus, jqXHR, param) {
@@ -623,7 +623,7 @@ function postGetUnassignedSlides(data, textStatus, jqXHR, param) {
 
 function getSlide(id) {
 	var url = ERMREST_HOME + '/Slide/ID=' + encodeSafeURIComponent(id);
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlide, null, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlide, null, null, 0);
 }
 
 function postGetSlide(data, textStatus, jqXHR, param) {
@@ -639,7 +639,7 @@ function postGetSlide(data, textStatus, jqXHR, param) {
 function getSpecimensSlides(view) {
 	var url = ERMREST_HOME + '/Scan';
 	var params = {'view': view};
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimensSlides, params, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimensSlides, params, null, 0);
 }
 
 function postGetSpecimensSlides(data, textStatus, jqXHR, param) {
@@ -653,7 +653,7 @@ function postGetSpecimensSlides(data, textStatus, jqXHR, param) {
 	if (view == 'Unassigned') {
 		url += '/'+encodeSafeURIComponent(slideExperimentColumn)+'::null::';
 	}
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetViewSlides, {'view': view}, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetViewSlides, {'view': view}, null, 0);
 }
 
 function postGetViewSlides(data, textStatus, jqXHR, param) {
@@ -672,7 +672,7 @@ function postGetViewSlides(data, textStatus, jqXHR, param) {
 
 function getExperimentSlides(experimentId) {
 	var url = ERMREST_HOME + '/Slide/'+encodeSafeURIComponent(slideExperimentColumn)+'=' + encodeSafeURIComponent(experimentId);
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSlides, {'experimentId': experimentId}, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSlides, {'experimentId': experimentId}, null, 0);
 }
 
 function postGetExperimentSlides(data, textStatus, jqXHR, param) {
@@ -686,7 +686,7 @@ function postGetExperimentSlides(data, textStatus, jqXHR, param) {
 
 function getExperimentScans(experimentId) {
 	var url = ERMREST_HOME + '/Slide/'+encodeSafeURIComponent(slideExperimentColumn)+'=' + encodeSafeURIComponent(experimentId) + '/Scan';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentScans, {'ID': experimentId}, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentScans, {'ID': experimentId}, null, 0);
 }
 
 function postGetExperimentScans(data, textStatus, jqXHR, param) {
@@ -702,7 +702,7 @@ function postGetExperimentScans(data, textStatus, jqXHR, param) {
 
 function getSlides(specimenId) {
 	var url = ERMREST_HOME + '/Specimen/ID=' + encodeSafeURIComponent(specimenId) + '/Slide';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlides, {'specimenId': specimenId}, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlides, {'specimenId': specimenId}, null, 0);
 }
 
 function postGetSlides(data, textStatus, jqXHR, param) {
@@ -716,7 +716,7 @@ function postGetSlides(data, textStatus, jqXHR, param) {
 
 function getSpecimenScans(specimenId) {
 	var url = ERMREST_HOME + '/Scan/' + encodeSafeURIComponent('Slide ID') + '::regexp::' + encodeSafeURIComponent(specimenId) + '*';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimenScans, {'ID': specimenId}, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimenScans, {'ID': specimenId}, null, 0);
 }
 
 function postGetSpecimenScans(data, textStatus, jqXHR, param) {
@@ -731,13 +731,13 @@ function postGetSpecimenScans(data, textStatus, jqXHR, param) {
 }
 
 function renderLogin() {
-	HOME = CIRM_HOME = '' + window.location;
-	var index = CIRM_HOME.indexOf('#');
+	HOME = APP_HOME = '' + window.location;
+	var index = APP_HOME.indexOf('#');
 	if (index > 0) {
-		PAGE_URL = CIRM_HOME.substring(index+1);
-		CIRM_HOME = CIRM_HOME.substring(0, index);
+		PAGE_URL = APP_HOME.substring(index+1);
+		APP_HOME = APP_HOME.substring(0, index);
 	}
-	var index = HOME.lastIndexOf('/cirm');
+	var index = HOME.lastIndexOf('/webcli');
 	HOME = HOME.substring(0, index);
 	ERMREST_HOME = HOME + ERMREST_HOME;
 	CATALOG_HOME = HOME + CATALOG_HOME;
@@ -759,7 +759,7 @@ function renderLogin() {
 }
 
 function renderLoginForm() {
-	var uiDiv = $('#cirm');
+	var uiDiv = $('#app');
 	uiDiv.html('');
 	var logoDiv = $('<div>');
 	uiDiv.append(logoDiv);
@@ -767,7 +767,7 @@ function renderLoginForm() {
 	var img = $('<img>');
 	logoDiv.append(img);
 	img.attr({'alt': 'USC logo',
-		'src': '/cirm/images/usc-primaryshieldwordmark.png',
+		'src': '/webcli/images/usc-primaryshieldwordmark.png',
 		'width': 300,
 		'height': 100
 		});
@@ -836,13 +836,13 @@ function submitLogout() {
 		postSubmitLogout();
 	} else {
 		var url = WEBAUTHN_HOME;
-		cirmAJAX.DELETE(url, true, postSubmitLogout, null, errorSubmitLogout, 0);
+		webcliAJAX.DELETE(url, true, postSubmitLogout, null, errorSubmitLogout, 0);
 	}
 }
 
 function postSubmitLogout(data, textStatus, jqXHR, param) {
 	if (mobileParams == null) {
-		window.location = CIRM_HOME;
+		window.location = APP_HOME;
 	} else {
 		mobileRequest();
 	}
@@ -870,7 +870,7 @@ function submitMobileDatabaseLogin() {
 	var url = WEBAUTHN_HOME;
 	var obj = {'username': GUEST_USER,
 			'password': GUEST_PASSWORD};
-	cirmAJAX.POST(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postSubmitLogin, null, null, 0);
+	webcliAJAX.POST(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postSubmitLogin, null, null, 0);
 }
 
 function submitLogin() {
@@ -936,7 +936,7 @@ function checkGlobusAuthorization() {
 
 function postCheckGlobusAuthorization(data, textStatus, jqXHR, param) {
 	var url = ERMREST_HOME + '/Specimen';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitLogin, null, errorGlobusAuthorization, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitLogin, null, errorGlobusAuthorization, 0);
 }
 
 function errorGlobusAuthorization(jqXHR, textStatus, errorThrown) {
@@ -944,7 +944,7 @@ function errorGlobusAuthorization(jqXHR, textStatus, errorThrown) {
 		alert('You are not authorized to use this application.');
 		submitLogout();
 	} else {
-		handleError(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, ERMREST_HOME + '/Specimen', 'application/json', true, null, true, postSubmitLogin, null, null,  MAX_RETRIES+1);
+		handleError(jqXHR, textStatus, errorThrown, webcliAJAX.fetch, ERMREST_HOME + '/Specimen', 'application/json', true, null, true, postSubmitLogin, null, null,  MAX_RETRIES+1);
 		postSubmitLogin();
 	}
 }
@@ -956,7 +956,7 @@ function submitDatabaseLogin() {
 	var obj = new Object();
 	obj['username'] = user;
 	obj['password'] = password;
-	cirmAJAX.POST(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postSubmitLogin, null, null, 0);
+	webcliAJAX.POST(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postSubmitLogin, null, null, 0);
 }
 
 function postSubmitLogin(data, textStatus, jqXHR, param) {
@@ -966,7 +966,7 @@ function postSubmitLogin(data, textStatus, jqXHR, param) {
 		document.body.style.cursor = 'default';
 		return;
 	}
-	initCIRM();
+	initApp();
 }
 
 function createNewFolderRequest() {
@@ -982,7 +982,7 @@ function createNewFolderRequest() {
 			  "path": path,
 			  "DATA_TYPE": "mkdir"
 			};
-	cirmAJAX.POST(url, 'application/json', false, obj, true, postCreateNewFolderRequest, null, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, obj, true, postCreateNewFolderRequest, null, null, 0);
 }
 
 function postCreateNewFolderRequest(data, textStatus, jqXHR, param) {
@@ -1001,12 +1001,12 @@ function getEndpointData() {
 	$('#transferLinks').hide();
 	var endpoint = encodeSafeURIComponent(selectedEndpoint);
 	var url = SERVICE_TRANSFER_HOME + 'endpoint/' + endpoint + '/autoactivate';
-	cirmAJAX.POST(url, 'application/json', false, {}, true, postAutoActivateEndpoint, null, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, {}, true, postAutoActivateEndpoint, null, null, 0);
 }
 
 function getTaskStatus(task_id) {
 	var url = SERVICE_TRANSFER_HOME + 'task/' + encodeSafeURIComponent(task_id);
-	cirmAJAX.GET(url, 'application/json', false, postGetTaskStatus, null, null, MAX_RETRIES+1);
+	webcliAJAX.GET(url, 'application/json', false, postGetTaskStatus, null, null, MAX_RETRIES+1);
 }
 
 function postGetTaskStatus(data, textStatus, jqXHR, param) {
@@ -1022,7 +1022,7 @@ function postAutoActivateEndpoint(data, textStatus, jqXHR, param) {
 	var path = '/' + pathes.join('/') + '/';
 	var url = SERVICE_TRANSFER_HOME + 'endpoint/' + endpoint + '/ls?path='+path+'&orderby=type,name&fields=name,type,size';
 	var params = (param == null ? {} : param);
-	cirmAJAX.GET(url, 'application/json', false, postGetEndpointData, params, null, MAX_RETRIES+1);
+	webcliAJAX.GET(url, 'application/json', false, postGetEndpointData, params, null, MAX_RETRIES+1);
 }
 
 function postGetEndpointData(data, textStatus, jqXHR, param) {
@@ -1224,10 +1224,10 @@ function drawPanels() {
 	if ($('#search').get(0) != null) {
 		lastSearchValue = $('#search').val();
 	}
-	var cirm = $('#cirm');
-	cirm.html('');
+	var app = $('#app');
+	app.html('');
 	var container = $('<div>');
-	cirm.append(container);
+	app.append(container);
 	container.attr('id', 'container');
 	var div = $('<div>');
 	container.append(div);
@@ -1385,7 +1385,7 @@ function initPanels() {
 	var rightPanel = $('#rightPanelTop');
 	rightPanel.html('');
 	if (newSearchKeywords == null) {
-		$('#centerPanelTop').html(CIRM_START_INFO);
+		$('#centerPanelTop').html(HTML_START_INFO);
 	}
 	var bottomPanel = $('#bottomPanel');
 	initBottomPanel(bottomPanel);
@@ -1570,7 +1570,7 @@ function addSlides() {
 		});
 		arr.push(obj);
 	});
-	cirmAJAX.PUT(url, 'application/json', false, arr, true, postAddSlides, {'ID': experimentId}, null, 0);
+	webcliAJAX.PUT(url, 'application/json', false, arr, true, postAddSlides, {'ID': experimentId}, null, 0);
 }
 
 function postAddSlides(data, textStatus, jqXHR, param) {
@@ -1673,7 +1673,7 @@ function displayUnassignedSlides() {
 	var arr = [].concat(unassignedSlidesList);
 	arr.sort(compareIds);
 	if (arr.length == 0) {
-		centerPanel.append(CIRM_NO_UNASSIGNED_SLIDES_INFO);
+		centerPanel.append(HTML_NO_UNASSIGNED_SLIDES_INFO);
 	} else {
 		var p = $('<p>');
 		p.addClass('intro');
@@ -1776,7 +1776,7 @@ function appendSlides(item) {
 	var arr = [].concat(slidesList);
 	arr.sort(compareIds);
 	if (arr.length == 0) {
-		centerPanel.html(CIRM_NO_SLIDES_INFO);
+		centerPanel.html(HTML_NO_SLIDES_INFO);
 	} else {
 		centerPanel.html('');
 		var p = $('<p>');
@@ -2032,7 +2032,7 @@ function getSearchSlides(keywords, originalValue) {
 	var url = ERMREST_HOME + '/Scan';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSearchSlides, params, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSearchSlides, params, null, 0);
 }
 
 function postGetSearchSlides(data, textStatus, jqXHR, param) {
@@ -2048,7 +2048,7 @@ function getSlideSearchSlides(keywords, originalValue) {
 	var url = ERMREST_HOME + '/Slide/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords);
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlideSearchSlides, params, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlideSearchSlides, params, null, 0);
 }
 
 function postGetSlideSearchSlides(data, textStatus, jqXHR, param) {
@@ -2063,7 +2063,7 @@ function getExperimentSearchSlides(keywords, originalValue) {
 	var url = ERMREST_HOME + '/Experiment/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/Slide';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSearchSlides, params, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSearchSlides, params, null, 0);
 }
 
 function postGetExperimentSearchSlides(data, textStatus, jqXHR, param) {
@@ -2077,7 +2077,7 @@ function getSpecimenSearchSlides(keywords, originalValue) {
 	var url = ERMREST_HOME + '/Specimen/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/Slide';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimenSearchSlides, params, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimenSearchSlides, params, null, 0);
 }
 
 function postGetSpecimenSearchSlides(data, textStatus, jqXHR, param) {
@@ -2167,7 +2167,7 @@ function checkExperimentSaveButton() {
 
 function getScans(id) {
 	var url = ERMREST_HOME + '/Slide/ID='+encodeSafeURIComponent(id)+'/Scan';
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetScans, null, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetScans, null, null, 0);
 }
 
 function postGetScans(data, textStatus, jqXHR, param) {
@@ -2186,7 +2186,7 @@ function appendImage(images) {
 	}
 	var centerPanel = $('#centerPanelTop');
 	if (images.length == 0) {
-		centerPanel.html(CIRM_NO_SCANS_INFO);
+		centerPanel.html(HTML_NO_SCANS_INFO);
 	} else {
 		centerPanel.html('');
 	}
@@ -2213,7 +2213,7 @@ function appendImage(images) {
 }
 
 function enlargeImage(img, image) {
-	if (cirm_mobile) {
+	if (is_mobile) {
 		var label = image['Slide ID'];
 		mobileParams = {};
 		getSlide(label);
@@ -2885,7 +2885,7 @@ function proceedUpdateEntity(item, column, isMultiValue, answer) {
 		});
 		arr.push(obj);
 	}
-	cirmAJAX.PUT(url, 'application/json', false, arr, true, postUpdateEntity, {'item': item}, null, 0);
+	webcliAJAX.PUT(url, 'application/json', false, arr, true, postUpdateEntity, {'item': item}, null, 0);
 }
 
 function postUpdateEntity(data, textStatus, jqXHR, param) {
@@ -3353,7 +3353,7 @@ function renderTransferFiles(files) {
 					response(getEndpoints(data));
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
-					handleError(jqXHR, textStatus, errorThrown, cirmAJAX.fetch, url, 'application/json', true, null, true, null, null, null,  MAX_RETRIES+1);
+					handleError(jqXHR, textStatus, errorThrown, webcliAJAX.fetch, url, 'application/json', true, null, true, null, null, null,  MAX_RETRIES+1);
 				}
 			});
 		},
@@ -3567,7 +3567,7 @@ function globusTasks(fromRefresh) {
 		pushHistoryState('globus', '', 'query=globus', null);
 	}
 	var url = SERVICE_TRANSFER_HOME + 'task_list?fields=task_id,request_time,completion_time,destination_endpoint,bytes_transferred,label,status,source_endpoint&orderby=request_time desc';
-	cirmAJAX.GET(url, 'application/json', false, postGlobusTasks, null, null, MAX_RETRIES+1);
+	webcliAJAX.GET(url, 'application/json', false, postGlobusTasks, null, null, MAX_RETRIES+1);
 }
 
 function postGlobusTasks(data, textStatus, jqXHR, param) {
@@ -3821,9 +3821,9 @@ function managePrinter(param) {
 	obj['printer_port'] = PRINTER_PORT;
 	arr.push(obj);
 	if (param == 'getStatus' || param == 'getConfiguration') {
-		cirmAJAX.fetch(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postManagePrinter, {'param': param}, null, 0);
+		webcliAJAX.fetch(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, obj, true, postManagePrinter, {'param': param}, null, 0);
 	} else {
-		cirmAJAX.PUT(url, 'application/json', false, arr, true, postManagePrinter, {'param': param}, null, 0);
+		webcliAJAX.PUT(url, 'application/json', false, arr, true, postManagePrinter, {'param': param}, null, 0);
 	}
 }
 
@@ -3861,7 +3861,7 @@ function createExperiment() {
 	$('button', $('#rightPanelBottom')).hide();
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('');
-	centerPanel.append(CIRM_NEW_EXPERIMENT);
+	centerPanel.append(HTML_NEW_EXPERIMENT);
 	centerPanel.show();
 	var table = $('<table>');
 	centerPanel.append(table);
@@ -4139,7 +4139,7 @@ function createSpecimen() {
 	$('button', $('#rightPanelBottom')).hide();
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('');
-	centerPanel.append(CIRM_NEW_SPECIMEN);
+	centerPanel.append(HTML_NEW_SPECIMEN);
 	centerPanel.show();
 	var table = $('<table>');
 	centerPanel.append(table);
@@ -4436,7 +4436,7 @@ function saveSpecimen() {
 	var id = [specimenDate, $('#specimenGenotype').val(), $('#specimenRI').val(), $('#specimenDisambiguator').val()].join('-');
 	obj['ID'] = id;
 	arr.push(obj);
-	cirmAJAX.POST(url, 'application/json', false, arr, true, postSaveSpecimen, null, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, arr, true, postSaveSpecimen, null, null, 0);
 }
 
 function postSaveSpecimen(data, textStatus, jqXHR, param) {
@@ -4460,7 +4460,7 @@ function saveExperiment() {
 	var id = [experimentDate, $('#experimentDescription').val(), $('#experimentRI').val(), $('#experimentDisambiguator').val()].join('-');
 	obj['ID'] = id;
 	arr.push(obj);
-	cirmAJAX.POST(url, 'application/json', false, arr, true, postSaveExperiment, null, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, arr, true, postSaveExperiment, null, null, 0);
 }
 
 function postSaveExperiment(data, textStatus, jqXHR, param) {
@@ -4505,7 +4505,7 @@ function saveSlide() {
 		arr.push(obj);
 	}
 //alert(JSON.stringify(arr));
-	cirmAJAX.POST(url, 'application/json', false, arr, true, postSaveSlide, null, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, arr, true, postSaveSlide, null, null, 0);
 }
 
 function postSaveSlide(data, textStatus, jqXHR, param) {
@@ -4526,7 +4526,7 @@ function submitTransfer() {
 		slides.push('Slide ID=' + encodeSafeURIComponent($(checkbox).attr('slideId')));
 	});
 	url += slides.join(';');
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitTransfer, null, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postSubmitTransfer, null, null, 0);
 }
 
 function postSubmitTransfer(data, textStatus, jqXHR, param) {
@@ -4603,7 +4603,7 @@ function globusFileTransfer() {
 		}
 	});
 	obj['files'] = arr;
-	cirmAJAX.POST(url, 'application/json', false, obj, true, postGlobusFileTransfer, null, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, obj, true, postGlobusFileTransfer, null, null, 0);
 }
 
 function postGlobusFileTransfer(data, textStatus, jqXHR, param) {
@@ -4645,7 +4645,7 @@ function submitPrintSlide() {
 		obj['printer_port'] = SLIDE_PRINTER_PORT;
 		arr.push(obj);
 	});
-	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintSlide, null, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintSlide, null, null, 0);
 }
 
 function postSubmitPrintSlide(data, textStatus, jqXHR, param) {
@@ -4668,7 +4668,7 @@ function submitPrintSpecimen() {
 	obj['printer_id'] = SPECIMEN_PRINTER_ADDR;
 	obj['printer_port'] = SPECIMEN_PRINTER_PORT;
 	arr.push(obj);
-	cirmAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintSpecimen, null, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, arr, true, postSubmitPrintSpecimen, null, null, 0);
 }
 
 function postSubmitPrintSpecimen(data, textStatus, jqXHR, param) {
@@ -4745,7 +4745,7 @@ function getLocaleTimestamp(s) {
 function clear() {
 	$('li', $('#leftPanel')).removeClass('highlighted');
 	$('#rightPanelTop').html('');
-	$('#centerPanelTop').html(CIRM_START_INFO);
+	$('#centerPanelTop').html(HTML_START_INFO);
 	$('#printSpecimenButton').hide();
 	$('#deleteSpecimenButton').hide();
 	$('button[context="centerPanelBottom"]').hide();
@@ -4758,7 +4758,7 @@ function clear() {
 function pushHistoryState(query, title, url, params) {
 	if (query == null) {
 		if (!testEqual(LAST_STATE, {})) {
-			history.pushState({}, title, CIRM_HOME+'#'+url);
+			history.pushState({}, title, APP_HOME+'#'+url);
 			LAST_STATE = {};
 		}
 	} else {
@@ -4773,7 +4773,7 @@ function pushHistoryState(query, title, url, params) {
 		}
 		var currentState = history.state;
 		if (!testEqual(currentState, state)) {
-			history.pushState(state, title, CIRM_HOME+'#'+url);
+			history.pushState(state, title, APP_HOME+'#'+url);
 			LAST_STATE = state;
 		}
 	}
@@ -4963,7 +4963,7 @@ function deleteTerm() {
 			arr.push('ID=' + encodeSafeURIComponent($(input).parent().next().html()))
 		});
 		url += arr.join(';');
-		cirmAJAX.DELETE(url, true, postDeleteTerm, null, null, 0);
+		webcliAJAX.DELETE(url, true, postDeleteTerm, null, null, 0);
 	}
 }
 
@@ -4977,7 +4977,7 @@ function deleteSpecimen() {
 	if (answer) {
 		var specimen = specimensDict[$($('.highlighted', $('#SpecimenDiv'))[0]).attr('entityId')]['ID'];
 		var url = ERMREST_HOME + '/Specimen/ID=' + encodeSafeURIComponent(specimen);
-		cirmAJAX.DELETE(url, true, postDeleteSpecimen, {'name': name}, null, 0);
+		webcliAJAX.DELETE(url, true, postDeleteSpecimen, {'name': name}, null, 0);
 	}
 }
 
@@ -4993,7 +4993,7 @@ function deleteExperiment() {
 	if (answer) {
 		var experiment = experimentsDict[$($('.highlighted', $('#ExperimentDiv'))[0]).attr('entityId')]['ID'];
 		var url = ERMREST_HOME + '/Experiment/ID=' + encodeSafeURIComponent(experiment);
-		cirmAJAX.DELETE(url, true, postDeleteExperiment, {'name': name}, null, 0);
+		webcliAJAX.DELETE(url, true, postDeleteExperiment, {'name': name}, null, 0);
 	}
 }
 
@@ -5010,7 +5010,7 @@ function deleteScan() {
 		var id = $('#IDLabel').html();
 		var scan = scansDict[id];
 		var url = ERMREST_HOME + '/Scan/ID=' + encodeSafeURIComponent(id);
-		cirmAJAX.DELETE(url, true, postDeleteScan, {'scan': scan}, null, 0);
+		webcliAJAX.DELETE(url, true, postDeleteScan, {'scan': scan}, null, 0);
 	}
 }
 
@@ -5018,7 +5018,7 @@ function postDeleteScan(data, textStatus, jqXHR, param) {
 	var answer = confirm ('Do you want to delete also the scan\'s file(s)?');
 	if (answer) {
 		var url = SERVICE_TRANSFER_HOME + 'submission_id';
-		cirmAJAX.GET(url, 'application/json', true, activateDeleteEndpoint, param, null, MAX_RETRIES+1);
+		webcliAJAX.GET(url, 'application/json', true, activateDeleteEndpoint, param, null, MAX_RETRIES+1);
 	} else {
 		alert('The scan was successfully deleted.');
 		history.back();
@@ -5031,7 +5031,7 @@ function activateDeleteEndpoint(data, textStatus, jqXHR, param) {
 	var obj = {'scan': scan,
 			'submission_id': data['value']};
 	var url = SERVICE_TRANSFER_HOME + 'endpoint/' + endpoint + '/autoactivate';
-	cirmAJAX.POST(url, 'application/json', true, {}, true, deleteScanFiles, obj, null, 0);
+	webcliAJAX.POST(url, 'application/json', true, {}, true, deleteScanFiles, obj, null, 0);
 }
 
 function deleteScanFiles(data, textStatus, jqXHR, param) {
@@ -5054,7 +5054,7 @@ function deleteScanFiles(data, textStatus, jqXHR, param) {
 			           }
 			         ]
 			};
-	cirmAJAX.POST(url, 'application/json', false, obj, true, postDeleteScanFiles, {'scan': scan}, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, obj, true, postDeleteScanFiles, {'scan': scan}, null, 0);
 }
 
 function postDeleteScanFiles(data, textStatus, jqXHR, param) {
@@ -5067,7 +5067,7 @@ function deleteSlide() {
 	var answer = confirm ('Are you sure you want to delete the slide "' + slide + '"?');
 	if (answer) {
 		var url = ERMREST_HOME + '/Slide/ID=' + encodeSafeURIComponent(slide);
-		cirmAJAX.DELETE(url, true, postDeleteSlide, {'name': slide}, null, 0);
+		webcliAJAX.DELETE(url, true, postDeleteSlide, {'name': slide}, null, 0);
 	}
 }
 
@@ -5123,7 +5123,7 @@ function getSpecimenSelectValues(successCallback) {
 		param['dict'] = values['dict'];
 		param['successCallback'] = successCallback;
 		var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table) + '@sort(ID)';
-		cirmAJAX.GET(url, 'application/json', true, postGetSpecimenSelectValues, param, null, MAX_RETRIES+1);
+		webcliAJAX.GET(url, 'application/json', true, postGetSpecimenSelectValues, param, null, MAX_RETRIES+1);
 	});
 }
 
@@ -5174,7 +5174,7 @@ function saveTerm() {
 	obj['ID'] = $('#termLabel').val();
 	obj['Code'] = $('#termCode').val();
 	arr.push(obj);
-	cirmAJAX.POST(url, 'application/json', false, arr, true, postSaveTerm, null, null, 0);
+	webcliAJAX.POST(url, 'application/json', false, arr, true, postSaveTerm, null, null, 0);
 }
 
 function postSaveTerm(data, textStatus, jqXHR, param) {
@@ -5192,7 +5192,7 @@ function createTerm() {
 	$('#saveTermButton').addClass('disabledButton');
 	var centerPanel = $('#centerPanelTop');
 	centerPanel.html('');
-	centerPanel.append(CIRM_NEW_TERM);
+	centerPanel.append(HTML_NEW_TERM);
 	centerPanel.show();
 	var table = $('<table>');
 	centerPanel.append(table);
@@ -5237,7 +5237,7 @@ function createTerm() {
 
 function termsManaging(table) {
 	var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table);
-	cirmAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postTermsManaging, {'table': table}, null, 0);
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postTermsManaging, {'table': table}, null, 0);
 }
 
 function postTermsManaging(data, textStatus, jqXHR, param) {
@@ -5329,7 +5329,7 @@ function postTermsManaging(data, textStatus, jqXHR, param) {
 
 function getResearchersInitials(table, initialsList) {
 	var url = CATALOG_HOME + '/attributegroup/' + encodeSafeURIComponent(table) + '/Initials@sort(Initials)';
-	cirmAJAX.GET(url, 'application/json', true, postGetResearchersInitials, {'initialsList': initialsList}, null, MAX_RETRIES+1);
+	webcliAJAX.GET(url, 'application/json', true, postGetResearchersInitials, {'initialsList': initialsList}, null, MAX_RETRIES+1);
 }
 
 function postGetResearchersInitials(data, textStatus, jqXHR, param) {

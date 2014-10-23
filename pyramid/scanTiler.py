@@ -109,9 +109,9 @@ def load(config_filename):
         logger.error('HTML directory must be given and exist.')
         return None
 
-    cirm_path = cfg.get('cirm_path', None)
-    if not cirm_path:
-        logger.error('CIRM PATH must be given.')
+    app_path = cfg.get('app_path', None)
+    if not app_path:
+        logger.error('APP PATH must be given.')
         return None
 
     http_storage = cfg.get('http_storage', None)
@@ -169,7 +169,7 @@ def load(config_filename):
                                extract_rgb=extract_rgb, \
                                czirules=czirules, \
                                showinf=showinf, \
-                               cirm_path=cirm_path, \
+                               app_path=app_path, \
                                http_storage=http_storage, \
                                timeout=timeout, \
                                mail_server=mail_server, \

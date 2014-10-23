@@ -40,9 +40,9 @@ _base_html = """
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-        <script type="text/javascript" src="/%(cirm_path)s/zoomify/ZoomifyImageViewer.js"></script>
+        <script type="text/javascript" src="/%(app_path)s/zoomify/ZoomifyImageViewer.js"></script>
         <style type="text/css"> #myContainer { width:900px; height:550px; margin:auto; border:1px; border-style:solid; border-color:#696969;} </style>
-        <script type="text/javascript"> Z.showImage("myContainer", "/%(cirm_path)s/tiles/%(slide_id)s/%(scan_id)s", "zInitialZoom=50&zFullPageInitial=1&zLogoVisible=0&zSkinPath=/%(cirm_path)s/zoomify/Assets/Skins/Default"); </script>
+        <script type="text/javascript"> Z.showImage("myContainer", "/%(app_path)s/tiles/%(slide_id)s/%(scan_id)s", "zInitialZoom=50&zFullPageInitial=1&zLogoVisible=0&zSkinPath=/%(app_path)s/zoomify/Assets/Skins/Default"); </script>
     </head>
     <body>
         <div id="myContainer"></div>
@@ -149,7 +149,7 @@ class ErmrestClient (object):
         self.czirules = kwargs.get("czirules")
         self.showinf = kwargs.get("showinf")
         self.timeout = kwargs.get("timeout")
-        self.cirm_path = kwargs.get("cirm_path")
+        self.app_path = kwargs.get("app_path")
         self.http_storage = kwargs.get("http_storage")
         self.header = None
         self.webconn = None
@@ -218,7 +218,7 @@ class ErmrestClient (object):
         if not os.path.exists(outdir):
             os.makedirs(outdir)
         f = open('%s/%s.html' % (outdir, scan_id), 'w')
-        f.write('%s\n' % _base_html % (dict(cirm_path=self.cirm_path, scan_id=scan_id, slide_id=slide_id)))
+        f.write('%s\n' % _base_html % (dict(app_path=self.app_path, scan_id=scan_id, slide_id=slide_id)))
         f.close()
         
     def writeThumbnailFile(self, slide_id, scan_id):
@@ -297,8 +297,8 @@ class ErmrestClient (object):
                 url = '%s/attribute/Scan/ID=:ID/%s' % (self.path, columns)
                 body = []
                 obj = {'ID': scanId,
-                       'Thumbnail': '%s/%s/thumbnails/%s/%s.jpg' % (self.http_storage, self.cirm_path, slideId, scanId),
-                       'Zoomify': '%s/%s/html/%s/%s.html' % (self.http_storage, self.cirm_path, slideId, scanId)
+                       'Thumbnail': '%s/%s/thumbnails/%s/%s.jpg' % (self.http_storage, self.app_path, slideId, scanId),
+                       'Zoomify': '%s/%s/html/%s/%s.html' % (self.http_storage, self.app_path, slideId, scanId)
                        }
                 for col in self.metadata:
                     if col in metadata and metadata[col] != None:

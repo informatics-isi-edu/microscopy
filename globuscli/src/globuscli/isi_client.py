@@ -7,8 +7,8 @@ import json
 
 # simple transfer betweent 2 endpoints that support auto activation
 def simple_transfer():
-  endpoint_1 = "kyle#kyle_cdn"
-  endpoint_2 = "kyle#kyle-laptop"
+  endpoint_1 = "user#endpoint1"
+  endpoint_2 = "user#endpoint2"
   file_from = "/cfp.txt"
   file_to = "/~/C/globus_share/cfp2.txt"
 
@@ -42,8 +42,8 @@ def simple_transfer():
 
 # this is for more complicated transfers that need endpoints to be activated - first using username/password
 def password_activation_transfer():
-  endpoint_1 = "kyle#seattle"
-  endpoint_2 = "kyle#kyle-laptop"
+  endpoint_1 = "user#endpoint1"
+  endpoint_2 = "user#endpoint2"
   file_from = "/~/file1.txt"  
   file_to = "/~/C/globus_share/file1-nanohub"
  

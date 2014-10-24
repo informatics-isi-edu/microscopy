@@ -326,17 +326,17 @@ margin-right: 5px;
 	white-space:nowrap;
 }
 
-.itemTable a.link-style:link, .fancyTable a.link-style:link {
+.itemTable a.link-style:link, .fancyTable a.link-style:link, .define_entity a.link-style:link {
 	text-decoration:none;
 	color: #024A68;
 }
 
-.itemTable a.link-style:visited, .fancyTable a.link-style:visited {
+.itemTable a.link-style:visited, .fancyTable a.link-style:visited, .define_entity a.link-style:visited {
 	text-decoration:none;
 	color: #800000;
 }
 
-.itemTable a.link-style:hover, .fancyTable a.link-style:hover {
+.itemTable a.link-style:hover, .fancyTable a.link-style:hover, .define_entity a.link-style:hover {
 	/*text-decoration:underline;*/
 	color: #800000;
 }

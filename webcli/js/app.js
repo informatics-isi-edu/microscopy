@@ -3964,7 +3964,7 @@ function createExperiment() {
 	td.append(a);
     a.addClass('link-style banner-text');
 	a.attr({'href': 'javascript:newTerm("Experiment Type")'});
-	a.html('Add Experiment Type');
+	a.html('  Add Experiment Type');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -3989,7 +3989,7 @@ function createExperiment() {
 	td.append(a);
     a.addClass('link-style banner-text');
 	a.attr({'href': 'javascript:newTerm("Probe")'});
-	a.html('Add Probe Term');
+	a.html('  Add Probe Term');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4242,7 +4242,7 @@ function createSpecimen() {
 	td.append(a);
     a.addClass('link-style banner-text');
 	a.attr({'href': 'javascript:newTerm("Specimen Identifier")'});
-	a.html('Add Specimen Identifier');
+	a.html('  Add Specimen Identifier');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4270,7 +4270,7 @@ function createSpecimen() {
 	td.append(a);
     a.addClass('link-style banner-text');
 	a.attr({'href': 'javascript:newTerm("Species")'});
-	a.html('Add Species');
+	a.html('  Add Species');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4295,7 +4295,7 @@ function createSpecimen() {
 	td.append(a);
     a.addClass('link-style banner-text');
 	a.attr({'href': 'javascript:newTerm("Tissue")'});
-	a.html('Add Tissue');
+	a.html('  Add Tissue');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4325,7 +4325,7 @@ function createSpecimen() {
 	td.append(a);
     a.addClass('link-style banner-text');
 	a.attr({'href': 'javascript:newTerm("Age")'});
-	a.html('Add Age');
+	a.html('  Add Age');
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4367,10 +4367,10 @@ function createSpecimen() {
 		}
 	});
 	var a = $('<a>');
-	td.append(a);
+	geneTd.append(a);
     a.addClass('link-style banner-text');
 	a.attr({'href': 'javascript:newTerm("Gene")'});
-	a.html('Add Gene');
+	a.html('  Add Gene');
 	var geneTr = $('<tr>');
 	geneValuesTable.append(geneTr);
 	var geneTd = $('<td>');

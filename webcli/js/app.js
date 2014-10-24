@@ -2310,19 +2310,19 @@ function displayItem(cols, item, itemType) {
 		}
 		div.append(label);
 		if (selectColumns != null && selectColumns[col] != null && selectColumns[col]['multivalue'] != null) {
+			var input = $('<input>');
+			input.attr({'type': 'text',
+				'id': makeId(col) + 'Input',
+				'size': 30});
+			input.autocomplete({
+				minLength: 0,
+				select: function (event, ui) {$('#' + makeId(col) + 'Input').val(ui.item.value);updateMultiSelectValue(itemType, col, true);},
+				source: function(request, response) {
+					response(getSuggestions(request.term, selectColumns[col]['list']));
+				}
+			});
+			div.append(input);
 			if (item[col] != null && item[col] !== '') {
-				var input = $('<input>');
-				input.attr({'type': 'text',
-					'id': makeId(col) + 'Input',
-					'size': 30});
-				input.autocomplete({
-					minLength: 0,
-					select: function (event, ui) {$('#' + makeId(col) + 'Input').val(ui.item.value);updateMultiSelectValue(itemType, col, true);},
-					source: function(request, response) {
-						response(getSuggestions(request.term, selectColumns[col]['list']));
-					}
-				});
-				div.append(input);
 				var multiValues = item[col].split(';');
 				var multiTable = $('<table>');
 				div.append(multiTable);

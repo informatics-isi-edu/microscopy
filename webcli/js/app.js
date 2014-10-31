@@ -1993,7 +1993,8 @@ function getSearchExpression(originalValue, delimiter) {
 		}
 	});
 	keywords = keywords.join(delimiter);
-	return keywords;
+	return originalValue;
+	//return keywords;
 }
 
 function checkCreateFolder(event) {
@@ -2045,7 +2046,7 @@ function postGetSearchSlides(data, textStatus, jqXHR, param) {
 }
 
 function getSlideSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/Slide/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords);
+	var url = ERMREST_HOME + '/Slide/' + encodeSafeURIComponent('*') + '::regexp::' + encodeSafeURIComponent(keywords);
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlideSearchSlides, params, null, 0);
@@ -2060,7 +2061,7 @@ function postGetSlideSearchSlides(data, textStatus, jqXHR, param) {
 }
 
 function getExperimentSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/Experiment/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/Slide';
+	var url = ERMREST_HOME + '/Experiment/' + encodeSafeURIComponent('*') + '::regexp::' + encodeSafeURIComponent(keywords) + '/Slide';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSearchSlides, params, null, 0);
@@ -2074,7 +2075,7 @@ function postGetExperimentSearchSlides(data, textStatus, jqXHR, param) {
 }
 
 function getSpecimenSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/Specimen/' + encodeSafeURIComponent('*') + '::ts::' + encodeSafeURIComponent(keywords) + '/Slide';
+	var url = ERMREST_HOME + '/Specimen/' + encodeSafeURIComponent('*') + '::regexp::' + encodeSafeURIComponent(keywords) + '/Slide';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimenSearchSlides, params, null, 0);

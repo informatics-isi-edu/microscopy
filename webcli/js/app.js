@@ -144,11 +144,11 @@ var probeDict = {};
 var specimenDropDown = {
 		'Probe': {'list': probeList, 'dict': probeDict},
 		'Experiment Type': {'list': experimentTypeList, 'dict': experimentTypeDict},
-		'Specimen Identifier': {'list': speciemenIdentifierList, 'dict': speciemenIdentifierDict},
-		'Species': {'list': speciesList, 'dict': speciesDict},
-		'Age': {'list': ageList, 'dict': ageDict, 'input': true},
-		'Tissue': {'list': tissueList, 'dict': tissueDict},
-		'Gene': {'list': geneList, 'dict': geneDict, 'autocomplete': true, 'multivalue': true}
+		'Specimen Identifier': {'list': speciemenIdentifierList, 'dict': speciemenIdentifierDict, 'max': 4},
+		'Species': {'list': speciesList, 'dict': speciesDict, 'max': 1},
+		'Age': {'list': ageList, 'dict': ageDict, 'input': true, 'max': 4},
+		'Tissue': {'list': tissueList, 'dict': tissueDict, 'max': 2},
+		'Gene': {'list': geneList, 'dict': geneDict, 'autocomplete': true, 'multivalue': true, 'max': 5}
 };
 
 var buttonsEnableFunction = {
@@ -5235,6 +5235,9 @@ function createTerm() {
 	var input = $('<input>');
 	input.attr({'id': 'termCode',
 		'type': 'text'});
+	if (specimenDropDown[termTable] != null && specimenDropDown[termTable]['max'] != null) {
+		input.attr('maxlength', specimenDropDown[termTable]['max']);
+	}
 	td.append(input);
 	if (labelTerms.contains(termTable)) {
 		tr.hide();

@@ -5164,6 +5164,7 @@ function genSampleName(selectedItem) {
 	}
 	$.each($('tr', $('#geneTable')), function(i, tr) {
 		ret += specimenDropDown['Gene']['dict'][$($('td', $(tr))[0]).html()]['Code'];
+		return false;
 	});
 	var val = $('#specimenIdentifier').val();
 	ret += specimenDropDown['Specimen Identifier']['dict'][val]['Code'];

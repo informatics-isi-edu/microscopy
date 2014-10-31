@@ -715,7 +715,7 @@ function postGetSlides(data, textStatus, jqXHR, param) {
 }
 
 function getSpecimenScans(specimenId) {
-	var url = ERMREST_HOME + '/Scan/' + encodeSafeURIComponent('Slide ID') + '::regexp::' + encodeSafeURIComponent(specimenId) + '*';
+	var url = ERMREST_HOME + '/Scan/' + encodeSafeURIComponent('Slide ID') + '::ciregexp::' + encodeSafeURIComponent(specimenId) + '*';
 	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimenScans, {'ID': specimenId}, null, 0);
 }
 
@@ -2046,7 +2046,7 @@ function postGetSearchSlides(data, textStatus, jqXHR, param) {
 }
 
 function getSlideSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/Slide/' + encodeSafeURIComponent('*') + '::regexp::' + encodeSafeURIComponent(keywords);
+	var url = ERMREST_HOME + '/Slide/' + encodeSafeURIComponent('*') + '::ciregexp::' + encodeSafeURIComponent(keywords);
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSlideSearchSlides, params, null, 0);
@@ -2061,7 +2061,7 @@ function postGetSlideSearchSlides(data, textStatus, jqXHR, param) {
 }
 
 function getExperimentSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/Experiment/' + encodeSafeURIComponent('*') + '::regexp::' + encodeSafeURIComponent(keywords) + '/Slide';
+	var url = ERMREST_HOME + '/Experiment/' + encodeSafeURIComponent('*') + '::ciregexp::' + encodeSafeURIComponent(keywords) + '/Slide';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetExperimentSearchSlides, params, null, 0);
@@ -2075,7 +2075,7 @@ function postGetExperimentSearchSlides(data, textStatus, jqXHR, param) {
 }
 
 function getSpecimenSearchSlides(keywords, originalValue) {
-	var url = ERMREST_HOME + '/Specimen/' + encodeSafeURIComponent('*') + '::regexp::' + encodeSafeURIComponent(keywords) + '/Slide';
+	var url = ERMREST_HOME + '/Specimen/' + encodeSafeURIComponent('*') + '::ciregexp::' + encodeSafeURIComponent(keywords) + '/Slide';
 	var params = {'keywords': keywords,
 			'originalValue': originalValue};
 	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, postGetSpecimenSearchSlides, params, null, 0);
@@ -2093,6 +2093,10 @@ function postGetSpecimenSearchSlides(data, textStatus, jqXHR, param) {
 	entityStack = [];
 	pushHistoryState('search', '', 'query=search&keywords='+encodeSafeURIComponent(param['originalValue']), {'keywords': param['originalValue']});
 	appendSlides('search');
+	if (slidesList.length == 0) {
+		var entityid = searchList.shift();
+		$('[entityid='+entityid+']', $('#SearchUL')).remove();
+	}
 }
 
 function clickEntity(ul, label) {

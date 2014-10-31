@@ -142,8 +142,8 @@ var probeList = [];
 var probeDict = {};
 
 var specimenDropDown = {
-		'Probe': {'list': probeList, 'dict': probeDict},
-		'Experiment Type': {'list': experimentTypeList, 'dict': experimentTypeDict},
+		'Probe': {'list': probeList, 'dict': probeDict, 'max': 5},
+		'Experiment Type': {'list': experimentTypeList, 'dict': experimentTypeDict, 'max': 4},
 		'Specimen Identifier': {'list': speciemenIdentifierList, 'dict': speciemenIdentifierDict, 'max': 4},
 		'Species': {'list': speciesList, 'dict': speciesDict, 'max': 1},
 		'Age': {'list': ageList, 'dict': ageDict, 'input': true, 'max': 4},
@@ -5218,6 +5218,10 @@ function createTerm() {
 	var input = $('<input>');
 	input.attr({'id': 'termLabel',
 		'type': 'text'});
+	if (specimenDropDown[termTable] != null && specimenDropDown[termTable]['max'] != null && 
+			labelTerms.contains(termTable)) {
+		input.attr('maxlength', specimenDropDown[termTable]['max']);
+	}
 	td.append(input);
 	if (labelTerms.contains(termTable)) {
 		input.keyup(function(event) {$('#termCode').val($('#termLabel').val()); checkTermSaveButton();});

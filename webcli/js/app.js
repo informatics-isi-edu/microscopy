@@ -62,7 +62,7 @@ var goauth_cookie = 'globusonline-goauth';
 var token = null;
 
 var URL_ESCAPE = new String("~!()'");
-var ID_ESCAPE = new String(".");
+var ID_ESCAPE = new String(".()");
 
 var tablesMetadata = {};
 

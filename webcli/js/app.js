@@ -359,6 +359,15 @@ function handleError(jqXHR, textStatus, errorThrown, retryCallback, url, content
 	}
 }
 
+function errorErmrest(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
+	if (param == null || param['alert'] == null) {
+		handleError(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+	} else if (param['alert']['display']) {
+		param['alert']['display'] = false;
+		handleError(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+	}
+}
+
 function init() {
 	// necessary for window.location to be initialized
 	setTimeout('renderLogin()', 1);
@@ -5128,14 +5137,16 @@ function getSpecimenSelectValues(successCallback) {
 		'total': 4,
 		'index': 0
 	};
+	var alertObject = {'display': true};
 	$.each(specimenDropDown, function(table, values) {
 		var param = {};
 		param['count'] = count;
 		param['list'] = values['list'];
 		param['dict'] = values['dict'];
 		param['successCallback'] = successCallback;
+		param['alert'] = alertObject;
 		var url = ERMREST_HOME + '/' + encodeSafeURIComponent(table) + '@sort(ID)';
-		webcliAJAX.GET(url, 'application/json', true, postGetSpecimenSelectValues, param, null, MAX_RETRIES+1);
+		webcliAJAX.GET(url, 'application/json', true, postGetSpecimenSelectValues, param, errorErmrest, MAX_RETRIES+1);
 	});
 }
 

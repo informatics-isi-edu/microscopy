@@ -76,7 +76,7 @@ var fileClassValue = {'Thumbnail': 'thumbnail', 'File Size': 'file_size'};
 var filesDict = {};
 
 var specimenColumns = null;
-var specimenEditColumns = ['Comment', 'Tags', 'Sample Name'];
+var specimenEditColumns = ['Comment', 'Tags', 'Sample Name', 'Specimen Identifier'];
 var specimenMultiValuesColumns = ['Tags'];
 var specimensDict = {};
 var specimensList = [];
@@ -118,7 +118,7 @@ var entityStack = [];
 var timestampsColumns = ['completion_time', 'deadline', 'request_time'];
 
 var labelTerms = ['Experiment Type', 'Probe'];
-var viewsList = ['Transfer', 'Printers', '+/- Age', '+/- Experiment Type', '+/- Gene', '+/- Probe', '+/- Species', '+/- Specimen Identifier', '+/- Tissue'];
+var viewsList = ['Transfer', 'Printers', '+/- Age', '+/- Experiment Type', '+/- Gene', '+/- Probe', '+/- Species', '+/- Tissue'];
 var slidesViewList = ['All', 'Unassigned'];
 var SCAN_HISTORY = ['Specimen', 'Experiment', 'Slide', 'search'];
 
@@ -134,8 +134,6 @@ var tissueList = [];
 var tissueDict = {};
 var geneList = [];
 var geneDict = {};
-var speciemenIdentifierList = [];
-var speciemenIdentifierDict = {};
 var experimentTypeList = [];
 var experimentTypeDict = {};
 var probeList = [];
@@ -144,7 +142,6 @@ var probeDict = {};
 var specimenDropDown = {
 		'Probe': {'list': probeList, 'dict': probeDict, 'max': 5},
 		'Experiment Type': {'list': experimentTypeList, 'dict': experimentTypeDict, 'max': 4},
-		'Specimen Identifier': {'list': speciemenIdentifierList, 'dict': speciemenIdentifierDict, 'max': 4},
 		'Species': {'list': speciesList, 'dict': speciesDict, 'max': 1},
 		'Age': {'list': ageList, 'dict': ageDict, 'input': true, 'max': 4},
 		'Tissue': {'list': tissueList, 'dict': tissueDict, 'max': 2},
@@ -161,6 +158,7 @@ var buttonsEnableFunction = {
 
 var updateEntityParameters = null;
 
+var specimensIdentifierList = [];
 var specimensInitialsList = [];
 var experimentsInitialsList = [];
 
@@ -563,6 +561,7 @@ function getSpecimens(id) {
 	if (id != null) {
 		url += '/ID=' + encodeSafeURIComponent(id);
 	} else {
+		getSpecimenIdentifiers('Specimen', specimensIdentifierList)
 		getResearchersInitials('Specimen', specimensInitialsList)
 		getResearchersInitials('Experiment', experimentsInitialsList)
 	}
@@ -4243,23 +4242,18 @@ function createSpecimen() {
 	td.html('Specimen Identifier:');
 	var td = $('<td>');
 	tr.append(td);
-	var select = $('<select>');
-	select.attr({	id: 'specimenIdentifier',
-					name: 'specimenIdentifier' });
-	$.each(speciemenIdentifierList, function(i, value) {
-		var option = $('<option>');
-		option.text(value);
-		option.attr('value', value);
-		select.append(option);
+	var input = $('<input>');
+	input.attr({'id': 'specimenIdentifier',
+		'type': 'text'});
+	td.append(input);
+	input.autocomplete({
+		select: function (event, ui) {$('#specimenIdentifier').val(ui.item.value);$('#specimenGenotype').val(genSampleName());checkSpecimenSaveButton();},
+		search: function (event, ui) {$('#specimenGenotype').val(genSampleName());checkSpecimenSaveButton();},
+		minLength: 0,
+		source: function(request, response) {
+			response(getSuggestions(request.term, specimensIdentifierList));
+		}
 	});
-	select.change(function () {$('#specimenGenotype').val(genSampleName());});
-	td.append(select);
-	var a = $('<a>');
-	td.append(a);
-    a.addClass('link-style banner-text');
-	a.attr({'href': 'javascript:newTerm("Specimen Identifier")'});
-	a.html('  Add Specimen Identifier');
-	a.hide();
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -5182,8 +5176,8 @@ function genSampleName(selectedItem) {
 		ret += specimenDropDown['Gene']['dict'][$($('td', $(tr))[0]).html()]['Code'];
 		return false;
 	});
-	var val = $('#specimenIdentifier').val();
-	ret += specimenDropDown['Specimen Identifier']['dict'][val]['Code'];
+	var val = $('#specimenIdentifier').val().substr(0,4);
+	ret += val;
 	
 	return ret.substr(0,15);
 }
@@ -5356,6 +5350,22 @@ function postTermsManaging(data, textStatus, jqXHR, param) {
 	$('#deleteTermButton').show();
 	$('#deleteTermButton').attr('disabled', 'disabled');
 	$('#deleteTermButton').addClass('disabledButton');
+}
+
+function getSpecimenIdentifiers(table, initialsList) {
+	var column = encodeSafeURIComponent('Specimen Identifier');
+	var url = CATALOG_HOME + '/attributegroup/' + encodeSafeURIComponent(table) + '/' + column + '@sort(' + column + ')';
+	webcliAJAX.GET(url, 'application/json', true, postGetSpecimenIdentifiers, {'initialsList': initialsList}, null, MAX_RETRIES+1);
+}
+
+function postGetSpecimenIdentifiers(data, textStatus, jqXHR, param) {
+	var initialsList = param['initialsList'];
+	initialsList.length = 0;
+	$.each(data, function(i, value) {
+		if (value['Specimen Identifier'] != null) {
+			initialsList.push(value['Specimen Identifier']);
+		}
+	});
 }
 
 function getResearchersInitials(table, initialsList) {

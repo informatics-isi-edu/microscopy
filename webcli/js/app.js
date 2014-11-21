@@ -2323,18 +2323,41 @@ function displayItem(cols, item, itemType) {
 		}
 		div.append(label);
 		if (selectColumns != null && selectColumns[col] != null && selectColumns[col]['multivalue'] != null) {
-			var input = $('<input>');
-			input.attr({'type': 'text',
-				'id': makeId(col) + 'Input',
-				'size': 30});
-			input.autocomplete({
-				minLength: 0,
-				select: function (event, ui) {$('#' + makeId(col) + 'Input').val(ui.item.value);updateMultiSelectValue(itemType, col, true);},
-				source: function(request, response) {
-					response(getSuggestions(request.term, selectColumns[col]['list']));
-				}
-			});
-			div.append(input);
+			if (selectColumns[col]['autocomplete'] != null) {
+				var input = $('<input>');
+				input.attr({'type': 'text',
+					'id': makeId(col) + 'Input',
+					'size': 30});
+				input.autocomplete({
+					minLength: 0,
+					select: function (event, ui) {$('#' + makeId(col) + 'Input').val(ui.item.value);updateMultiSelectValue(itemType, col, true);},
+					source: function(request, response) {
+						response(getSuggestions(request.term, selectColumns[col]['list']));
+					}
+				});
+				div.append(input);
+			} else {
+				var select = $('<select>');
+				select.attr({	id: makeId(col) + 'Input',
+								name: makeId(col) + 'Input' });
+				var option = $('<option>');
+				option.text('');
+				option.attr('value', '');
+				select.append(option);
+				$.each(selectColumns[col]['list'], function(i, value) {
+					var option = $('<option>');
+					option.text(value);
+					option.attr('value', value);
+					if (value == item[col]) {
+						option.attr('selected', 'selected');
+					}
+					select.append(option);
+				});
+				select.change({	itemType: itemType,
+					col: col },
+					function(event) {updateMultiSelectValue(itemType, col, true);$('#' + makeId(col) + 'Input').val('');});
+				div.append(select);
+			}
 			if (item[col] != null && item[col] !== '') {
 				var multiValues = item[col].split(';');
 				var multiTable = $('<table>');

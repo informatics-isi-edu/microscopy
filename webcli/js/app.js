@@ -140,7 +140,7 @@ var probeList = [];
 var probeDict = {};
 
 var specimenDropDown = {
-		'Probe': {'list': probeList, 'dict': probeDict, 'max': 5},
+		'Probe': {'list': probeList, 'dict': probeDict, 'multivalue': true, 'max': 5},
 		'Experiment Type': {'list': experimentTypeList, 'dict': experimentTypeDict, 'max': 4},
 		'Species': {'list': speciesList, 'dict': speciesDict, 'max': 1},
 		'Age': {'list': ageList, 'dict': ageDict, 'input': true, 'max': 4},
@@ -2167,7 +2167,7 @@ function checkExperimentSaveButton() {
 	if ($('#experimentDate').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentRI').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentType').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
-		$('#probe').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
+		$('tr', $('#probeTable')).length > 0 &&
 		$('#experimentDisambiguator').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0 &&
 		$('#experimentDescription').val().replace(/^\s*/, "").replace(/\s*$/, "").length > 0) {
 		$('#createButton').removeAttr('disabled');
@@ -2514,7 +2514,7 @@ function getMultiValue(col) {
 	var values = [];
 	$.each($('label', $('#'+makeId(col)+'MultiTable')), function(i, label) {
 		if ($(label).html() !== '') {
-			values.push($(label).html());
+			values.push($(label).text());
 		}
 	});
 	return values;
@@ -2587,12 +2587,12 @@ function editMultiValueItem(col, trId) {
 	$('#' + makeId(col) + 'Input').hide();
 	var input = $($('input', $('#'+trId))[0]);
 	var label = $($('label', $('#'+trId))[0]);
-	input.val(label.html());
+	input.val(label.text());
 	input.show();
 }
 
 function editItem(col) {
-	$('#' + makeId(col) + 'Input').val($('#' + makeId(col) + 'Label').html());
+	$('#' + makeId(col) + 'Input').val($('#' + makeId(col) + 'Label').text());
 	$('#' + makeId(col) + 'Input').show();
 	$('#' + makeId(col) + 'Label').hide();
 }
@@ -2821,7 +2821,7 @@ function editEntity(item) {
 		cols = experimentEditColumns;
 	}
 	$.each(cols, function(i, col) {
-		$('#' + makeId(col) + 'Input').val($('#' + makeId(col) + 'Label').html());
+		$('#' + makeId(col) + 'Input').val($('#' + makeId(col) + 'Label').text());
 		$('#' + makeId(col) + 'Input').show();
 		$('#' + makeId(col) + 'Label').hide();
 	});
@@ -2872,7 +2872,7 @@ function proceedUpdateEntity(item, column, isMultiValue, answer) {
 					if (!isMultiValue) {
 						obj[col] = $('#' + makeId(col) + 'Input').val();
 					} else {
-						obj[col] = $('#' + makeId(col) + 'Label').html();
+						obj[col] = $('#' + makeId(col) + 'Label').text();
 					}
 					if (obj[col] == '') {
 						delete obj[col];
@@ -2890,7 +2890,7 @@ function proceedUpdateEntity(item, column, isMultiValue, answer) {
 			if (col == column && !isMultiValue) {
 				obj[col] = $('#' + makeId(col) + 'Input').val();
 			} else {
-				obj[col] = $('#' + makeId(col) + 'Label').html();
+				obj[col] = $('#' + makeId(col) + 'Label').text();
 			}
 			if (obj[col] == '') {
 				delete obj[col];
@@ -2898,7 +2898,7 @@ function proceedUpdateEntity(item, column, isMultiValue, answer) {
 		});
 		arr.push(obj);
 	}
-	webcliAJAX.PUT(url, 'application/json', false, arr, true, postUpdateEntity, {'item': item}, null, 0);
+	webcliAJAX.PUT(url, 'application/json', false, arr, true, postUpdateEntity, {'item': item, 'column': column}, null, 0);
 }
 
 function postUpdateEntity(data, textStatus, jqXHR, param) {
@@ -2938,7 +2938,13 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	if (item == 'Slide') {
 		updateRowData(slideColumns, slideEditColumns, data);
 	}
-	displayEntity(item, data[0]);
+	if (data.length > 0) {
+		displayEntity(item, data[0]);
+	} else {
+		var col = param['column'];
+		$('#'+makeId(col) + 'Input').hide();
+		$('#'+makeId(col) + 'Label').show();
+	}
 	$('#printSpecimenButton').hide();
 	$('#deleteSpecimenButton').hide();
 	if (item == 'Scan') {
@@ -3983,28 +3989,48 @@ function createExperiment() {
 	var tr = $('<tr>');
 	table.append(tr);
 	var td = $('<td>');
-	tr.append(td);
-	td.addClass('tag');
+	td.addClass('tag top');
 	td.html('Probe:');
+	tr.append(td);
 	var td = $('<td>');
 	tr.append(td);
+	var probeValuesTable = $('<table>');
+	td.append(probeValuesTable);
+	var probeTr = $('<tr>');
+	probeValuesTable.append(probeTr);
+	var probeTd = $('<td>');
+	probeTr.append(probeTd);
 	var select = $('<select>');
 	select.attr({	id: 'probe',
 					name: 'probe' });
+	var option = $('<option>');
+	option.text('');
+	option.attr('value', '');
+	select.append(option);
 	$.each(probeList, function(i, value) {
 		var option = $('<option>');
 		option.text(value);
 		option.attr('value', value);
 		select.append(option);
 	});
-	select.change(function () {$('#experimentDescription').val(genExperimentDescription()); checkExperimentSaveButton();});
-	td.append(select);
+	
+	select.change(function () {addProbe();checkExperimentSaveButton();});
+	probeTd.append(select);
 	var a = $('<a>');
 	td.append(a);
     a.addClass('link-style banner-text');
 	a.attr({'href': 'javascript:newTerm("Probe")'});
 	a.html('  Add Probe Term');
 	a.hide();
+
+	var probeTr = $('<tr>');
+	probeValuesTable.append(probeTr);
+	var probeTd = $('<td>');
+	probeTr.append(probeTd);
+	var probeTable = $('<table>');
+	probeTable.attr('id', 'probeTable');
+	probeTable.addClass('normal');
+	probeTd.append(probeTable);
 
 	var tr = $('<tr>');
 	table.append(tr);
@@ -4431,7 +4457,7 @@ function createSpecimen() {
 function saveSpecimen() {
 	var gene = [];
 	$.each($('tr', $('#geneTable')), function(i, tr) {
-		gene.push($($('td', $(tr))[0]).html());
+		gene.push($($('td', $(tr))[0]).text());
 	});
 	gene = gene.join(';');
 	var specimenDate = $('#specimenDate').val().split('-').join('');
@@ -4461,6 +4487,11 @@ function postSaveSpecimen(data, textStatus, jqXHR, param) {
 }
 
 function saveExperiment() {
+	var probe = [];
+	$.each($('tr', $('#probeTable')), function(i, tr) {
+		probe.push($($('td', $(tr))[0]).text());
+	});
+	probe = probe.join(';');
 	var url = ERMREST_HOME + '/Experiment';
 	var arr = [];
 	var obj = new Object();
@@ -4470,7 +4501,7 @@ function saveExperiment() {
 	obj['Disambiguator'] = $('#experimentDisambiguator').val();
 	obj['Comment'] = $('#experimentComment').val();
 	obj['Experiment Type'] = $('#experimentType').val();
-	obj['Probe'] = $('#probe').val();
+	obj['Probe'] = probe;
 	var experimentDate = $('#experimentDate').val().split('-').join('');
 	var id = [experimentDate, $('#experimentDescription').val(), $('#experimentRI').val(), $('#experimentDisambiguator').val()].join('-');
 	obj['ID'] = id;
@@ -5173,7 +5204,7 @@ function genSampleName(selectedItem) {
 		ret += $('#specimenAgeNumber').val().replace(/^\s*/, "").replace(/\s*$/, "") + specimenDropDown['Age']['dict'][val]['Code'];
 	}
 	$.each($('tr', $('#geneTable')), function(i, tr) {
-		ret += specimenDropDown['Gene']['dict'][$($('td', $(tr))[0]).html()]['Code'];
+		ret += specimenDropDown['Gene']['dict'][$($('td', $(tr))[0]).text()]['Code'];
 		return false;
 	});
 	var val = $('#specimenIdentifier').val().substr(0,4);
@@ -5401,6 +5432,35 @@ function addGene(selectedItem) {
 	
 }
 
+function addProbe() {
+	var selectedItem = $('#probe').val();
+	if (selectedItem != '' && specimenDropDown['Probe']['dict'][selectedItem] != null) {
+		var table = $('#probeTable');
+		var tr = $('<tr>');
+		table.append(tr);
+		var td = $('<td>');
+		tr.append(td);
+		td.html(selectedItem);
+		var td = $('<td>');
+		tr.append(td);
+		var span = $('<span>');
+		td.append(span);
+		span.addClass('ui-icon ui-icon-circle-minus');
+		span.click(function(event) {removeProbeValue(event, $(this));});
+		$('#experimentDescription').val(genExperimentDescription());
+		checkExperimentSaveButton();
+		$('#probe').val('');
+	}
+	
+}
+
+function removeProbeValue(event, item) {
+	item.parent().parent().remove();
+	var selectedItem = item.parent().prev().html();
+	$('#experimentDescription').val(genExperimentDescription());
+	checkExperimentSaveButton();
+}
+
 function removeGeneValue(event, item) {
 	item.parent().parent().remove();
 	var selectedItem = item.parent().prev().html();
@@ -5411,7 +5471,7 @@ function removeGeneValue(event, item) {
 function getMultiSelectValue(col) {
 	var values = [];
 	$.each($('tr', $('#'+makeId(col)+'MultiTable')), function(i, tr) {
-		values.push($($('td', $(tr))[0]).html());
+		values.push($($('td', $(tr))[0]).text());
 	});
 	return values;
 }
@@ -5446,11 +5506,11 @@ function genExperimentDescription() {
 	if (val != '') {
 		ret += specimenDropDown['Experiment Type']['dict'][val]['Code'];
 	}
-	var val = $('#probe').val();
-	if (val != '') {
-		ret += specimenDropDown['Probe']['dict'][val]['Code'];
-	}
-	
+	$.each($('tr', $('#probeTable')), function(i, tr) {
+		ret += specimenDropDown['Probe']['dict'][$($('td', $(tr))[0]).text()]['Code'];
+		return false;
+	});
+
 	return ret.substr(0,15);
 }
 

@@ -156,21 +156,24 @@ class ErmrestClient (object):
         self.webconn = None
         self.logger.debug('Client initialized.')
 
-    def send_request(self, method, url, body='', headers={}):
+    def send_request(self, method, url, body='', headers={}, reconnect=False):
         if self.header:
             headers.update(self.header)
         self.webconn.request(method, url, body, headers)
         try:
             resp = self.webconn.getresponse()
         except BadStatusLine:
+            if not reconnect:
+                self.close()
+                self.connect(True)
+                self.sendMail('WARNING Tiles: HTTP BadStatusLine exception', 'The HTTPSConnection has been restarted\n')
+                self.webconn.request(method, url, body, headers)
+                resp = self.webconn.getresponse()
+            else:
+                raise
+        if not reconnect and resp.status in [FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT]:
             self.close()
-            self.connect()
-            self.sendMail('WARNING Tiles: HTTP BadStatusLine exception', 'The HTTPSConnection has been restarted\n')
-            self.webconn.request(method, url, body, headers)
-            resp = self.webconn.getresponse()
-        if resp.status in [FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT]:
-            self.close()
-            self.connect()
+            self.connect(True)
             self.sendMail('WARNING Tiles: HTTP exception: %d' % resp.status, 'The HTTPSConnection has been restarted\n')
             self.webconn.request(method, url, body, headers)
             resp = self.webconn.getresponse()
@@ -178,7 +181,7 @@ class ErmrestClient (object):
             raise ErmrestHTTPException("Error response (%i) received: %s" % (resp.status, resp.read()), resp.status)
         return resp
 
-    def connect(self):
+    def connect(self, reconnect=False):
         if self.scheme == 'https':
             self.webconn = HTTPSConnection(host=self.host, port=self.port)
         elif self.scheme == 'http':
@@ -189,14 +192,14 @@ class ErmrestClient (object):
         if self.use_goauth:
             auth = base64.encodestring('%s:%s' % (self.username, self.password)).replace('\n', '')
             headers = dict(Authorization='Basic %s' % auth)
-            resp = self.send_request('GET', '/service/nexus/goauth/token?grant_type=client_credentials', '', headers)
+            resp = self.send_request('GET', '/service/nexus/goauth/token?grant_type=client_credentials', '', headers, reconnect)
             goauth = json.loads(resp.read())
             self.access_token = goauth['access_token']
             self.header = dict(Authorization='Globus-Goauthtoken %s' % self.access_token)
         else:
             headers = {}
             headers["Content-Type"] = "application/x-www-form-urlencoded"
-            resp = self.send_request("POST", "/ermrest/authn/session", "username=%s&password=%s" % (self.username, self.password), headers)
+            resp = self.send_request("POST", "/ermrest/authn/session", "username=%s&password=%s" % (self.username, self.password), headers, reconnect)
             self.header = dict(Cookie=resp.getheader("set-cookie"))
         
     def close(self):
@@ -275,7 +278,7 @@ class ErmrestClient (object):
     def processScans(self):
         url = '%s/entity/Scan/Zoomify::null::' % self.path
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-        resp = self.send_request('GET', url, '', headers)
+        resp = self.send_request('GET', url, '', headers, False)
         scans = json.loads(resp.read())
         scanids = []
         for scan in scans:
@@ -321,7 +324,7 @@ class ErmrestClient (object):
                         obj[col] = metadata[col]
                 body.append(obj)
                 headers = {'Content-Type': 'application/json'}
-                self.send_request('PUT', url, json.dumps(body), headers)
+                self.send_request('PUT', url, json.dumps(body), headers, False)
                 self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".' % (slideId, scanId)) 
                 self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
         

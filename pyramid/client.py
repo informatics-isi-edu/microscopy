@@ -313,7 +313,7 @@ class ErmrestClient (object):
                 columns = ["Thumbnail","Zoomify"]
                 columns.extend(self.metadata)
                 columns = ','.join([urllib.quote(col, safe='') for col in columns])
-                url = '%s/attribute/Scan/ID=:ID/%s' % (self.path, columns)
+                url = '%s/attributegroup/Scan/ID;%s' % (self.path, columns)
                 body = []
                 obj = {'ID': scanId,
                        'Thumbnail': '%s/%s/thumbnails/%s/%s.jpg' % (self.http_storage, self.app_path, slideId, scanId),

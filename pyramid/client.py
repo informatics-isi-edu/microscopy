@@ -23,7 +23,7 @@ import subprocess
 import json
 import base64
 import urlparse
-from httplib import HTTPConnection, HTTPSConnection, HTTPException, OK, CREATED, ACCEPTED, NO_CONTENT, CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE, BadStatusLine, GATEWAY_TIMEOUT
+from httplib import HTTPConnection, HTTPSConnection, HTTPException, OK, CREATED, ACCEPTED, NO_CONTENT, CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE, BadStatusLine, GATEWAY_TIMEOUT, METHOD_NOT_ALLOWED
 import sys
 import traceback
 import time
@@ -171,7 +171,7 @@ class ErmrestClient (object):
                 resp = self.webconn.getresponse()
             else:
                 raise
-        if not reconnect and resp.status in [FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT]:
+        if not reconnect and resp.status in [FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT, METHOD_NOT_ALLOWED]:
             self.close()
             self.connect(True)
             self.sendMail('WARNING Tiles: HTTP exception: %d' % resp.status, 'The HTTPSConnection has been restarted\n')

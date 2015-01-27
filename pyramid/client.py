@@ -269,11 +269,6 @@ class ErmrestClient (object):
             try:
                 self.processScans()
                 time.sleep(self.timeout)
-            except XMLSyntaxError:
-                et, ev, tb = sys.exc_info()
-                self.logger.error('got unexpected exception "%s"' % str(ev))
-                self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
-                self.sendMail('FAILURE Tiles: XMLSyntaxError', '%s\n' % str(traceback.format_exception(et, ev, tb)))
             except:
                 et, ev, tb = sys.exc_info()
                 self.logger.error('got unexpected exception "%s"' % str(ev))
@@ -313,7 +308,24 @@ class ErmrestClient (object):
                 bioformatsClient = BioformatsClient(showinf=self.showinf, \
                                                     czirules=self.czirules, \
                                                     czifile='%s/%s/%s.czi' % (self.czi, slideId, scanId))
-                metadata = bioformatsClient.getMetadata()
+                try:
+                    metadata = bioformatsClient.getMetadata()
+                    returncode = 0
+                except XMLSyntaxError:
+                    et, ev, tb = sys.exc_info()
+                    self.logger.error('got unexpected exception "%s"' % str(ev))
+                    self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+                    self.sendMail('FAILURE Tiles: XMLSyntaxError', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+                    returncode = 1
+                    for file in f:
+                        os.rename('%s/%s/%s/%s' % (self.tiff, slideId, scanId, file), '%s/%s/%s/%s.err' % (self.tiff, slideId, scanId, file))
+                    continue
+                        
+                if returncode != 0:
+                    for file in f:
+                        os.rename('%s/%s/%s/%s' % (self.tiff, slideId, scanId, file), '%s/%s/%s/%s.err' % (self.tiff, slideId, scanId, file))
+                    continue
+                
                 self.logger.debug('Metadata: "%s"' % str(metadata)) 
                 os.remove('temp.xml')
                 columns = ["Thumbnail","Zoomify"]

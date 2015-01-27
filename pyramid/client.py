@@ -317,9 +317,6 @@ class ErmrestClient (object):
                     self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
                     self.sendMail('FAILURE Tiles: XMLSyntaxError', '%s\n' % str(traceback.format_exception(et, ev, tb)))
                     returncode = 1
-                    for file in f:
-                        os.rename('%s/%s/%s/%s' % (self.tiff, slideId, scanId, file), '%s/%s/%s/%s.err' % (self.tiff, slideId, scanId, file))
-                    continue
                         
                 if returncode != 0:
                     for file in f:

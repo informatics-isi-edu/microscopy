@@ -4,6 +4,8 @@ import sys
 import os
 from PIL import Image
 
+#import pdb
+
 # you need to install this library yourself
 # recent versions handle bigtiff too...
 import tifffile
@@ -44,10 +46,12 @@ File directory generated
 try:
     fname = sys.argv[1]
     outdir = sys.argv[2]
-    if (sys.argv[3]== "1") :
-       add0 = True
-    else :
-       add0 = False
+    add0 = False
+    if( len(sys.argv) > 3 ) :
+        if (sys.argv[3]== "1") :
+            add0 = True
+        else :
+            add0 = False
 
     infile = open(fname, 'rb')
     if not os.path.exists(outdir):
@@ -80,16 +84,22 @@ if type(outpages[0].tags.tile_offsets.value) is int:
 
 if hasattr(outpages[0].tags, 'tile_offsets') and len(outpages[0].tags.tile_offsets.value) > 1:
     # first input zoom level is multi-tile
-    assert len(outpages[0].tags.tile_offsets.value) <= 4
+#    assert len(outpages[0].tags.tile_offsets.value) <= 4
 
-    # so leave space for tile 0-0-0
-    zoomno = 1
-    total_tiles = 1
-    need_to_build_0 = True
-    if (add0):
-      lowest_level = 0;
+    if (len(outpages[0].tags.tile_offsets.value) > 4) :
+# don't make level0 even if user wants to
+      zoomno = 1
+      total_tiles = 1
+      need_to_build_0 = False
     else:
-      lowest_level=1;
+# so leave space for tile 0-0-0
+      zoomno = 1
+      total_tiles = 1
+      need_to_build_0 = True
+      if (add0):
+        lowest_level = 0;
+      else:
+        lowest_level=1;
 
 else:
     # input includes first zoom level already

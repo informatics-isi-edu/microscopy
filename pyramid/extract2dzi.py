@@ -88,18 +88,15 @@ if hasattr(outpages[0].tags, 'tile_offsets') and len(outpages[0].tags.tile_offse
 
     if (len(outpages[0].tags.tile_offsets.value) > 4) :
 # don't make level0 even if user wants to
-      zoomno = 1
-      total_tiles = 1
-      need_to_build_0 = False
+      add0 = False;
+
+    zoomno = 1
+    total_tiles = 1
+    need_to_build_0 = True
+    if (add0):
+      lowest_level = 0;
     else:
-# so leave space for tile 0-0-0
-      zoomno = 1
-      total_tiles = 1
-      need_to_build_0 = True
-      if (add0):
-        lowest_level = 0;
-      else:
-        lowest_level=1;
+      lowest_level=1;
 
 else:
     # input includes first zoom level already

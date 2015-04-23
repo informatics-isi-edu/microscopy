@@ -14,11 +14,8 @@ import tifffile
 Extract a pyramidal TIFF with JPEG tiled storage into a tree of
 separate JPEG files into DZI compliant that is usable by openseadragon.
 
-usage: extract2dzi.py pyramid-file dest-dir 0/1
+usage: extract2dzi.py pyramid-file dest-dir
          
-1 = add the missing level 0
-0 = forget it
-
 The pyramid-file must be a multi-page TIFF with each page having an
 image scaled by 1/2 from the previous page.  All pages must be tiled
 with the same tile size, and tiles must be stored using the new-style
@@ -41,17 +38,16 @@ File directory generated
           0_0.jpg
           1_0.jpg
         ...
+
+Since the tiled tiff kept padded tiles and openseadragon expected its
+jpeg files to be cropped but not padded, the border tiles are cropped
+and the width and height of image uses the actual image dimension
 """
 
 try:
     fname = sys.argv[1]
     outdir = sys.argv[2]
-    add0 = False
-    if( len(sys.argv) > 3 ) :
-        if (sys.argv[3]== "1") :
-            add0 = True
-        else :
-            add0 = False
+    skip0 = False
 
     infile = open(fname, 'rb')
     if not os.path.exists(outdir):
@@ -73,6 +69,8 @@ image_template = '%(outdir)s/ImageProperties.xml'
 tiff = tifffile.TiffFile(fname)
 pages = list(tiff)
 
+outinfo = []
+
 # we need to go from lowest to highest zoom level
 pages.reverse()
 
@@ -85,18 +83,16 @@ if type(outpages[0].tags.tile_offsets.value) is int:
 if hasattr(outpages[0].tags, 'tile_offsets') and len(outpages[0].tags.tile_offsets.value) > 1:
     # first input zoom level is multi-tile
 #    assert len(outpages[0].tags.tile_offsets.value) <= 4
-
     if (len(outpages[0].tags.tile_offsets.value) > 4) :
-# don't make level0 even if user wants to
-      add0 = False;
+      skip0 = True;
 
     zoomno = 1
     total_tiles = 1
     need_to_build_0 = True
-    if (add0):
-      lowest_level = 0;
+    if (skip0):
+      lowest_level = 1;
     else:
-      lowest_level=1;
+      lowest_level = 0;
 
 else:
     # input includes first zoom level already
@@ -120,6 +116,7 @@ def load_tile(tile_offset, tile_length):
 
 def dump_tile(tileno, trow, tcol, jpeg_tables_bytes, tile_offset, tile_length):
     """Output one tile.  Note this manages global state for tile grouping in subdirs."""
+#print("TILE, tileno %d, trow %d, tcol %d, tile_length %d"%(tileno, trow, tcol, tile_length));
     global zoomno
     global total_tiles
 
@@ -153,8 +150,14 @@ def dump_tile(tileno, trow, tcol, jpeg_tables_bytes, tile_offset, tile_length):
     outfile = open(outname, 'wb')
     outfile.write( jpeg_assemble(jpeg_tables_bytes, load_tile(tile_offset, tile_length)) )
     outfile.close()
+    return outname
 
-outinfo = []
+def crop_tile(outname, cpxsize, cpysize) :
+    """This is a border tile, crop it if need to """
+    print("Crop.. %s to %d,%d)" %(outname, cpxsize, cpysize))
+    image = Image.open(outname)
+    image = image.crop((0,0, cpxsize, cpysize))
+    image.save(outname, 'JPEG')
 
 def get_page_info(page):
 
@@ -175,6 +178,8 @@ def get_page_info(page):
 
     tcols = pxsize / txsize + (pxsize % txsize > 0)
     trows = pysize / tysize + (pysize % tysize > 0)
+
+#print("PAGE: pxsize %d,pysize %d,txsize %d,tysize %d,tcols %d,trows %d" %(pxsize, pysize, txsize, tysize, tcols, trows));
 
     return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
 
@@ -198,7 +203,19 @@ for page in outpages:
         assert trow >= 0 and trow < trows
         assert tcol >= 0 and tcol < tcols
 
-        dump_tile(tileno, trow, tcol, jpeg_tables_bytes, page.tags.tile_offsets.value[tileno], page.tags.tile_byte_counts.value[tileno])
+        outname = dump_tile(tileno, trow, tcol, jpeg_tables_bytes, page.tags.tile_offsets.value[tileno], page.tags.tile_byte_counts.value[tileno])
+
+        if (trow+1 == trows) or (tcol+1 == tcols) : 
+            # crop it 
+            if tcol+1 == tcols :
+               cpxsize= (pxsize-(txsize * tcol))
+            else:
+               cpxsize=txsize
+            if trow+1 == trows :
+               cpysize= (pysize-(tysize * trow))
+            else:
+               cpysize=tysize
+            crop_tile(outname, cpxsize, cpysize)
     
     if tile_width is not None:
         assert tile_width == txsize
@@ -219,6 +236,11 @@ for page in outpages:
             total_tile_count= total_tiles
             )
     )
+    print("   LEVEL %d total tile %d"%( (zoomno),(total_tiles)));
+    print("   tcols %d, trows %d"%( (tcols),(trows)));
+    print("   tile width %d, height %d"%( (txsize),(tysize)));
+    print("   img orig width %d, orig height %d"%( (pxsize),(pysize)));
+    print("   img padded width %d, padded height %d"%( (tcols * txsize),(trows * tysize)));
 
     # each page is next higher zoom level
     zoomno += 1
@@ -228,7 +250,7 @@ infile.close()
 
 if need_to_build_0 :
 # add only if user wants to
-    if add0:
+    if (skip0 == False):
       # tier 0 was missing from input image, so built it from tier 1 data
       page = outpages[0]
 
@@ -283,7 +305,7 @@ dzi_descriptor = """\
        Overlap="1" 
        Format="jpg" 
        xmlns="http://schemas.microsoft.com/deepzoom/2008">
-       <Size Width="%(image_width_padded)d" Height="%(image_length_padded)d"/>
+       <Size Width="%(image_width_orig)d" Height="%(image_length_orig)d"/>
 </Image>
 """ % imageinfo
 dname= dzi_template % dict(outdir = outdir, dzi_name=dzi_name)
@@ -297,8 +319,8 @@ imageinfo['data_location']=dir_name;
 image_descriptor = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <IMAGE_PROPERTIES
-                  WIDTH="%(image_width_padded)d" 
-                  HEIGHT="%(image_length_padded)d" 
+                  WIDTH="%(image_width_orig)d" 
+                  HEIGHT="%(image_length_orig)d" 
                   NUMTILES="%(total_tile_count)d" 
                   NUMIMAGES="1" 
                   VERSION="1.8" 

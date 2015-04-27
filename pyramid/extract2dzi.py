@@ -3,8 +3,12 @@
 import sys
 import os
 from PIL import Image
+from StringIO import StringIO
 
-#import pdb
+DEBUG = False
+
+if DEBUG :
+    import pdb
 
 # you need to install this library yourself
 # recent versions handle bigtiff too...
@@ -106,20 +110,35 @@ prev_page = None
 tile_width = None
 tile_length = None
 
+################# helper functions ###################
+# http://www.w3.org/Graphics/JPEG/jfif3.pdf
 def jpeg_assemble(jpeg_tables_bytes, jpeg_bytes):
-    # start-image + tables + rest of image to end-image
     return jpeg_bytes[0:2] + jpeg_tables_bytes + jpeg_bytes[2:]
 
 def load_tile(tile_offset, tile_length):
     infile.seek(tile_offset)
     return infile.read(tile_length)
 
-def dump_tile(tileno, trow, tcol, jpeg_tables_bytes, tile_offset, tile_length):
+def dump_tile(tileno, trow, trows, tcol, tcols, jpeg_tables_bytes, tile_offset, tile_length):
     """Output one tile.  Note this manages global state for tile grouping in subdirs."""
-#print("TILE, tileno %d, trow %d, tcol %d, tile_length %d"%(tileno, trow, tcol, tile_length));
+    if DEBUG :
+        print("TILE, tileno %d, trow %d, tcol %d, tile_length %d"%(tileno, trow, tcol, tile_length));
     global zoomno
     global total_tiles
 
+    cropIt = False
+    if (trow+1 == trows) or (tcol+1 == tcols) : 
+        #this is a border tile, crop it if need to
+        if tcol+1 == tcols :
+           cpxsize= (pxsize-(txsize * tcol))
+        else:
+           cpxsize=txsize
+        if trow+1 == trows :
+           cpysize= (pysize-(tysize * trow))
+        else:
+           cpysize=tysize
+        cropIt = True
+    
     total_tiles += 1
 
     topdir = topdir_template % dict(
@@ -147,17 +166,23 @@ def dump_tile(tileno, trow, tcol, jpeg_tables_bytes, tile_offset, tile_length):
         trowno = trow
         )
     
-    outfile = open(outname, 'wb')
-    outfile.write( jpeg_assemble(jpeg_tables_bytes, load_tile(tile_offset, tile_length)) )
-    outfile.close()
+    data= jpeg_assemble(jpeg_tables_bytes, load_tile(tile_offset, tile_length));
+####    outfile.write(data)
+####    outfile = open(outname, 'wb')
+####    outfile.close()
+    image = Image.open(StringIO(data))
+    if cropIt :
+        image = image.crop((0,0, cpxsize, cpysize))
+    image.save(outname, 'JPEG')
     return outname
 
-def crop_tile(outname, cpxsize, cpysize) :
-    """This is a border tile, crop it if need to """
-    print("Crop.. %s to %d,%d)" %(outname, cpxsize, cpysize))
-    image = Image.open(outname)
-    image = image.crop((0,0, cpxsize, cpysize))
-    image.save(outname, 'JPEG')
+def retrieve_marker(outname, pxsize, pysize) :
+    f = open(outname, 'rb')
+    data = f.read()
+    f.close()
+    bdata = bytes(bytearray(data))
+    pdb.set_trace()
+    print ("done with retrieve marker")
 
 def get_page_info(page):
 
@@ -165,6 +190,7 @@ def get_page_info(page):
     pysize = page.tags.image_length.value
 
     # get common JPEG tables to insert into all tiles
+    # ffd8 ffdb .... ffd9
     if hasattr(page.tags, 'jpeg_tables'):
         # trim off start-image/end-image byte markers at prefix and suffix
         jpeg_tables_bytes = bytes(bytearray(page.tags.jpeg_tables.value))[2:-2]
@@ -179,9 +205,11 @@ def get_page_info(page):
     tcols = pxsize / txsize + (pxsize % txsize > 0)
     trows = pysize / tysize + (pysize % tysize > 0)
 
-#print("PAGE: pxsize %d,pysize %d,txsize %d,tysize %d,tcols %d,trows %d" %(pxsize, pysize, txsize, tysize, tcols, trows));
+    if DEBUG:
+        print("PAGE: pxsize %d,pysize %d,txsize %d,tysize %d,tcols %d,trows %d" %(pxsize, pysize, txsize, tysize, tcols, trows));
 
     return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
+######################################################
 
 for page in outpages:
     # panic if these change from reverse-engineered samples
@@ -203,20 +231,14 @@ for page in outpages:
         assert trow >= 0 and trow < trows
         assert tcol >= 0 and tcol < tcols
 
-        outname = dump_tile(tileno, trow, tcol, jpeg_tables_bytes, page.tags.tile_offsets.value[tileno], page.tags.tile_byte_counts.value[tileno])
+        outname = dump_tile(
+                  tileno, 
+                  trow, trows,
+                  tcol, tcols,
+                  jpeg_tables_bytes, 
+                  page.tags.tile_offsets.value[tileno],
+                  page.tags.tile_byte_counts.value[tileno])
 
-        if (trow+1 == trows) or (tcol+1 == tcols) : 
-            # crop it 
-            if tcol+1 == tcols :
-               cpxsize= (pxsize-(txsize * tcol))
-            else:
-               cpxsize=txsize
-            if trow+1 == trows :
-               cpysize= (pysize-(tysize * trow))
-            else:
-               cpysize=tysize
-            crop_tile(outname, cpxsize, cpysize)
-    
     if tile_width is not None:
         assert tile_width == txsize
         assert tile_height == tysize
@@ -236,11 +258,12 @@ for page in outpages:
             total_tile_count= total_tiles
             )
     )
-    print("   LEVEL %d total tile %d"%( (zoomno),(total_tiles)));
-    print("   tcols %d, trows %d"%( (tcols),(trows)));
-    print("   tile width %d, height %d"%( (txsize),(tysize)));
-    print("   img orig width %d, orig height %d"%( (pxsize),(pysize)));
-    print("   img padded width %d, padded height %d"%( (tcols * txsize),(trows * tysize)));
+    if DEBUG :
+        print("   LEVEL %d total tile %d"%( (zoomno),(total_tiles)));
+        print("   tcols %d, trows %d"%( (tcols),(trows)));
+        print("   tile width %d, height %d"%( (txsize),(tysize)));
+        print("   img orig width %d, orig height %d"%( (pxsize),(pysize)));
+        print("   img padded width %d, padded height %d"%( (tcols * txsize),(trows * tysize)));
 
     # each page is next higher zoom level
     zoomno += 1
@@ -286,7 +309,6 @@ if need_to_build_0 :
           # create tile group dir on demand
           os.makedirs(dirname, mode=0755)
   
-#MEI pdb.set_trace()
       # write final tile
       tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, dir_name=dir_name), 'JPEG')
 else:
@@ -335,3 +357,4 @@ iname= image_template % dict(outdir = outdir)
 f = open('%s' % iname, 'w')
 f.write(image_descriptor)
 f.close
+

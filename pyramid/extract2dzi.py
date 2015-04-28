@@ -5,11 +5,6 @@ import os
 from PIL import Image
 from StringIO import StringIO
 
-DEBUG = False
-
-if DEBUG :
-    import pdb
-
 # you need to install this library yourself
 # recent versions handle bigtiff too...
 import tifffile
@@ -121,8 +116,6 @@ def load_tile(tile_offset, tile_length):
 
 def dump_tile(tileno, trow, trows, tcol, tcols, jpeg_tables_bytes, tile_offset, tile_length):
     """Output one tile.  Note this manages global state for tile grouping in subdirs."""
-    if DEBUG :
-        print("TILE, tileno %d, trow %d, tcol %d, tile_length %d"%(tileno, trow, tcol, tile_length));
     global zoomno
     global total_tiles
 
@@ -167,22 +160,11 @@ def dump_tile(tileno, trow, trows, tcol, tcols, jpeg_tables_bytes, tile_offset, 
         )
     
     data= jpeg_assemble(jpeg_tables_bytes, load_tile(tile_offset, tile_length));
-####    outfile.write(data)
-####    outfile = open(outname, 'wb')
-####    outfile.close()
     image = Image.open(StringIO(data))
     if cropIt :
         image = image.crop((0,0, cpxsize, cpysize))
     image.save(outname, 'JPEG')
     return outname
-
-def retrieve_marker(outname, pxsize, pysize) :
-    f = open(outname, 'rb')
-    data = f.read()
-    f.close()
-    bdata = bytes(bytearray(data))
-    pdb.set_trace()
-    print ("done with retrieve marker")
 
 def get_page_info(page):
 
@@ -204,9 +186,6 @@ def get_page_info(page):
 
     tcols = pxsize / txsize + (pxsize % txsize > 0)
     trows = pysize / tysize + (pysize % tysize > 0)
-
-    if DEBUG:
-        print("PAGE: pxsize %d,pysize %d,txsize %d,tysize %d,tcols %d,trows %d" %(pxsize, pysize, txsize, tysize, tcols, trows));
 
     return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
 ######################################################
@@ -258,12 +237,6 @@ for page in outpages:
             total_tile_count= total_tiles
             )
     )
-    if DEBUG :
-        print("   LEVEL %d total tile %d"%( (zoomno),(total_tiles)));
-        print("   tcols %d, trows %d"%( (tcols),(trows)));
-        print("   tile width %d, height %d"%( (txsize),(tysize)));
-        print("   img orig width %d, orig height %d"%( (pxsize),(pysize)));
-        print("   img padded width %d, padded height %d"%( (tcols * txsize),(trows * tysize)));
 
     # each page is next higher zoom level
     zoomno += 1

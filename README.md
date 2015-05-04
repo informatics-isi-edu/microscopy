@@ -1,8 +1,10 @@
-# Installation Instructions
+# Microscopy Image Manager
+
+## Installation Instructions
 
 1. First install all prerequisites for ERMrest
 
-   See https://confluence.misd.isi.edu:8443/display/MISD/ERMrest+Installation
+   See https://github.com/informatics-isi-edu/ermrest
 
 2. Install Globus Online Transfer Client API
 

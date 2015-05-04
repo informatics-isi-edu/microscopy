@@ -43,3 +43,7 @@
 8. Restart httpd
 
    sudo service httpd restart
+
+## License
+
+MIM is made available as open source under the Apache License, Version 2.0. Please see the LICENSE file for more information.

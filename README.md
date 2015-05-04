@@ -5,6 +5,9 @@
 1. First install all prerequisites for ERMrest
 
    See https://github.com/informatics-isi-edu/ermrest
+   
+   Use the 'cirm-deploy-3' tag for use with the 'microscopy' solution:
+   https://github.com/informatics-isi-edu/ermrest/tree/cirm-deploy-3
 
 2. Install Globus Online Transfer Client API
 

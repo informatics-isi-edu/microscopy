@@ -103,8 +103,12 @@ class BioformatsClient (object):
         if self.getXmlBioformats() == 0:
             root = etree.parse("temp.xml").getroot()
             self.setMappedElement(root)
-            self.mappedDict['Channel Name'] = self.mappedDict['Dye Name']
-            self.mappedDict['Channels'] = len(self.mappedDict['Dye Name'].split(','))
+            try:
+                self.mappedDict['Channel Name'] = self.mappedDict['Dye Name']
+                self.mappedDict['Channels'] = len(self.mappedDict['Dye Name'].split(','))
+            except:
+                self.mappedDict['Channel Name'] = ''
+                self.mappedDict['Channels'] = 0
             return self.mappedDict
         else:
             return None

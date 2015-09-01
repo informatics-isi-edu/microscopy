@@ -262,6 +262,7 @@ class ErmrestClient (object):
                     et, ev, tb = sys.exc_info()
                     self.logger.error('got exception "%s"' % str(ev))
                     self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+                    ready = True
 
     def start(self):
         ready = False

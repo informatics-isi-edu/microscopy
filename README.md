@@ -1,5 +1,8 @@
 # Microscopy Image Manager
 
+The Microscopy Image Manger is a proof of concept solution for microscopy
+image management based on the EMRrest service and IObox tools.
+
 ## Installation Instructions
 
 1. Install ERMrest
@@ -14,20 +17,19 @@
    sudo easy_install globusonline-transfer-api-client
    ```
 
-3. Install printer and globuscli
+3. Install and setup the additional REST services
+
+   See [REST services documentation](rest/README.md).
+
+4. Install printer services
 
    ```
    cd printer && sudo python setup.py install
-   cd globuscli && sudo python setup.py install
    ```
 
-4. Setup the database
+5. Setup the database
 
    See [configuration guide](config/README.md).
-
-5. Setup the rest services
-
-   See [REST services documentation](rest/README.md).
 
 6. Install the webcli
 
@@ -37,7 +39,8 @@
 
 7. Install Zoomify Viewer
 
-   Note: You will need a licensed verison of the Zoomify HTML5 Viewer. For more information, visit the [Zoomify website](http://www.zoomify.com).
+   Note: You will need a licensed verison of the Zoomify HTML5 Viewer. For
+   more information, visit the [Zoomify website](http://www.zoomify.com).
 
    You will need to copy over the `ZoomifyImageViewer.js` and the
    `Assets/` directory normally located in the same directory of the
@@ -57,4 +60,5 @@
 
 ## License
 
-MIM is made available as open source under the Apache License, Version 2.0. Please see the LICENSE file for more information.
+MIM is made available as open source under the Apache License, Version 2.0.
+Please see the LICENSE file for more information.

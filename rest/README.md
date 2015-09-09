@@ -3,13 +3,14 @@ To install this web serivce:
 1. Install this package
 
    ```
-   python setup.py install
+   cd rest
+   sudo python setup.py install
    ```
 
 2. Install the wsgi application
 
    ```
-   cp microscopy.wsgi /usr/lib/python2.6/site-packages/microscopy/microscopy.wsgi
+   sudo cp microscopy.wsgi /usr/lib/python2.6/site-packages/microscopy/microscopy.wsgi
    ```
 
    NOTE: make sure that microscopy.wsgi has executable permission bit set
@@ -17,7 +18,7 @@ To install this web serivce:
 3. Install the wsgi configuration
 
    ```
-   cp wsgi_microscopy.conf /etc/httpd/conf.d
+   sudo cp wsgi_microscopy.conf /etc/httpd/conf.d
    ```
 
 4. Update your httpd/conf with directives matching or similar to the examples
@@ -35,5 +36,5 @@ To install this web serivce:
 6. Restart httpd
 
    ```
-   service httpd restart
+   sudo service httpd restart
    ```

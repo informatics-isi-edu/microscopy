@@ -2,50 +2,58 @@
 
 ## Installation Instructions
 
-1. First install all prerequisites for ERMrest
+1. Install ERMrest
 
    See https://github.com/informatics-isi-edu/ermrest
-   
-   Use the 'cirm-deploy-3' tag for use with the 'microscopy' solution:
-   https://github.com/informatics-isi-edu/ermrest/tree/cirm-deploy-3
+
+   Use the `master` branch rather than releases.
 
 2. Install Globus Online Transfer Client API
 
-   easy_install globusonline-transfer-api-client
+   ```
+   sudo easy_install globusonline-transfer-api-client
+   ```
 
 3. Install printer and globuscli
 
+   ```
    cd printer && sudo python setup.py install
    cd globuscli && sudo python setup.py install
+   ```
 
 4. Setup the database
 
-   see config/README
+   See [configuration guide](config/README.md).
 
 5. Setup the rest services
 
-   see rest/README
+   See [REST services documentation](rest/README.md).
 
 6. Install the webcli
 
+   ```
    rsync -av --delete --exclude=".*" ./webcli /var/www/html/
+   ```
 
 7. Install Zoomify Viewer
 
-   Note: You will need a licensed verison of the Zoomify HTML5 Viewer.
-         For more information, go to www.zoomify.com
+   Note: You will need a licensed verison of the Zoomify HTML5 Viewer. For more information, visit the [Zoomify website](http://www.zoomify.com).
 
-   You will need to copy over the ZoomifyImageViewer.js and the Assets/
-   directory normally located in the same directory of the Zoomify
-   distribution zip file.
+   You will need to copy over the `ZoomifyImageViewer.js` and the
+   `Assets/` directory normally located in the same directory of the
+   Zoomify distribution zip file.
 
+   ```
    mkdir -p /var/www/html/webcli/zoomify
    cp /path/to/ZoomifyImageViewer /var/www/html/webcli/zoomify/
    cp -R /path/to/Assets /var/www/html/webcli/zoomify/
+   ```
 
 8. Restart httpd
 
+   ```
    sudo service httpd restart
+   ```
 
 ## License
 

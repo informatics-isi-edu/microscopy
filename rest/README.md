@@ -16,7 +16,8 @@ To install this web serivce:
 
 3. Install the wsgi configuration
 
-   ```cp wsgi_microscopy.conf /etc/httpd/conf.d
+   ```
+   cp wsgi_microscopy.conf /etc/httpd/conf.d
    ```
 
 4. Update your httpd/conf with directives matching or similar to the examples

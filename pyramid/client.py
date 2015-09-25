@@ -144,9 +144,11 @@ class ErmrestClient (object):
         self.tiles = kwargs.get("tiles")
         self.thumbnails = kwargs.get("thumbnails")
         self.tiff = kwargs.get("tiff")
+        self.dzi = kwargs.get("dzi")
         self.html = kwargs.get("html")
         self.extract = kwargs.get("extract")
         self.extract_rgb = kwargs.get("extract_rgb")
+        self.extract2dzi = kwargs.get("extract2dzi")
         self.czi = kwargs.get("czi")
         self.czirules = kwargs.get("czirules")
         self.showinf = kwargs.get("showinf")
@@ -290,7 +292,9 @@ class ErmrestClient (object):
             f = self.getTiffFile(slideId, scanId)
             if f:
                 if len(f) == 1:
-                    args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f[0]), '%s/%s/%s' % (self.tiles, slideId, scanId)]
+## swap extract2dzi with extract call
+##                    args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f[0]), '%s/%s/%s' % (self.tiles, slideId, scanId)]
+                    args = [self.extract2dzi, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f[0]), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 else:
                     args = [self.extract_rgb, '%s/%s/%s' % (self.tiff, slideId, scanId), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 self.logger.debug('Extracting tiles with "%s" for slide "%s", scan "%s"' % (args[0], slideId, scanId)) 

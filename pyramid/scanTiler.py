@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # 
 # Copyright 2014 University of Southern California
@@ -20,6 +20,8 @@ Load configuration for the Scan Tiler.
 Check with ermrest for images that need tiles.
 Generate the tiles directory.
 Generate the thumbnail and the HTML zoomify file.
+Generate the dzi directory.
+Generate the dzi file structure
 Update ermrest.
 """
 
@@ -104,6 +106,11 @@ def load(config_filename):
         logger.error('Tiff directory must be given and exist.')
         return None
 
+    dzi = cfg.get('dzi', None)
+    if not dzi or not os.path.isdir(dzi):
+        logger.error('DZI directory must be given and exist.')
+        return None
+
     html = cfg.get('html', None)
     if not html or not os.path.isdir(html):
         logger.error('HTML directory must be given and exist.')
@@ -127,6 +134,11 @@ def load(config_filename):
     extract_rgb = cfg.get('extract_rgb', None)
     if not extract_rgb or not os.path.isfile(extract_rgb):
         logger.error('Extract RGB application must be given and exist.')
+        return None
+
+    extract2dzi = cfg.get('extract2dzi', None)
+    if not extract2dzi or not os.path.isfile(extract2dzi):
+        logger.error('Extract to DZI application must be given and exist.')
         return None
 
     czirules = cfg.get('czirules', None)
@@ -164,9 +176,11 @@ def load(config_filename):
                                thumbnails=thumbnails, \
                                czi=czi, \
                                tiff=tiff, \
+                               dzi=dzi, \
                                html=html, \
                                extract=extract, \
                                extract_rgb=extract_rgb, \
+                               extract2dzi=extract2dzi, \
                                czirules=czirules, \
                                showinf=showinf, \
                                app_path=app_path, \

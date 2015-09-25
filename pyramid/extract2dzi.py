@@ -52,14 +52,13 @@ try:
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 except:
-    sys.stderr.write('\nusage: extract.py pyramid-file dest-dir [0|1]\n\n')
+    sys.stderr.write('\nusage: extract2dzi.py pyramid-file dest-dir [0|1]\n\n')
     raise
 
 t=fname.rsplit('/',1);
-dir_name=t[-1].replace('.tif','_files');
 dzi_name=t[-1].replace('.tif','.dzi');
 
-topdir_template = '%(outdir)s/%(dir_name)s'
+topdir_template = '%(outdir)s'
 dir_template = topdir_template +'/%(zoomno)d'
 tile_template = dir_template + '/%(tcolno)d_%(trowno)d.jpg'
 dzi_template = '%(outdir)s/%(dzi_name)s'
@@ -135,15 +134,13 @@ def dump_tile(tileno, trow, trows, tcol, tcols, jpeg_tables_bytes, tile_offset, 
     total_tiles += 1
 
     topdir = topdir_template % dict(
-        outdir = outdir,
-        dir_name = dir_name
+        outdir = outdir
     )
     if not os.path.exists(topdir):
         os.makedirs(topdir, mode=0755)
 
     dirname = dir_template % dict(
         outdir = outdir,
-        dir_name = dir_name,
         zoomno = zoomno
         )
 
@@ -153,7 +150,6 @@ def dump_tile(tileno, trow, trows, tcol, tcols, jpeg_tables_bytes, tile_offset, 
 
     outname = tile_template % dict(
         outdir = outdir,
-        dir_name = dir_name,
         zoomno = zoomno,
         tcolno = tcol,
         trowno = trow
@@ -258,7 +254,7 @@ if need_to_build_0 :
           trow = tileno / tcols
           tcol = tileno % tcols
 
-          image = Image.open(tile_template % dict(zoomno=1, tcolno=tcol, trowno=trow, outdir=outdir, dir_name=dir_name))
+          image = Image.open(tile_template % dict(zoomno=1, tcolno=tcol, trowno=trow, outdir=outdir))
   
           if tier1 is None:
             # lazily create with proper pixel data type
@@ -274,7 +270,6 @@ if need_to_build_0 :
 
       dirname = dir_template % dict(
           outdir = outdir,
-          dir_name = dir_name,
           zoomno = 0 
           )
   
@@ -283,14 +278,14 @@ if need_to_build_0 :
           os.makedirs(dirname, mode=0755)
   
       # write final tile
-      tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, dir_name=dir_name), 'JPEG')
+      tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir), 'JPEG')
 else:
     # tier 0 must be cropped down to the page size...
     page = outpages[0]
     pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
-    image = Image.open(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, dir_name=dir_name))
+    image = Image.open(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir))
     image = image.crop((0,0, pxsize,pysize))
-    image.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, dir_name=dir_name), 'JPEG')
+    image.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir), 'JPEG')
 
 imageinfo=outinfo[-1]
 
@@ -309,7 +304,7 @@ f.write(dzi_descriptor)
 f.close
 
 imageinfo['image_lowest_level']=lowest_level
-imageinfo['data_location']=dir_name;
+imageinfo['data_location']=outdir;
 
 image_descriptor = """\
 <?xml version="1.0" encoding="UTF-8"?>

@@ -291,10 +291,30 @@ class ErmrestClient (object):
         for slideId,scanId in scanids:
             f = self.getTiffFile(slideId, scanId)
             if f:
+
+## process for dzi tiles
                 if len(f) == 1:
-## swap extract2dzi with extract call
-##                    args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f[0]), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                     args = [self.extract2dzi, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f[0]), '%s/%s/%s' % (self.tiles, slideId, scanId)]
+
+                else:
+                    args = [self.extract_rgb, '%s/%s/%s' % (self.tiff, slideId, scanId), '%s/%s/%s' % (self.tiles, slideId, scanId)]
+                self.logger.debug('Extracting dzi tiles with "%s" for slide "%s", scan "%s"' % (args[0], slideId, scanId)) 
+                p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdoutdata, stderrdata = p.communicate()
+                returncode = p.returncode
+                if returncode != 0:
+                    self.logger.error('Can not extract dzi tiles for "%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.tiff, slideId, scanId, stdoutdata, stderrdata)) 
+                    self.sendMail('FAILURE Tiles', 'Can not extract dzi tiles for "%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.tiff, slideId, scanId, stdoutdata, stderrdata))
+                    for file in f:
+                        os.rename('%s/%s/%s/%s' % (self.tiff, slideId, scanId, file), '%s/%s/%s/%s.err' % (self.tiff, slideId, scanId, file))
+                    continue
+                else:
+                  self.logger.debug('SUCCEEDED created the dzi tiles directory for the slide id "%s" and scan id "%s".' % (slideId, scanId)) 
+                  self.sendMail('SUCCEEDED dzi Tiles', 'The dzi tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
+        
+## original
+                if len(f) == 1:
+                    args = [self.extract, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f[0]), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 else:
                     args = [self.extract_rgb, '%s/%s/%s' % (self.tiff, slideId, scanId), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 self.logger.debug('Extracting tiles with "%s" for slide "%s", scan "%s"' % (args[0], slideId, scanId)) 

@@ -141,6 +141,11 @@ def load(config_filename):
         logger.error('Extract to DZI application must be given and exist.')
         return None
 
+    extract2dzi_rgb = cfg.get('extract2dzi_rgb', None)
+    if not extract2dzi_rgb or not os.path.isfile(extract2dzi_rgb):
+        logger.error('Extract to DZI RGB application must be given and exist.')
+        return None
+
     czirules = cfg.get('czirules', None)
     if not czirules or not os.path.isfile(czirules):
         logger.error('CZI rules file must be given and exist.')
@@ -181,6 +186,7 @@ def load(config_filename):
                                extract=extract, \
                                extract_rgb=extract_rgb, \
                                extract2dzi=extract2dzi, \
+                               extract2dzi_rgb=extract2dzi_rgb, \
                                czirules=czirules, \
                                showinf=showinf, \
                                app_path=app_path, \

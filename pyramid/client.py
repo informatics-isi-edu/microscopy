@@ -149,6 +149,7 @@ class ErmrestClient (object):
         self.extract = kwargs.get("extract")
         self.extract_rgb = kwargs.get("extract_rgb")
         self.extract2dzi = kwargs.get("extract2dzi")
+        self.extract2dzi_rgb = kwargs.get("extract2dzi_rgb")
         self.czi = kwargs.get("czi")
         self.czirules = kwargs.get("czirules")
         self.showinf = kwargs.get("showinf")
@@ -297,7 +298,7 @@ class ErmrestClient (object):
                     args = [self.extract2dzi, '%s/%s/%s/%s' % (self.tiff, slideId, scanId, f[0]), '%s/%s/%s' % (self.tiles, slideId, scanId)]
 
                 else:
-                    args = [self.extract_rgb, '%s/%s/%s' % (self.tiff, slideId, scanId), '%s/%s/%s' % (self.tiles, slideId, scanId)]
+                    args = [self.extract2dzi_rgb, '%s/%s/%s' % (self.tiff, slideId, scanId), '%s/%s/%s' % (self.tiles, slideId, scanId)]
                 self.logger.debug('Extracting dzi tiles with "%s" for slide "%s", scan "%s"' % (args[0], slideId, scanId)) 
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()

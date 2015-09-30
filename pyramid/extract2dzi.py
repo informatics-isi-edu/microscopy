@@ -11,7 +11,8 @@ import tifffile
 
 """
 Extract a pyramidal TIFF with JPEG tiled storage into a tree of
-separate JPEG files into DZI compliant that is usable by openseadragon.
+separate JPEG files into DZI compliant directory that is usable 
+by openseadragon.
 
 usage: extract2dzi.py pyramid-file dest-dir
          
@@ -30,13 +31,12 @@ File directory generated
     dest-dir
       ImageProperties.xml
       pyramid.dzi
-      pyramid_files
-        0 
-          0_0.jpg
-        1
-          0_0.jpg
-          1_0.jpg
-        ...
+      0 
+        0_0.jpg
+      1
+        0_0.jpg
+        1_0.jpg
+      ...
 
 Since the tiled tiff kept padded tiles and openseadragon expected its
 jpeg files to be cropped but not padded, the border tiles are cropped
@@ -265,6 +265,8 @@ if need_to_build_0 :
   
       # generate reduced resolution tier and crop to real page size
       tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS ).crop((0, 0, pxsize / 2, pysize / 2))
+
+## XXX maybe can remove this restriction for openseadragon's viewer
       assert tier0.size[0] <= txsize
       assert tier0.size[1] <= tysize
 

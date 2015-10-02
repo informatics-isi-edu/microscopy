@@ -267,8 +267,8 @@ if need_to_build_0 :
       tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS ).crop((0, 0, pxsize / 2, pysize / 2))
 
 ## XXX maybe can remove this restriction for openseadragon's viewer
-      assert tier0.size[0] <= txsize
-      assert tier0.size[1] <= tysize
+##      assert tier0.size[0] <= txsize
+##      assert tier0.size[1] <= tysize
 
       dirname = dir_template % dict(
           outdir = outdir,

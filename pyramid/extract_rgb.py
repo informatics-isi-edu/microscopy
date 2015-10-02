@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import os
@@ -61,6 +61,7 @@ def colorFile(files, colors, pattern):
         colorFiles = [ f for f in files if re.match('.*[-]%s%s' % (color, pattern), f) ]
         if len(colorFiles) == 1:
             tifFiles.append(colorFiles[0])
+            sys.stdout.write('colorFile %s\n'%colorFiles[0]);
     if len(tifFiles) > 0:
         return tifFiles
     else:
@@ -84,6 +85,7 @@ def getTiffFiles(dname):
         if colorFiles:
             for file in colorFiles:
                 tiff_files.append('%s%s%s' % (dname, os.sep, file))
+                sys.stdout.write('adding, %s\n'%file);
     if len(tiff_files) == 0:
         tiff_files = [ '%s%s%s' % (dname, os.sep, f) for f in files if re.match('.*%s' % stackPattern, f) ]
     

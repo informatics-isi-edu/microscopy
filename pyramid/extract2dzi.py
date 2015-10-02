@@ -266,7 +266,7 @@ if need_to_build_0 :
       # generate reduced resolution tier and crop to real page size
       tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS ).crop((0, 0, pxsize / 2, pysize / 2))
 
-## XXX maybe can remove this restriction for openseadragon's viewer
+## Can remove this restriction for openseadragon's viewer
 ##      assert tier0.size[0] <= txsize
 ##      assert tier0.size[1] <= tysize
 

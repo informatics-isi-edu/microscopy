@@ -60,16 +60,10 @@ try:
     outloc = sys.argv[2]
     skip0 = False
 
-    if os.path.isdir(srcloc):
-      tifFiles = [ f for f in os.listdir(srcloc) if os.path.isfile(os.path.join(srcloc,f)) and not re.match('.*[.]err$', f) ]
-    else:
-      print 'Must be a src directory'
-      sys.stderr.write('\nusage: extract2dzi_rgb.py pyramid-file-directory dest-dir\n\n')
-      sys.exit()
- 
-    if len(tifFiles) == 0:
-      print 'Nothing to do'
-      sys.exit()
+    if not os.path.exists(srcloc) or not os.path.isdir(srcloc):
+        sys.stderr.write('Pyramid directory must be given and exist')
+        sys.stderr.write('\nusage: extract2dzi_rgb.py pyramid-file-directory dest-dir\n\n')
+        sys.exit(1)
 
     if not os.path.exists(outloc):
       os.makedirs(outloc)
@@ -376,6 +370,13 @@ def processOne(fname, outdirloc) :
   f.close
     
 ###############################################
+
+tiff_files = []
+tiff_outpages = []
+tiff_tifffile = []
+tiff_infile = []
+tiff_maxval = []
+
 redColors = ['Rhodamine', 'RFP', 'Alexa Fluor 555', 'Alexa Fluor 594', 'tdTomato', 'Alexa Fluor 633', 'Alexa Fluor 647']
 greenColors = ['FITC', 'Alexa 488', 'EGFP', 'Alexa Fluor 488']
 blueColors = ['DAPI']
@@ -383,23 +384,79 @@ blueColors = ['DAPI']
 tiff_colors = [redColors, greenColors, blueColors]
 
 def getFileColor(file):
-  colorMatched = None
-  for colors in tiff_colors:
-## try to match with Z3 first and then Z1 next
-    for color in colors:
-      if re.match('.*[-]%s[-]Z3[.]tif' % color, file):
-        sys.stdout.write('processing "%s" \n' % file)
-        colorMatched = True
-        return color
-  if not colorMatched:
-    sys.stderr.write('Unknown color for file "%s" \n' % file)
-    sys.exit(1)
+    colorMatched = None
+    for colors in tiff_colors:
+        for color in colors:
+            if re.match('.*[-]%s[-]Z[0-9]+[.]tif' % color, file):
+                colorMatched = True
+                return color
+    if not colorMatched:
+        sys.stderr.write('Unknown color for file "%s" \n' % file)
+        sys.exit(1)
 
-for fidx in range(0, len(tifFiles)):
-    tiff = tifFiles[fidx]
-    color= getFileColor(tiff)
+def checkFileColors(files):
+    for file in files:
+        colorMatched = None
+        for colors in tiff_colors:
+            for color in colors:
+                if re.match('.*[-]%s[-]Z1[.]tif' % color, file):
+                    colorMatched = True
+                    break
+            if colorMatched:
+                break
+        if not colorMatched:
+            sys.stderr.write('Unknown color for file "%s" \n' % file)
+            sys.exit(1)
+    
+def colorFile(files, colors, pattern):
+    tifFiles = []
+    for color in colors:
+        colorFiles = [ f for f in files if re.match('.*[-]%s%s' % (color, pattern), f) ]
+        if len(colorFiles) == 1:
+            tifFiles.append(colorFiles[0])
+            sys.stdout.write("adding color %s\n" % (colorFiles[0]))
+    if len(tifFiles) > 0:
+        return tifFiles
+    else:
+        return None
+    
+def getTiffFiles(dname):
+    global tiff_files
+    files = os.listdir(dname)
+    z1 = [f for f in files if re.match('.*[-]Z1[.]tif', f)]
+    if len(z1) > 0:
+        checkFileColors(z1)
+        stacks = len(files) / len(z1)
+        stackNo = stacks / 2
+        if stackNo * 2 < stacks:
+            stackNo += 1
+        stackPattern = '[-]Z%d[.]tif' % stackNo
+    else:
+        stackPattern = '[.]tif'
+    for colors in tiff_colors:
+        colorFiles = colorFile(files, colors, stackPattern)
+        if colorFiles:
+            for file in colorFiles:
+                tiff_files.append(file)
+    if len(tiff_files) == 0:
+        tiff_files = [ '%s' % (f) for f in files if re.match('.*%s' % stackPattern, f) ]
+    
+
+####### Main body ######
+try:
+    getTiffFiles(srcloc)
+except SystemExit:
+    raise
+
+if len(tiff_files) == 0:
+    print 'Nothing to do'
+    sys.exit()
+
+for fidx in range(0, len(tiff_files)):
+    fname = tiff_files[fidx]
+    color = getFileColor(fname)
     outdirloc='%s/%s' %(outloc, color)
     os.makedirs(outdirloc)
-    newfname="%s/%s" %(srcloc, tiff)
+    newfname="%s/%s" %(srcloc, fname)
     processOne(newfname, outdirloc);
 

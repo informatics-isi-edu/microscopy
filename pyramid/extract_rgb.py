@@ -322,8 +322,10 @@ if need_to_build_0:
 
     # generate reduced resolution tier and crop to real page size
     tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS ).crop((0, 0, pxsize / 2, pysize / 2))
-    assert tier0.size[0] <= txsize
-    assert tier0.size[1] <= tysize
+
+##does not seem to need this requirement for openseadragon's viewer
+##    assert tier0.size[0] <= txsize
+##    assert tier0.size[1] <= tysize
 
     # write final tile
     tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir, groupno=0), 'JPEG')

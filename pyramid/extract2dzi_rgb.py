@@ -414,7 +414,6 @@ def colorFile(files, colors, pattern):
         colorFiles = [ f for f in files if re.match('.*[-]%s%s' % (color, pattern), f) ]
         if len(colorFiles) == 1:
             tifFiles.append(colorFiles[0])
-            sys.stdout.write("adding color %s\n" % (colorFiles[0]))
     if len(tifFiles) > 0:
         return tifFiles
     else:

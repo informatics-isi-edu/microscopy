@@ -387,7 +387,7 @@ def getFileColor(file):
     colorMatched = None
     for colors in tiff_colors:
         for color in colors:
-            if re.match('.*[-]%s[-]Z[0-9]+[.]tif' % color, file):
+            if re.match('.*[-]%s([-]Z[0-9]+)*[.]tif' % color, file):
                 colorMatched = True
                 return color
     if not colorMatched:
@@ -455,7 +455,8 @@ for fidx in range(0, len(tiff_files)):
     fname = tiff_files[fidx]
     color = getFileColor(fname)
     outdirloc='%s/%s' %(outloc, color)
-    os.makedirs(outdirloc)
+    if not os.path.exists(outdirloc):
+        os.makedirs(outdirloc)
     newfname="%s/%s" %(srcloc, fname)
     processOne(newfname, outdirloc);
 

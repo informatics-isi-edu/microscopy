@@ -5,7 +5,7 @@ import os
 import re
 import numpy
 from PIL import Image
-import StringIO
+from StringIO import StringIO
 
 # you need to install this library yourself
 # recent versions handle bigtiff too...
@@ -14,10 +14,9 @@ import tifffile
 """
 Extract pyramidal TIFF files with JPEG tiled storage into a tree of
 separate JPEG files into DZI compliant directory that is usable 
-by openseadragon. Multiple channels info are combined into single
-jpeg.
+by openseadragon. One per channel.
 
-usage: extract2dzi_rgb.py pyramid-file-dir dest-dir
+usage: extract2dzc_rgb.py pyramid-file-dir dest-dir
          
 The pyramid-file must be a multi-page TIFF with each page having an
 image scaled by 1/2 from the previous page.  All pages must be tiled
@@ -31,15 +30,25 @@ represented by that last page should be generated or not.
 
 File directory generated
    
-    dest-dir
-      ImageProperties.xml
-      pyramid.dzi
-      0 
-        0_0.jpg
-      1
-        0_0.jpg
-        1_0.jpg
-      ...
+    dest-dir(DZC)
+     color_type_1
+        ImageProperties.xml
+        pyramid.dzi
+        0 
+          0_0.jpg
+        1
+          0_0.jpg
+          1_0.jpg
+        ...
+     color_type_2
+        ImageProperties.xml
+        pyramid.dzi
+        0 
+          0_0.jpg
+        1
+          0_0.jpg
+          1_0.jpg
+        ...
 
 Since the tiled tiff kept padded tiles and openseadragon expected its
 jpeg files to be cropped but not padded, the border tiles are cropped
@@ -77,8 +86,8 @@ tysize=0
 pxsize=0
 pysize=0
 zoomno=0
-outinfo=[]
 total_tiles=0
+outdirloc=0
 topdir_template = '%(outdir)s'
 dir_template = topdir_template +'/%(zoomno)d'
 tile_template = dir_template + '/%(tcolno)d_%(trowno)d.jpg'
@@ -90,30 +99,11 @@ image_template = '%(outdir)s/ImageProperties.xml'
 def jpeg_assemble(jpeg_tables_bytes, jpeg_bytes):
     return jpeg_bytes[0:2] + jpeg_tables_bytes + jpeg_bytes[2:]
 
-def load_tile(infile, tile_offset, tile_length):
+def load_tile(tile_offset, tile_length):
     infile.seek(tile_offset)
     return infile.read(tile_length)
 
-def getTile(page, infile, jpeg_tables_bytes, tileno):
-    jpeg = jpeg_assemble(jpeg_tables_bytes, load_tile(infile, page.tags.tile_offsets.value[tileno], page.tags.tile_byte_counts.value[tileno]))
-    outfile = StringIO.StringIO()
-    outfile.write( jpeg )
-    outfile.seek(0)
-    image = Image.open(outfile)
-    ret = numpy.asarray(image)
-    outfile.close()
-    return ret
-
-def maxTile(page, infile):
-    pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
-    maxval = 0
-    for tileno in range(0, len(page.tags.tile_offsets.value)):
-        tile = getTile(page, infile, jpeg_tables_bytes, tileno)
-        maxval = max(maxval, tile.max())
-    return maxval
-
-
-def write_tile(tileno, trow, trows, tcol, tcols, rgb_image):
+def dump_tile(tileno, trow, trows, tcol, tcols, jpeg_tables_bytes, tile_offset, tile_length):
     """Output one tile.  Note this manages global state for tile grouping in subdirs."""
     global zoomno
     global total_tiles
@@ -134,13 +124,13 @@ def write_tile(tileno, trow, trows, tcol, tcols, rgb_image):
     total_tiles += 1
 
     topdir = topdir_template % dict(
-        outdir = outloc
+        outdir = outdirloc
     )
     if not os.path.exists(topdir):
         os.makedirs(topdir, mode=0755)
 
     dirname = dir_template % dict(
-        outdir = outloc,
+        outdir = outdirloc,
         zoomno = zoomno
         )
 
@@ -149,15 +139,17 @@ def write_tile(tileno, trow, trows, tcol, tcols, rgb_image):
         os.makedirs(dirname, mode=0755)
 
     outname = tile_template % dict(
-        outdir = outloc,
+        outdir = outdirloc,
         zoomno = zoomno,
         tcolno = tcol,
         trowno = trow
         )
     
+    data= jpeg_assemble(jpeg_tables_bytes, load_tile(tile_offset, tile_length));
+    image = Image.open(StringIO(data))
     if cropIt :
-        rgb_image = rgb_image.crop((0,0, cpxsize, cpysize))
-    rgb_image.save(outname, 'JPEG')
+        image = image.crop((0,0, cpxsize, cpysize))
+    image.save(outname, 'JPEG')
     return outname
 
 def get_page_info(page):
@@ -182,7 +174,7 @@ def get_page_info(page):
 
     return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
 
-def processTiff() :
+def processOne(fname, outdirloc) :
   global skip0
   global infile
   global txsize
@@ -192,27 +184,24 @@ def processTiff() :
   global zoomno
   global total_tiles
 
-  fname=tiff_files[0];
-  chop=re.search('(?:[-][^-]*[-]Z[0-9]).tif', fname);
-  t=chop.group(0)
-  dzi_name=fname.replace(t,'.dzi');
+  infile=open(fname, 'rb')
+  t=fname.rsplit('/',1);
+  dzi_name=t[-1].replace('.tif','.dzi');
 
-  for file in range(0, len(tiff_files)):
-      tiff = tifffile.TiffFile(srcloc+'/'+tiff_files[file])
-      tiff_tifffile.append(tiff)
-      pages = list(tiff)
-      pages.reverse()
-      outpages = [ page for page in pages if hasattr(page.tags, 'tile_offsets') ]
-      if type(outpages[0].tags.tile_offsets.value) is int:
-          outpages[0].tags.tile_offsets.value=[outpages[0].tags.tile_offsets.value]
-          outpages[0].tags.tile_byte_counts.value=[outpages[0].tags.tile_byte_counts.value]
-      tiff_outpages.append(outpages)
-      infile = open(srcloc+'/'+tiff_files[file], 'rb')
-      tiff_infile.append(infile)
+  tiff = tifffile.TiffFile(fname)
+  pages = list(tiff)
+
+  outinfo = []
+
+# we need to go from lowest to highest zoom level
+  pages.reverse()
 
 # skip pages that aren't tiled... thumbnails?!
-#  outpages = tiff_outpages[0]  
-
+  outpages = [ page for page in pages if hasattr(page.tags, 'tile_offsets') ]
+  if type(outpages[0].tags.tile_offsets.value) is int:
+      outpages[0].tags.tile_offsets.value=[outpages[0].tags.tile_offsets.value]
+      outpages[0].tags.tile_byte_counts.value=[outpages[0].tags.tile_byte_counts.value]
+  
   if hasattr(outpages[0].tags, 'tile_offsets') and len(outpages[0].tags.tile_offsets.value) > 1:
       # first input zoom level is multi-tile
   #    assert len(outpages[0].tags.tile_offsets.value) <= 4
@@ -238,54 +227,42 @@ def processTiff() :
   prev_page = None
   tile_width = None
   tile_length = None
-
-
-###############CODE############
-  for channelno in range(0, len(tiff_outpages)):
-      tiff_maxval.append([])
-      for pageno in range(0, len(tiff_outpages[0])):
-          tiff_maxval[channelno].append(max(0, maxTile(tiff_outpages[channelno][pageno], tiff_infile[channelno])))
-
-  for pageno in range(0, len(tiff_outpages[0])):
-      page = tiff_outpages[0][pageno]
+  
+  for page in outpages:
       # panic if these change from reverse-engineered samples
       assert page.tags.fill_order.value == 1
       assert page.tags.orientation.value == 1
       assert page.tags.compression.value == 7 # new-style JPEG
-
+  
       if prev_page is not None:
           assert prev_page.tags.image_width.value == (page.tags.image_width.value / 2)
           assert prev_page.tags.image_length.value == (page.tags.image_length.value / 2)
-
-      tiff_page_info = []
-      for channelno in range(0, len(tiff_outpages)):
-          tiff_page_info.append(tiff_outpages[channelno][pageno])
-          
+  
+      pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
       
       for tileno in range(0, len(page.tags.tile_offsets.value)):
-          tile_array = []
-          for channelno in range(0, len(tiff_outpages)):
-              tiffPage = tiff_outpages[channelno][pageno]
-              pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(tiffPage)
-              # figure position of tile within tile array
-              trow = tileno / tcols
-              tcol = tileno % tcols
-      
-              assert trow >= 0 and trow < trows
-              assert tcol >= 0 and tcol < tcols
-              if tile_width is not None:
-                  assert tile_width == txsize
-                  assert tile_length == tysize
-              else:
-                  tile_width = txsize
-                  tile_length = tysize
-              tile = getTile(tiffPage, tiff_infile[channelno], jpeg_tables_bytes, tileno)
-              tile_norm = (255 * (tile.astype('float') / tiff_maxval[channelno][pageno])).astype('uint8')
-              tile_array.append(tile_norm)
-          rgb_array = numpy.dstack( tuple(tile_array) )
-          rgb_image = Image.fromarray(rgb_array)
-          write_tile(tileno, trow, trows, tcol, tcols, rgb_image)
-      
+          # figure position of tile within tile array
+          trow = tileno / tcols
+          tcol = tileno % tcols
+  
+          assert trow >= 0 and trow < trows
+          assert tcol >= 0 and tcol < tcols
+  
+          outname = dump_tile(
+                    tileno, 
+                    trow, trows,
+                    tcol, tcols,
+                    jpeg_tables_bytes, 
+                    page.tags.tile_offsets.value[tileno],
+                    page.tags.tile_byte_counts.value[tileno])
+
+      if tile_width is not None:
+          assert tile_width == txsize
+          assert tile_height == tysize
+      else:
+          tile_width = txsize
+          tile_height = tysize
+  
       outinfo.append(
           dict(
               tile_width= txsize,
@@ -297,14 +274,13 @@ def processTiff() :
               image_level = zoomno,
               total_tile_count= total_tiles
               )
-          )
-
+      )
+  
       # each page is next higher zoom level
       zoomno += 1
       prev_page = page
   
-  for infile in tiff_infile:
-     infile.close()
+  infile.close()
   
   if need_to_build_0 :
   # add only if user wants to
@@ -320,7 +296,7 @@ def processTiff() :
             trow = tileno / tcols
             tcol = tileno % tcols
   
-            image = Image.open(tile_template % dict(zoomno=1, tcolno=tcol, trowno=trow, outdir=outloc))
+            image = Image.open(tile_template % dict(zoomno=1, tcolno=tcol, trowno=trow, outdir=outdirloc))
     
             if tier1 is None:
               # lazily create with proper pixel data type
@@ -337,7 +313,7 @@ def processTiff() :
 ##        assert tier0.size[1] <= tysize
   
         dirname = dir_template % dict(
-            outdir = outloc,
+            outdir = outdirloc,
             zoomno = 0 
             )
     
@@ -346,14 +322,14 @@ def processTiff() :
             os.makedirs(dirname, mode=0755)
     
         # write final tile
-        tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outloc), 'JPEG')
+        tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdirloc), 'JPEG')
   else:
       # tier 0 must be cropped down to the page size...
       page = outpages[0]
       pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
-      image = Image.open(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outloc))
+      image = Image.open(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdirloc))
       image = image.crop((0,0, pxsize,pysize))
-      image.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outloc), 'JPEG')
+      image.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdirloc), 'JPEG')
   
   imageinfo=outinfo[-1]
   
@@ -366,13 +342,13 @@ def processTiff() :
          <Size Width="%(image_width_orig)d" Height="%(image_length_orig)d"/>
 </Image>
 """ % imageinfo
-  dname= dzi_template % dict(outdir = outloc, dzi_name=dzi_name)
+  dname= dzi_template % dict(outdir = outdirloc, dzi_name=dzi_name)
   f = open('%s' % dname, 'w')
   f.write(dzi_descriptor)
   f.close
-
+  
   imageinfo['image_lowest_level']=lowest_level
-  imageinfo['data_location']=outloc;
+  imageinfo['data_location']=outdirloc;
   
   image_descriptor = """\
 <?xml version="1.0" encoding="UTF-8"?>
@@ -389,7 +365,7 @@ def processTiff() :
 />
 """ % imageinfo
   
-  iname= image_template % dict(outdir = outloc)
+  iname= image_template % dict(outdir = outdirloc)
   f = open('%s' % iname, 'w')
   f.write(image_descriptor)
   f.close
@@ -476,8 +452,12 @@ if len(tiff_files) == 0:
     print 'Nothing to do'
     sys.exit()
 
-if not os.path.exists(outloc):
-    os.makedirs(outloc)
-
-processTiff()
+for fidx in range(0, len(tiff_files)):
+    fname = tiff_files[fidx]
+    color = getFileColor(fname)
+    outdirloc='%s/%s' %(outloc, color)
+    if not os.path.exists(outdirloc):
+        os.makedirs(outdirloc)
+    newfname="%s/%s" %(srcloc, fname)
+    processOne(newfname, outdirloc);
 

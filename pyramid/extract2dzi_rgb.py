@@ -381,7 +381,7 @@ def processTiff() :
                     HEIGHT="%(image_length_orig)d" 
                     NUMTILES="%(total_tile_count)d" 
                     NUMIMAGES="1" 
-                    VERSION="1.8" 
+                    VERSION="2.0" 
                     TILESIZE="%(tile_width)d" 
                     MINLEVEL="%(image_lowest_level)d" 
                     MAXLEVEL="%(image_level)d" 
@@ -406,15 +406,15 @@ redColors = ['Rhodamine', 'RFP', 'Alexa Fluor 555', 'Alexa Fluor 594', 'tdTomato
 greenColors = ['FITC', 'Alexa 488', 'EGFP', 'Alexa Fluor 488']
 blueColors = ['DAPI']
 
-tiff_colors = [redColors, greenColors, blueColors]
+tiff_colors = {'reds': redColors, 'greens': greenColors, 'blues': blueColors}
 
 def getFileColor(file):
     colorMatched = None
     for colors in tiff_colors:
-        for color in colors:
+        for color in tiff_colors[colors]:
             if re.match('.*[-]%s([-]Z[0-9]+)*[.]tif' % color, file):
                 colorMatched = True
-                return color
+                return colors
     if not colorMatched:
         sys.stderr.write('Unknown color for file "%s" \n' % file)
         sys.exit(1)
@@ -463,8 +463,24 @@ def getTiffFiles(dname):
             for file in colorFiles:
                 tiff_files.append(file)
     if len(tiff_files) == 0:
-        tiff_files = [ '%s' % (f) for f in files if re.match('.*%s' % stackPattern, f) ]
-    
+        files = [ '%s' % (f) for f in files if re.match('.*%s' % stackPattern, f) ]
+##  need to reorder it into RGB order.
+        red_one=0
+        blue_one=0
+        green_one=0
+        for f in files:
+          c=getFileColor(f)
+          if c == 'reds':
+             red_one=f
+          if c == 'blues':
+             blue_one=f
+          if c == 'greens':
+             green_one=f
+        tiff_files = [red_one, green_one, blue_one ]
+#        print "red is "+red_one
+#        print "blue is "+blue_one
+#        print "green is "+green_one
+        
 
 ####### Main body ######
 try:

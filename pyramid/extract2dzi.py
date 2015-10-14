@@ -72,8 +72,11 @@ outinfo = []
 # we need to go from lowest to highest zoom level
 pages.reverse()
 
+print "ZZZ %d"%len(pages)
+
 # skip pages that aren't tiled... thumbnails?!
 outpages = [ page for page in pages if hasattr(page.tags, 'tile_offsets') ]
+print "YYY %d"%len(outpages)
 if type(outpages[0].tags.tile_offsets.value) is int:
     outpages[0].tags.tile_offsets.value=[outpages[0].tags.tile_offsets.value]
     outpages[0].tags.tile_byte_counts.value=[outpages[0].tags.tile_byte_counts.value]
@@ -166,6 +169,7 @@ def get_page_info(page):
 
     pxsize = page.tags.image_width.value
     pysize = page.tags.image_length.value
+    print "page image_width %d image_length %d" %(pxsize,pysize)
 
     # get common JPEG tables to insert into all tiles
     # ffd8 ffdb .... ffd9
@@ -179,18 +183,25 @@ def get_page_info(page):
     # this page has multiple JPEG tiles
     txsize = page.tags.tile_width.value
     tysize = page.tags.tile_length.value
+    print "tile_width %d tile_length %d" %(txsize,tysize)
 
     tcols = pxsize / txsize + (pxsize % txsize > 0)
     trows = pysize / tysize + (pysize % tysize > 0)
 
+    print "cols %d rows %d" %(tcols,trows)
+
     return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
 ######################################################
+
+print "number of outpages..%d"%len(outpages)
 
 for page in outpages:
     # panic if these change from reverse-engineered samples
     assert page.tags.fill_order.value == 1
     assert page.tags.orientation.value == 1
     assert page.tags.compression.value == 7 # new-style JPEG
+
+    print "--> a page.."
 
     if prev_page is not None:
         assert prev_page.tags.image_width.value == (page.tags.image_width.value / 2)
@@ -216,10 +227,10 @@ for page in outpages:
 
     if tile_width is not None:
         assert tile_width == txsize
-        assert tile_height == tysize
+        assert tile_length == tysize
     else:
         tile_width = txsize
-        tile_height = tysize
+        tile_length = tysize
 
     outinfo.append(
         dict(
@@ -293,7 +304,8 @@ imageinfo=outinfo[-1]
 
 dzi_descriptor = """\
 <?xml version="1.0" encoding="UTF-8"?>
-<Image TileSize="%(tile_width)d" 
+<Image TileWidth="%(tile_width)d" 
+       TileHeight="%(tile_length)d" 
        Overlap="1" 
        Format="jpg" 
        xmlns="http://schemas.microsoft.com/deepzoom/2008">
@@ -316,7 +328,8 @@ image_descriptor = """\
                   NUMTILES="%(total_tile_count)d" 
                   NUMIMAGES="1" 
                   VERSION="2.0" 
-                  TILESIZE="%(tile_width)d" 
+                  TILEWIDTH="%(tile_width)d" 
+                  TILEHEIGHT="%(tile_length)d" 
                   MINLEVEL="%(image_lowest_level)d" 
                   MAXLEVEL="%(image_level)d" 
                   DATA="%(data_location)s"

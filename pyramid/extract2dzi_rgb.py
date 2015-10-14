@@ -359,11 +359,12 @@ def processTiff() :
   
   dzi_descriptor = """\
 <?xml version="1.0" encoding="UTF-8"?>
-<Image TileSize="%(tile_width)d" 
-         Overlap="1" 
-         Format="jpg" 
-         xmlns="http://schemas.microsoft.com/deepzoom/2008">
-         <Size Width="%(image_width_orig)d" Height="%(image_length_orig)d"/>
+<Image TileWidth="%(tile_width)d" 
+       TileHeight="%(tile_length)d"
+       Overlap="1" 
+       Format="jpg" 
+       xmlns="http://schemas.microsoft.com/deepzoom/2008">
+       <Size Width="%(image_width_orig)d" Height="%(image_length_orig)d"/>
 </Image>
 """ % imageinfo
   dname= dzi_template % dict(outdir = outloc, dzi_name=dzi_name)
@@ -382,7 +383,8 @@ def processTiff() :
                     NUMTILES="%(total_tile_count)d" 
                     NUMIMAGES="1" 
                     VERSION="2.0" 
-                    TILESIZE="%(tile_width)d" 
+                    TILEWIDTH="%(tile_width)d" 
+                    TILEHEIGHT="%(tile_length)d" 
                     MINLEVEL="%(image_lowest_level)d" 
                     MAXLEVEL="%(image_level)d" 
                     DATA="%(data_location)s"

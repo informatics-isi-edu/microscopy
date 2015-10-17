@@ -2,6 +2,7 @@
 
 import sys
 import os
+import math
 from PIL import Image
 from StringIO import StringIO
 
@@ -46,13 +47,12 @@ and the width and height of image uses the actual image dimension
 try:
     fname = sys.argv[1]
     outdir = sys.argv[2]
-    skip0 = False
 
     infile = open(fname, 'rb')
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 except:
-    sys.stderr.write('\nusage: extract2dzi.py pyramid-file dest-dir [0|1]\n\n')
+    sys.stderr.write('\nusage: extract2dzi.py pyramid-file dest-dir\n\n')
     raise
 
 t=fname.rsplit('/',1);
@@ -72,40 +72,23 @@ outinfo = []
 # we need to go from lowest to highest zoom level
 pages.reverse()
 
-print "ZZZ %d"%len(pages)
-
 # skip pages that aren't tiled... thumbnails?!
 outpages = [ page for page in pages if hasattr(page.tags, 'tile_offsets') ]
-print "YYY %d"%len(outpages)
 if type(outpages[0].tags.tile_offsets.value) is int:
     outpages[0].tags.tile_offsets.value=[outpages[0].tags.tile_offsets.value]
     outpages[0].tags.tile_byte_counts.value=[outpages[0].tags.tile_byte_counts.value]
 
-if hasattr(outpages[0].tags, 'tile_offsets') and len(outpages[0].tags.tile_offsets.value) > 1:
-    # first input zoom level is multi-tile
-#    assert len(outpages[0].tags.tile_offsets.value) <= 4
-    if (len(outpages[0].tags.tile_offsets.value) > 4) :
-      skip0 = True;
+## DEBUG print outpages[0].tags
 
-    zoomno = 1
-    total_tiles = 1
-    need_to_build_0 = True
-    if (skip0):
-      lowest_level = 1;
-    else:
-      lowest_level = 0;
-
-else:
-    # input includes first zoom level already
-    zoomno = 0
-    lowest_level = 0
-    total_tiles = 0
-    need_to_build_0 = False
+zoomno = 0
+lowest_level = 0
+total_tiles = 0
 
 # remember values for debugging sanity checks
 prev_page = None
 tile_width = None
 tile_length = None
+reduce_ratio = 2  # DZI default
 
 ################# helper functions ###################
 # http://www.w3.org/Graphics/JPEG/jfif3.pdf
@@ -169,7 +152,6 @@ def get_page_info(page):
 
     pxsize = page.tags.image_width.value
     pysize = page.tags.image_length.value
-    print "page image_width %d image_length %d" %(pxsize,pysize)
 
     # get common JPEG tables to insert into all tiles
     # ffd8 ffdb .... ffd9
@@ -183,17 +165,13 @@ def get_page_info(page):
     # this page has multiple JPEG tiles
     txsize = page.tags.tile_width.value
     tysize = page.tags.tile_length.value
-    print "tile_width %d tile_length %d" %(txsize,tysize)
 
     tcols = pxsize / txsize + (pxsize % txsize > 0)
     trows = pysize / tysize + (pysize % tysize > 0)
 
-    print "cols %d rows %d" %(tcols,trows)
 
     return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
 ######################################################
-
-print "number of outpages..%d"%len(outpages)
 
 for page in outpages:
     # panic if these change from reverse-engineered samples
@@ -201,11 +179,8 @@ for page in outpages:
     assert page.tags.orientation.value == 1
     assert page.tags.compression.value == 7 # new-style JPEG
 
-    print "--> a page.."
-
     if prev_page is not None:
-        assert prev_page.tags.image_width.value == (page.tags.image_width.value / 2)
-        assert prev_page.tags.image_length.value == (page.tags.image_length.value / 2)
+      reduce_ratio=page.tags.image_width.value / prev_page.tags.image_width.value
 
     pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
     
@@ -241,7 +216,8 @@ for page in outpages:
             image_width_padded= tcols * txsize,
             image_length_padded= trows * tysize,
             image_level = zoomno,
-            total_tile_count= total_tiles
+            total_tile_count= total_tiles,
+            level_scale=reduce_ratio
             )
     )
 
@@ -250,55 +226,6 @@ for page in outpages:
     prev_page = page
 
 infile.close()
-
-if need_to_build_0 :
-# add only if user wants to
-    if (skip0 == False):
-      # tier 0 was missing from input image, so built it from tier 1 data
-      page = outpages[0]
-
-      pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
-
-      tier1 = None
-
-      for tileno in range(0, len(page.tags.tile_offsets.value)):
-          trow = tileno / tcols
-          tcol = tileno % tcols
-
-          image = Image.open(tile_template % dict(zoomno=1, tcolno=tcol, trowno=trow, outdir=outdir))
-  
-          if tier1 is None:
-            # lazily create with proper pixel data type
-              tier1 = Image.new(image.mode, (tcols * txsize, trows * tysize))
-  
-          # accumulate tile into tier1 image
-          tier1.paste(image, (tcol * txsize, trow * tysize))
-  
-      # generate reduced resolution tier and crop to real page size
-      tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS ).crop((0, 0, pxsize / 2, pysize / 2))
-
-## Can remove this restriction for openseadragon's viewer
-##      assert tier0.size[0] <= txsize
-##      assert tier0.size[1] <= tysize
-
-      dirname = dir_template % dict(
-          outdir = outdir,
-          zoomno = 0 
-          )
-  
-      if not os.path.exists(dirname):
-          # create tile group dir on demand
-          os.makedirs(dirname, mode=0755)
-  
-      # write final tile
-      tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir), 'JPEG')
-else:
-    # tier 0 must be cropped down to the page size...
-    page = outpages[0]
-    pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
-    image = Image.open(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir))
-    image = image.crop((0,0, pxsize,pysize))
-    image.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdir), 'JPEG')
 
 imageinfo=outinfo[-1]
 
@@ -330,6 +257,7 @@ image_descriptor = """\
                   VERSION="2.0" 
                   TILEWIDTH="%(tile_width)d" 
                   TILEHEIGHT="%(tile_length)d" 
+                  LEVELSCALE="%(level_scale)d"
                   MINLEVEL="%(image_lowest_level)d" 
                   MAXLEVEL="%(image_level)d" 
                   DATA="%(data_location)s"

@@ -58,7 +58,6 @@ and the width and height of image uses the actual image dimension
 try:
     srcloc = sys.argv[1]
     outloc = sys.argv[2]
-    skip0 = False
 
     if not os.path.exists(srcloc) or not os.path.isdir(srcloc):
         sys.stderr.write('Pyramid directory must be given and exist')
@@ -175,7 +174,6 @@ def get_page_info(page):
     return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
 
 def processOne(fname, outdirloc) :
-  global skip0
   global infile
   global txsize
   global tysize
@@ -202,31 +200,15 @@ def processOne(fname, outdirloc) :
       outpages[0].tags.tile_offsets.value=[outpages[0].tags.tile_offsets.value]
       outpages[0].tags.tile_byte_counts.value=[outpages[0].tags.tile_byte_counts.value]
   
-  if hasattr(outpages[0].tags, 'tile_offsets') and len(outpages[0].tags.tile_offsets.value) > 1:
-      # first input zoom level is multi-tile
-  #    assert len(outpages[0].tags.tile_offsets.value) <= 4
-      if (len(outpages[0].tags.tile_offsets.value) > 4) :
-        skip0 = True;
-  
-      zoomno = 1
-      total_tiles = 1
-      need_to_build_0 = True
-      if (skip0):
-        lowest_level = 1;
-      else:
-        lowest_level = 0;
-  
-  else:
-      # input includes first zoom level already
-      zoomno = 0
-      lowest_level = 0
-      total_tiles = 0
-      need_to_build_0 = False
+  zoomno = 0
+  lowest_level = 0
+  total_tiles = 0
   
   # remember values for debugging sanity checks
   prev_page = None
   tile_width = None
   tile_length = None
+  reduce_ratio = 2  #default
   
   for page in outpages:
       # panic if these change from reverse-engineered samples
@@ -235,9 +217,8 @@ def processOne(fname, outdirloc) :
       assert page.tags.compression.value == 7 # new-style JPEG
   
       if prev_page is not None:
-          assert prev_page.tags.image_width.value == (page.tags.image_width.value / 2)
-          assert prev_page.tags.image_length.value == (page.tags.image_length.value / 2)
-  
+          reduce_ratio = (page.tags.image_width.value / prev_page.tags.image_width.value)
+
       pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
       
       for tileno in range(0, len(page.tags.tile_offsets.value)):
@@ -272,7 +253,8 @@ def processOne(fname, outdirloc) :
               image_width_padded= tcols * txsize,
               image_length_padded= trows * tysize,
               image_level = zoomno,
-              total_tile_count= total_tiles
+              total_tile_count= total_tiles,
+              level_scale = reduce_ratio
               )
       )
   
@@ -281,55 +263,6 @@ def processOne(fname, outdirloc) :
       prev_page = page
   
   infile.close()
-  
-  if need_to_build_0 :
-  # add only if user wants to
-      if (skip0 == False):
-        # tier 0 was missing from input image, so built it from tier 1 data
-        page = outpages[0]
-  
-        pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
-  
-        tier1 = None
-  
-        for tileno in range(0, len(page.tags.tile_offsets.value)):
-            trow = tileno / tcols
-            tcol = tileno % tcols
-  
-            image = Image.open(tile_template % dict(zoomno=1, tcolno=tcol, trowno=trow, outdir=outdirloc))
-    
-            if tier1 is None:
-              # lazily create with proper pixel data type
-                tier1 = Image.new(image.mode, (tcols * txsize, trows * tysize))
-    
-            # accumulate tile into tier1 image
-            tier1.paste(image, (tcol * txsize, trow * tysize))
-    
-        # generate reduced resolution tier and crop to real page size
-        tier0 = tier1.resize( (txsize * tcols / 2, tysize * trows / 2), Image.ANTIALIAS ).crop((0, 0, pxsize / 2, pysize / 2))
-  
-## can remove this restriction for openseadragon's viewer
-##        assert tier0.size[0] <= txsize
-##        assert tier0.size[1] <= tysize
-  
-        dirname = dir_template % dict(
-            outdir = outdirloc,
-            zoomno = 0 
-            )
-    
-        if not os.path.exists(dirname):
-            # create tile group dir on demand
-            os.makedirs(dirname, mode=0755)
-    
-        # write final tile
-        tier0.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdirloc), 'JPEG')
-  else:
-      # tier 0 must be cropped down to the page size...
-      page = outpages[0]
-      pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes = get_page_info(page)
-      image = Image.open(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdirloc))
-      image = image.crop((0,0, pxsize,pysize))
-      image.save(tile_template % dict(zoomno=0, tcolno=0, trowno=0, outdir=outdirloc), 'JPEG')
   
   imageinfo=outinfo[-1]
   
@@ -361,6 +294,7 @@ def processOne(fname, outdirloc) :
                     VERSION="2.0" 
                     TILEWIDTH="%(tile_width)d" 
                     TILEHEIGHT="%(tile_length)d" 
+                    LEVELSCALE="%(level_scale)d"
                     MINLEVEL="%(image_lowest_level)d" 
                     MAXLEVEL="%(image_level)d" 
                     DATA="%(data_location)s"

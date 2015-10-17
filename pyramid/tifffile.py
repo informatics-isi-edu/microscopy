@@ -1415,10 +1415,8 @@ class TiffPage(object):
 #MEI
 #           pdb.set_trace()
 #            print("TAG %s %s field %s count %d>\n" % (tags[tag.name].name,tags[tag.name].code,tags[tag.name].dtype, tags[tag.name].count))
-            if tags[tag.name].code == 270 :
+#            if tags[tag.name].code == 270 :
 #                pdb.set_trace()
-                print("TAG %s %s field %s count %d>\n" % (tags[tag.name].name,tags[tag.name].code,tags[tag.name].dtype, tags[tag.name].count))
-                print("description is %s\n" % tags[tag.name].value)
 
         pos = fh.tell()
 

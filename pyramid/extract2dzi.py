@@ -217,6 +217,7 @@ for page in outpages:
             image_length_padded= trows * tysize,
             image_level = zoomno,
             total_tile_count= total_tiles,
+            color_type = 'unknown',
             level_scale=reduce_ratio
             )
     )
@@ -260,6 +261,7 @@ image_descriptor = """\
                   LEVELSCALE="%(level_scale)d"
                   MINLEVEL="%(image_lowest_level)d" 
                   MAXLEVEL="%(image_level)d" 
+                  COLORTYPE="%(color_type)s" 
                   DATA="%(data_location)s"
 />
 """ % imageinfo

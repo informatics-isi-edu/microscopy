@@ -276,6 +276,7 @@ def processTiff() :
               image_length_padded= trows * tysize,
               image_level = zoomno,
               total_tile_count= total_tiles,
+              color_type = 'combo',
               level_scale=reduce_ratio
               )
           )
@@ -318,6 +319,7 @@ def processTiff() :
                     TILEWIDTH="%(tile_width)d" 
                     TILEHEIGHT="%(tile_length)d" 
                     LEVELSCALE="%(level_scale)d"
+                    COLORTYPE="%(color_type)s"
                     MINLEVEL="%(image_lowest_level)d" 
                     MAXLEVEL="%(image_level)d" 
                     DATA="%(data_location)s"
@@ -343,7 +345,7 @@ blueColors = ['DAPI']
 
 tiff_colors = {'reds': redColors, 'greens': greenColors, 'blues': blueColors}
 
-def getFileColor(file):
+def getFileColors(file):
     colorMatched = None
     for colors in tiff_colors:
         for color in tiff_colors[colors]:
@@ -354,18 +356,29 @@ def getFileColor(file):
         sys.stderr.write('Unknown color for file "%s" \n' % file)
         sys.exit(1)
 
+def getFileColor(file):
+    colorMatched = None
+    for colors in tiff_colors:
+        for color in tiff_colors[colors]:
+            if re.match('.*[-]%s([-]Z[0-9]+)*[.]tif' % color, file):
+                colorMatched = True
+                return color
+    if not colorMatched:
+        sys.stderr.write('Unknown color for file "%s" \n' % file)
+        sys.exit(1)
+
 def checkFileColors(files):
     for file in files:
         colorMatched = None
         for colors in tiff_colors:
-            for color in colors:
-                if re.match('.*[-]%s[-]Z1[.]tif' % color, file):
+            for color in tiff_colors[colors]:
+                if re.match('.*[-]%s([-]Z1)*[.]tif' % color, file):
                     colorMatched = True
                     break
             if colorMatched:
                 break
         if not colorMatched:
-            sys.stderr.write('Unknown color for file "%s" \n' % file)
+            sys.stderr.write('000Unknown color for file "%s" \n' % file)
             sys.exit(1)
     
 def colorFile(files, colors, pattern):
@@ -404,7 +417,7 @@ def getTiffFiles(dname):
         blue_one=0
         green_one=0
         for f in files:
-          c=getFileColor(f)
+          c=getFileColors(f)
           if c == 'reds':
              red_one=f
           if c == 'blues':

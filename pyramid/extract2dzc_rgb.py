@@ -173,7 +173,7 @@ def get_page_info(page):
 
     return pxsize, pysize, txsize, tysize, tcols, trows, jpeg_tables_bytes
 
-def processOne(fname, outdirloc) :
+def processOne(fname, outdirloc, color) :
   global infile
   global txsize
   global tysize
@@ -254,6 +254,7 @@ def processOne(fname, outdirloc) :
               image_length_padded= trows * tysize,
               image_level = zoomno,
               total_tile_count= total_tiles,
+              color_type=color,
               level_scale = reduce_ratio
               )
       )
@@ -297,6 +298,7 @@ def processOne(fname, outdirloc) :
                     LEVELSCALE="%(level_scale)d"
                     MINLEVEL="%(image_lowest_level)d" 
                     MAXLEVEL="%(image_level)d" 
+                    COLORTYPE="%(color_type)s" 
                     DATA="%(data_location)s"
 />
 """ % imageinfo
@@ -395,5 +397,5 @@ for fidx in range(0, len(tiff_files)):
     if not os.path.exists(outdirloc):
         os.makedirs(outdirloc)
     newfname="%s/%s" %(srcloc, fname)
-    processOne(newfname, outdirloc);
+    processOne(newfname, outdirloc, color);
 

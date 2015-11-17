@@ -5,7 +5,7 @@ from tifffile.tifffile import __version__ as version
 from tifffile.tifffile import __doc__ as long_description
 
 ext1 = Extension(
-    'tifffile/_tifffile',
+    'tifffile._tifffile',
     sources=['tifffile.c'],
     include_dirs=[numpy.get_include()]
 )

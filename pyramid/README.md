@@ -15,8 +15,27 @@ replacing the `.czi` suffix with `.dzi`.
 
 - Numpy
 - Scipy
-- jxrlib C library
-- Czifile.py
-- Czifile.pyx extension for JPEG-XR decoder
-- Tifffile.py
+- JPEG C library
+  - Such as `libjpeg-turbo` and `libjpeg-turbo-devel` on Fedora or CentOS.
+- JPEG-XR C library
+  - Such as `jxrlib` and `jxrlib-devel` on Fedora or Fedora EPEL.
+- Czifile (see below)
+- Tifffile (see below)
 
+#### Tifffile Package
+
+The `tifffile` sub-directory provides a packaged version of the
+Tifffile.py module needed by this script.  It can be installed via:
+
+    cd tifffile
+    python ./setup.py install
+
+#### Czifile Package
+
+The `czifile` sub-directory provides a packaged version of the
+Czifile.py module needed by this script.  It can be installed via:
+
+    cd czifile
+    python ./setup.py install
+
+This package also depends on 

@@ -325,7 +325,7 @@ def metadata_to_xml(meta, channelno, channeldir):
     TILEHEIGHT="%(TH)d"
     LEVELSCALE="2"
     MINLEVEL="0"
-    MAXLEVEL="%(NZ)d"
+    MAXLEVEL="%(ML)d"
     COLORTYPE="%(CN)s"
     DATA="%(P)s"
 />""" % dict(
@@ -336,7 +336,7 @@ def metadata_to_xml(meta, channelno, channeldir):
     NT=meta['channel'][channelno]['ntiles'],
     TW=meta['tile_size'][0],
     TH=meta['tile_size'][1],
-    NZ=len(meta['channel'][channelno]['zooms'].keys()),
+    ML=len(meta['channel'][channelno]['zooms'].keys()) - 1,
 )
     f = open('%s/ImageProperties.xml' % channeldir, 'w')
     f.write(doc)

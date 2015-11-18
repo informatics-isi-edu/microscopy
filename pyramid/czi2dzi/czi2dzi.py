@@ -353,7 +353,12 @@ def main(czifilename, dzidirname=None):
 
     converter = LazyCziConverter(czifilename)
 
-    tilesize = (1200, 1600)
+    tilesize = os.getenv('DZI_TILESIZE_YxX')
+    if tilesize:
+        tilesize = tuple([ int(s) for s in tilesize.split('x') ])
+        assert len(tilesize) == 2
+    else:
+        tilesize = (1200, 1600)
 
     H, W = converter.canvas_size()
     spp = converter._fo.shape[-1]

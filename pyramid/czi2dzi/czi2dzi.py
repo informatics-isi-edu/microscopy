@@ -89,9 +89,12 @@ class LazyCziConverter (object):
                 # for fancy-indexing by boolean arrays, repeat entry indexes into array
                 boxmap = np.array( range(len(bbox_entries)), dtype=np.int32 )
                 self._channel_tier_maps[channel][zoom] = (bboxes, boxmap)
-                
-        self._channel_names = [ e.text for e in self._fo.metadata.getroottree().findall('Metadata/DisplaySetting/Channels/Channel/ShortName') ]
 
+        channels = self._fo.metadata.getroottree().findall('Metadata/DisplaySetting/Channels/Channel')
+        self._channel_names_long = [ c.get('Name') for c in channels ]
+        self._channel_names = [ c.find('ShortName').text for c in channels ]
+        self._channel_colors = [ c.find('Color').text for c in channels ]
+        
         self._bbox_native = (tuple(v0), tuple(v1))
         self._bbox_zeroed = ((0, 0), (v1[0]-v0[0], v1[1]-v0[1]))
         self._tile_size = tile_size
@@ -101,7 +104,10 @@ class LazyCziConverter (object):
         sys.stderr.write('CZI %s tile-size %s %s\n  channels: %s\n  bounding-box: %s native or shape %s\n  zoom levels: %s\n' % (
             ' '.join(map(lambda d, s: '%s=%d' % (d, s), self._fo.axes, self._fo.shape)),
             'x'.join(map(str, self._tile_size)), self._fo.dtype,
-            ', '.join(self._channel_names),
+            ', '.join([
+                '%s (%s %s)' % (self._channel_names[i], self._channel_names_long[i], self._channel_colors[i])
+                for i in range(self._fo.shape[self._C])
+            ]),
             self._bbox_native, 'x'.join(map(str, self._bbox_zeroed[1])), self._zoom_levels
         ))
 
@@ -371,7 +377,9 @@ def main(czifilename, dzidirname=None):
     
     for channel in range(converter.num_channels()):
         cname = converter._channel_names[channel]
-        doc['channel'][channel] = dict(name=cname, zooms=dict(), ntiles=0)
+        cname_long = converter._channel_names_long[channel]
+        color = converter._channel_colors[channel]
+        doc['channel'][channel] = dict(name=cname, zooms=dict(), ntiles=0, cname_long=cname_long, color=color)
 
         # TODO: use channel name or number here...?
         dzichanneldirname = "%s/%s" % (dzidirname, cname)

@@ -174,16 +174,17 @@ class LazyCziConverter (object):
         assert type(slc) == tuple
         assert len(slc) == 2
 
-        def slc_check(slc):
+        def slc_check(slc, L):
             assert type(slc) == slice
             assert slc.step is None
             assert slc.start >= 0
+            assert (slc.start * zoom) < L
             assert slc.stop > slc.start
-            bounds = [slc.start * zoom, slc.stop * zoom]
+            bounds = [slc.start * zoom, min(L/zoom, slc.stop) * zoom]
             return slice(*bounds)
 
-        # do a little sanity checking and convert back to 1:1 pixel units
-        slc = map(slc_check, slc)
+        # do a little sanity checking and convert back to 1:1 pixel units with cropping to canvas
+        slc = map(slc_check, slc, self._fo.shape[self._slc][0:2])
         
         # this should now be in same format as one row of self._channel_tier_maps[0]
         bbox = np.array([slc[0].start, slc[1].start, slc[0].stop, slc[1].stop], dtype=np.int32)

@@ -6,7 +6,7 @@ import os.path
 import math
 import czifile
 import numpy as np
-from scipy.misc import imsave
+from scipy.misc import toimage
 import json
 
 
@@ -298,7 +298,7 @@ class LazyCziConverter (object):
                     
         return data
 
-def array_to_jpeg(array, Y, X, jpegroot=None):
+def array_to_jpeg(array, Y, X, jpegroot=None, quality=75):
     """Save pixel array to JPEG.  Needs work."""
 
     jpegname = '%d_%d.jpg' % (X, Y)
@@ -316,8 +316,9 @@ def array_to_jpeg(array, Y, X, jpegroot=None):
     if array.shape[2] == 1:
         # drop single-channel dimension for grayscale array?
         array = array[:,:,0]
-        
-    imsave(jpegname, array)
+
+    img = toimage(array)
+    img.save(jpegname, quality=quality)
 
 def metadata_to_xml(meta, channelno, channeldir):
     doc = \
@@ -337,7 +338,7 @@ def metadata_to_xml(meta, channelno, channeldir):
     DATA="%(P)s"
 />""" % dict(
     P=channeldir,
-    CN=meta['channel'][channelno]['name'],
+    CN=meta['channel'][channelno]['cname_long'],
     W=meta['canvas_size'][0],
     H=meta['canvas_size'][1],
     NT=meta['channel'][channelno]['ntiles'],
@@ -366,6 +367,12 @@ def main(czifilename, dzidirname=None):
     else:
         tilesize = (1200, 1600)
 
+    quality = os.getenv('DZI_JPEG_QUALITY')
+    if quality:
+        quality = int(quality)
+    else:
+        quality = 75
+        
     H, W = converter.canvas_size()
     spp = converter._fo.shape[-1]
     doc = dict(channel=dict(), canvas_size=(W, H), tile_size=(tilesize[1], tilesize[0]), samples_per_pixel=spp)
@@ -390,8 +397,8 @@ def main(czifilename, dzidirname=None):
 
             dzizoomdirname = "%s/%d" % (dzichanneldirname, zoom_numbers[zoom])
             
-            sys.stderr.write('Channel %d zoom %d: Canvas %dx%d using %dx%d output grid of %dx%d tiles\n' % (
-                channel, zoom, W, H, J, K, tilesize[1], tilesize[0]
+            sys.stderr.write('Channel %d zoom %d: Canvas %dx%d using %dx%d output grid of %dx%d q=%d tiles\n' % (
+                channel, zoom, W, H, J, K, tilesize[1], tilesize[0], quality
             ))
             
             doc['channel'][channel]['zooms'][zoom] = dict(shape=(W, H), tile_grid=(J, K))
@@ -407,7 +414,7 @@ def main(czifilename, dzidirname=None):
                         )
                     )
 
-                    array_to_jpeg(tile, k, j, dzizoomdirname)
+                    array_to_jpeg(tile, k, j, dzizoomdirname, quality)
 
         metadata_to_xml(doc, channel, dzichanneldirname)
 

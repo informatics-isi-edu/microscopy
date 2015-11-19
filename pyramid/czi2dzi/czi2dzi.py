@@ -8,7 +8,7 @@ import czifile
 import numpy as np
 from scipy.misc import toimage
 import json
-
+import re
 
 class LazyCziConverter (object):
 
@@ -93,7 +93,7 @@ class LazyCziConverter (object):
         channels = self._fo.metadata.getroottree().findall('Metadata/DisplaySetting/Channels/Channel')
         self._channel_names_long = [ c.get('Name') for c in channels ]
         self._channel_names = [ c.find('ShortName').text for c in channels ]
-        self._channel_colors = [ c.find('Color').text for c in channels ]
+        self._channel_colors = [ c.find('Color').text if c.find('Color') is not None else None for c in channels ]
         
         self._bbox_native = (tuple(v0), tuple(v1))
         self._bbox_zeroed = ((0, 0), (v1[0]-v0[0], v1[1]-v0[1]))
@@ -321,6 +321,16 @@ def array_to_jpeg(array, Y, X, jpegroot=None, quality=75):
     img.save(jpegname, quality=quality)
 
 def metadata_to_xml(meta, channelno, channeldir):
+    color_argb = meta['channel'][channelno]['color']
+    if color_argb is not None and color_argb[0] == '#' and len(color_argb[1:]) == 8:
+        alpha = '%f' % (int(color_argb[1:3], 16) / 255.0)
+        rgb = ' '.join([ '%f' % (int(c, 16) / 255.0) for c in re.findall('..', color_argb[3:]) ])
+        colorstuff = """
+    CHANNELDEFAULTALPHA="%s"
+    CHANNELDEFAULTRGB="%s" """ % (alpha, rgb)
+    else:
+        colorstuff = ""
+        
     doc = \
 """<?xml version="1.0" encoding="UTF-8"?>
 <IMAGE_PROPERTIES
@@ -334,7 +344,9 @@ def metadata_to_xml(meta, channelno, channeldir):
     LEVELSCALE="2"
     MINLEVEL="0"
     MAXLEVEL="%(ML)d"
-    COLORTYPE="%(CN)s"
+    CHANNELNAME="%(CN)s"%(COLORSTUFF)s
+    MINVALUE="%(V0)s"
+    MAXVALUE="%(V1)s"
     DATA="%(P)s"
 />""" % dict(
     P=channeldir,
@@ -345,6 +357,9 @@ def metadata_to_xml(meta, channelno, channeldir):
     TW=meta['tile_size'][0],
     TH=meta['tile_size'][1],
     ML=len(meta['channel'][channelno]['zooms'].keys()) - 1,
+    COLORSTUFF=colorstuff,
+    V0=(meta['channel'][channelno]['valuerange'][0] / 255.0),
+    V1=(meta['channel'][channelno]['valuerange'][1] / 255.0),
 )
     f = open('%s/ImageProperties.xml' % channeldir, 'w')
     f.write(doc)
@@ -390,6 +405,8 @@ def main(czifilename, dzidirname=None):
 
         # TODO: use channel name or number here...?
         dzichanneldirname = "%s/%s" % (dzidirname, cname)
+
+        pixel_range = None
         
         for zoom in converter._zoom_levels:
             H, W = map(lambda x: x/zoom, converter.canvas_size())
@@ -414,8 +431,15 @@ def main(czifilename, dzidirname=None):
                         )
                     )
 
+                    if pixel_range is None:
+                        pixel_range = [ tile.min(), tile.max() ]
+                    else:
+                        pixel_range[0] = min(tile.min(), pixel_range[0])
+                        pixel_range[1] = max(tile.max(), pixel_range[1])
+                        
                     array_to_jpeg(tile, k, j, dzizoomdirname, quality)
 
+        doc['channel'][channel]['valuerange'] = [ int(v) for v in pixel_range ]
         metadata_to_xml(doc, channel, dzichanneldirname)
 
     # dump overall info to JSON for now...

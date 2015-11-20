@@ -166,10 +166,24 @@ class LazyCziConverter (object):
         return [ (bboxes[i,:], self._channel_tiers[channelno][zoom][i][1]) for i in boxmap[~nonintersects] ]
                 
 
-    def get_tile_data(self, channelno, zoom, slc, dtype=np.uint8, fill=None):
+    def get_tile_data(self, channelno, zoom, slc, dtype=np.uint8, fill=None, range_accum=None):
         """Project a tile array for the given channel, zoom, and YX slice.
 
            slc MUST have non-negative integer start and stop and no step.
+
+           fill specifies tile fill value to cover sparse tile regions
+           or zeros if None (default).
+
+           range_accum, if not Null, must be a list of length 2 in one
+           of two forms:
+
+             - [None, None]: will be mutated to contain [v0, v1]
+
+             - [A, B]: will be mutated to contain [min(v0,A), max(v1,B)]
+
+           where v0 and v1 are the minimum and maximum values in this
+           tile, respectively. This considers only pixels acquired in
+           the source CZI and ignores fill values.
 
            Slice coordinates are in zero-based canvas pixel units,
            e.g. (slice(0,1), slice(0,1)) at 64:1 zoom will be a single
@@ -235,18 +249,31 @@ class LazyCziConverter (object):
             
             # get decoded tile data to slice and composite
             data = self._entry_asarray_cached(entry, dtype)
-                
+
             # avoid empty slicing due to reduced resolution
             if (src_overlap[2] - src_overlap[0]) > 0 and (src_overlap[3] - src_overlap[1]) > 0:
-                output[
-                    dst_overlap[0]:dst_overlap[2],
-                    dst_overlap[1]:dst_overlap[3],
-                    :
-                ] = data[
+                data_sliced = data[
                     src_overlap[0]:src_overlap[2],
                     src_overlap[1]:src_overlap[3],
                     :
                 ]
+            
+                if range_accum is not None:
+                    # accumulate active pixel value range
+                    v0 = data_sliced.min()
+                    v1 = data_sliced.max()
+                    if range_accum[0] is None:
+                        range_accum[0] = v0
+                        range_accum[1] = v1
+                    else:
+                        range_accum[0] = min(v0, range_accum[0])
+                        range_accum[1] = max(v1, range_accum[1])
+
+                output[
+                    dst_overlap[0]:dst_overlap[2],
+                    dst_overlap[1]:dst_overlap[3],
+                    :
+                ] = data_sliced
         
         return output
 
@@ -414,7 +441,7 @@ def main(czifilename, dzidirname=None):
         # TODO: use channel name or number here...?
         dzichanneldirname = "%s/%s" % (dzidirname, cname)
 
-        pixel_range = None
+        pixel_range = [None, None]
         
         for zoom in converter._zoom_levels:
             H, W = map(lambda x: x/zoom, converter.canvas_size())
@@ -437,15 +464,10 @@ def main(czifilename, dzidirname=None):
                             slice(k*tilesize[0], (k+1)*tilesize[0]),
                             slice(j*tilesize[1], (j+1)*tilesize[1]),
                         ),
-                        fill=fill
+                        fill=fill,
+                        range_accum=pixel_range
                     )
 
-                    if pixel_range is None:
-                        pixel_range = [ tile.min(), tile.max() ]
-                    else:
-                        pixel_range[0] = min(tile.min(), pixel_range[0])
-                        pixel_range[1] = max(tile.max(), pixel_range[1])
-                        
                     array_to_jpeg(tile, k, j, dzizoomdirname, quality)
 
         doc['channel'][channel]['valuerange'] = [ int(v) for v in pixel_range ]

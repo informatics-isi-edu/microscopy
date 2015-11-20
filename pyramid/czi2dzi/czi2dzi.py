@@ -166,7 +166,7 @@ class LazyCziConverter (object):
         return [ (bboxes[i,:], self._channel_tiers[channelno][zoom][i][1]) for i in boxmap[~nonintersects] ]
                 
 
-    def get_tile_data(self, channelno, zoom, slc, dtype=np.uint8):
+    def get_tile_data(self, channelno, zoom, slc, dtype=np.uint8, fill=None):
         """Project a tile array for the given channel, zoom, and YX slice.
 
            slc MUST have non-negative integer start and stop and no step.
@@ -204,6 +204,9 @@ class LazyCziConverter (object):
         # composite output buffer
         output = np.zeros(((bbox[2]-bbox[0])/zoom, (bbox[3]-bbox[1])/zoom) + (self._fo.shape[-1],), dtype=dtype)
 
+        if fill is not None:
+            output[:,:,:] = fill
+        
         # these entries overlap bbox by at least one pixel in canvas space
         for ebbox_native, entry in self._get_intersecting_bbox_entries(channelno, zoom, bbox_native):
 
@@ -403,6 +406,11 @@ def main(czifilename, dzidirname=None):
         color = converter._channel_colors[channel]
         doc['channel'][channel] = dict(name=cname, zooms=dict(), ntiles=0, cname_long=cname_long, color=color)
 
+        if cname == 'Brigh':
+            fill = np.array([[[255,255,255]]], dtype=np.uint8)
+        else:
+            fill = None
+            
         # TODO: use channel name or number here...?
         dzichanneldirname = "%s/%s" % (dzidirname, cname)
 
@@ -428,7 +436,8 @@ def main(czifilename, dzidirname=None):
                         (
                             slice(k*tilesize[0], (k+1)*tilesize[0]),
                             slice(j*tilesize[1], (j+1)*tilesize[1]),
-                        )
+                        ),
+                        fill=fill
                     )
 
                     if pixel_range is None:

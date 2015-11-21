@@ -298,7 +298,7 @@ def processOne(fname, outdirloc, color) :
                     LEVELSCALE="%(level_scale)d"
                     MINLEVEL="%(image_lowest_level)d" 
                     MAXLEVEL="%(image_level)d" 
-                    COLORTYPE="%(color_type)s" 
+                    CHANNELNAME="%(color_type)s" 
                     DATA="%(data_location)s"
 />
 """ % imageinfo

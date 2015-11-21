@@ -319,7 +319,7 @@ def processTiff() :
                     TILEWIDTH="%(tile_width)d" 
                     TILEHEIGHT="%(tile_length)d" 
                     LEVELSCALE="%(level_scale)d"
-                    COLORTYPE="%(color_type)s"
+                    CHANNELNAME="%(color_type)s"
                     MINLEVEL="%(image_lowest_level)d" 
                     MAXLEVEL="%(image_level)d" 
                     DATA="%(data_location)s"

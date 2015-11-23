@@ -13,22 +13,18 @@ replacing the `.czi` suffix with `.dzi`.
 
 ### Prequisites
 
+These prerequisites should be installed to the system prior to using
+the `czi2dzi.py` script:
+
 - Numpy
 - Scipy
+- Cython
 - JPEG C library
   - Such as `libjpeg-turbo` and `libjpeg-turbo-devel` on Fedora or CentOS.
 - JPEG-XR C library
   - Such as `jxrlib` and `jxrlib-devel` on Fedora or Fedora EPEL.
 - Czifile (see below)
 - Tifffile (see below)
-
-#### Tifffile Package
-
-The `tifffile` sub-directory provides a packaged version of the
-Tifffile.py module needed by this script.  It can be installed via:
-
-    cd tifffile
-    python ./setup.py install
 
 #### Czifile Package
 
@@ -38,4 +34,14 @@ Czifile.py module needed by this script.  It can be installed via:
     cd czifile
     python ./setup.py install
 
-This package also depends on 
+This package depends on the `jxrlib` JPEG-XR decoding library and the
+`tifffile` Python module.
+
+#### Tifffile Package
+
+The `tifffile` sub-directory provides a packaged version of the
+Tifffile.py module needed by this script.  It can be installed via:
+
+    cd tifffile
+    python ./setup.py install
+

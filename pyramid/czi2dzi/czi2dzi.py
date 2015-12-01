@@ -90,7 +90,7 @@ class LazyCziConverter (object):
                 boxmap = np.array( range(len(bbox_entries)), dtype=np.int32 )
                 self._channel_tier_maps[channel][zoom] = (bboxes, boxmap)
 
-        channels = self._fo.metadata.getroottree().findall('Metadata/DisplaySetting/Channels/Channel')
+        channels = self._fo.metadata.findall('Metadata/DisplaySetting/Channels/Channel')
         self._channel_names_long = [ c.get('Name') for c in channels ]
         self._channel_names = [ c.find('ShortName').text for c in channels ]
         self._channel_colors = [ c.find('Color').text if c.find('Color') is not None else None for c in channels ]
@@ -120,7 +120,7 @@ class LazyCziConverter (object):
         # HACK: try to configure a tile cache for row-major tile grid traversals
         # 1. assume we will output tiles no larger than current tile size
         # 2. assume that up to 3 tile rows might be active due to overlapping source tiles
-        overlap_factor = max([float(e.text) for e in self._fo.metadata.getroottree().findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/SubDimensionSetups/RegionsSetup/SampleHolder/Overlap') ])
+        overlap_factor = max([float(e.text) for e in self._fo.metadata.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/SubDimensionSetups/RegionsSetup/SampleHolder/Overlap') ])
 
         row_tile_count = math.ceil(self._bbox_zeroed[1][1] / (self._tile_size[1] - self._tile_size[1] * overlap_factor))
         self._tile_cache_size = row_tile_count * 3 + 1

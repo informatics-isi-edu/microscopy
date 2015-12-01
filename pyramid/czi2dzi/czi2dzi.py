@@ -410,7 +410,7 @@ def main(czifilename, dzidirname=None):
         tilesize = tuple([ int(s) for s in tilesize.split('x') ])
         assert len(tilesize) == 2
     else:
-        tilesize = (1200, 1600)
+        tilesize = (512, 512)
 
     quality = os.getenv('DZI_JPEG_QUALITY')
     if quality:

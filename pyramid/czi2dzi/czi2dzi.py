@@ -204,7 +204,7 @@ class LazyCziConverter (object):
             return slice(*bounds)
 
         # do a little sanity checking and convert back to 1:1 pixel units with cropping to canvas
-        slc = map(slc_check, slc, self._fo.shape[self._slc][0:2])
+        slc = map(slc_check, slc, self._bbox_zeroed[1])
         
         # this should now be in same format as one row of self._channel_tier_maps[0]
         bbox = np.array([slc[0].start, slc[1].start, slc[0].stop, slc[1].stop], dtype=np.int32)

@@ -364,20 +364,20 @@ def metadata_to_xml(meta, channelno, channeldir):
     doc = \
 """<?xml version="1.0" encoding="UTF-8"?>
 <IMAGE_PROPERTIES
-    WIDTH="%(W)d"
-    HEIGHT="%(H)d"
-    NUMTILES="%(NT)d"
-    NUMIMAGES="1"
-    VERSION="2.0"
-    TILEWIDTH="%(TW)d"
-    TILEHEIGHT="%(TH)d"
-    LEVELSCALE="2"
-    MINLEVEL="0"
-    MAXLEVEL="%(ML)d"
-    CHANNELNAME="%(CN)s"%(COLORSTUFF)s
-    MINVALUE="%(V0)s"
-    MAXVALUE="%(V1)s"
-    DATA="%(P)s"
+    width="%(W)d"
+    height="%(H)d"
+    numTiles="%(NT)d"
+    numImages="1"
+    version="2.0"
+    tileWidth="%(TW)d"
+    tileHeight="%(TH)d"
+    levelScale="2"
+    minLevel="0"
+    maxLevel="%(ML)d"
+    channelName="%(CN)s"%(COLORSTUFF)s
+    minValue="%(V0)s"
+    maxValue="%(V1)s"
+    data="%(P)s"
 />""" % dict(
     P=channeldir,
     CN=meta['channel'][channelno]['cname_long'],

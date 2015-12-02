@@ -229,7 +229,7 @@ else:
 
 
 zoomify_descriptor = """
-<IMAGE_PROPERTIES WIDTH="%(image_width_padded)d" HEIGHT="%(image_length_padded)d" NUMTILES="%(total_tile_count)d" NUMIMAGES="1" VERSION="1.8" TILESIZE="%(tile_width)d" />
+<IMAGE_PROPERTIES width="%(image_width_padded)d" height="%(image_length_padded)d" numTiles="%(total_tile_count)d" numImages="1" version="1.8" tileSize="%(tile_width)d" />
 """ % outinfo[-1]
 
 f = open('%s/ImageProperties.xml' % outdir, 'w')

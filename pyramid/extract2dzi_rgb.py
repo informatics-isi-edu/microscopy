@@ -311,18 +311,18 @@ def processTiff() :
   image_descriptor = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <IMAGE_PROPERTIES
-                    WIDTH="%(image_width_orig)d" 
-                    HEIGHT="%(image_length_orig)d" 
-                    NUMTILES="%(total_tile_count)d" 
-                    NUMIMAGES="1" 
-                    VERSION="2.0" 
-                    TILEWIDTH="%(tile_width)d" 
-                    TILEHEIGHT="%(tile_length)d" 
-                    LEVELSCALE="%(level_scale)d"
-                    CHANNELNAME="%(color_type)s"
-                    MINLEVEL="%(image_lowest_level)d" 
-                    MAXLEVEL="%(image_level)d" 
-                    DATA="%(data_location)s"
+                    width="%(image_width_orig)d" 
+                    height="%(image_length_orig)d" 
+                    numTiles="%(total_tile_count)d" 
+                    numImages="1" 
+                    version="2.0" 
+                    tileWidth="%(tile_width)d" 
+                    tileHeight="%(tile_length)d" 
+                    levelScale="%(level_scale)d"
+                    channelName="%(color_type)s"
+                    minLevel="%(image_lowest_level)d" 
+                    maxLevel="%(image_level)d" 
+                    data="%(data_location)s"
 />
 """ % imageinfo
   

@@ -356,8 +356,8 @@ def metadata_to_xml(meta, channelno, channeldir):
         alpha = '%f' % (int(color_argb[1:3], 16) / 255.0)
         rgb = ' '.join([ '%f' % (int(c, 16) / 255.0) for c in re.findall('..', color_argb[3:]) ])
         colorstuff = """
-    CHANNELDEFAULTALPHA="%s"
-    CHANNELDEFAULTRGB="%s" """ % (alpha, rgb)
+    channelDefaultAlpha="%s"
+    channelDefaultRGB="%s" """ % (alpha, rgb)
     else:
         colorstuff = ""
         

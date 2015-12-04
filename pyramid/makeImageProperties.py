@@ -77,6 +77,7 @@ def makeXml(cfg):
                     numTiles="%(total)d"
                     numImages="1"
                     version="2.0"
+                    levelScale="2"
                     tileWidth="%(tileSize)d"
                     overlap="%(overlap)d"
                     tileHeight="%(tileSize)d"
@@ -100,8 +101,9 @@ try:
     cfg = load(dzi_filename)
     dloc = dirloc(dzi_filename,cfg)
     desc=makeXml(cfg)
+    print desc
     writeXml(desc,dloc)
 except:
-    sys.stderr.write('\nusage: scanDZI.py file.dzi\n\n')
+    sys.stderr.write('\nusage: makeImageProperties.py file.dzi\n\n')
     raise
 

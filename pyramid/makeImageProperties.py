@@ -101,7 +101,7 @@ try:
     cfg = load(dzi_filename)
     dloc = dirloc(dzi_filename,cfg)
     desc=makeXml(cfg)
-    print desc
+#    print desc
     writeXml(desc,dloc)
 except:
     sys.stderr.write('\nusage: makeImageProperties.py file.dzi\n\n')

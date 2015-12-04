@@ -13,7 +13,8 @@
 import os
 import json
 import sys
-from lxml import etree
+#from lxml import etree
+from xml.etree import cElementTree as etree
 
 def load(dzi_filename):
     if os.path.exists(dzi_filename):
@@ -41,7 +42,13 @@ def dirloc(fname, cfg):
         sys.stderr.write('did not find data directory location'+dloc)
         sys.exit(1)
     zooms = os.listdir(dloc)
-    zooms.remove('ImageProperties.xml')
+    try:
+        i = zooms.index('ImageProperties.xml')
+    except ValueError:
+        i = -1
+        # good, no match
+    if (i != -1):
+        zooms.remove('ImageProperties.xml')
     zooms.sort(cmp=numeric_compare)
 
     min=zooms[0]

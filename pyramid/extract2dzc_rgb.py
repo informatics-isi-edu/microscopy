@@ -33,7 +33,6 @@ File directory generated
     dest-dir(DZC)
      color_type_1
         ImageProperties.xml
-        pyramid.dzi
         0 
           0_0.jpg
         1
@@ -42,7 +41,6 @@ File directory generated
         ...
      color_type_2
         ImageProperties.xml
-        pyramid.dzi
         0 
           0_0.jpg
         1
@@ -76,7 +74,7 @@ except:
 ## 20140403-R26-Tdt-JJG-0-38-000-Rhodamine-Z3.tif
 ## iterate through the files,
 ## if valid tiff file, then change the outdir to 
-##     outdir/DAPI/.xml,.dzi,0,1..
+##     outdir/DAPI/.xml,0,1..
 ## essentialy like calling extract2dzi.py filename outdir/color
 
 infile=None
@@ -90,7 +88,6 @@ outdirloc=0
 topdir_template = '%(outdir)s'
 dir_template = topdir_template +'/%(zoomno)d'
 tile_template = dir_template + '/%(tcolno)d_%(trowno)d.jpg'
-dzi_template = '%(outdir)s/%(dzi_name)s'
 image_template = '%(outdir)s/ImageProperties.xml'
 
 ################# helper functions ###################
@@ -184,7 +181,6 @@ def processOne(fname, outdirloc, color) :
 
   infile=open(fname, 'rb')
   t=fname.rsplit('/',1);
-  dzi_name=t[-1].replace('.tif','.dzi');
 
   tiff = tifffile.TiffFile(fname)
   pages = list(tiff)
@@ -266,22 +262,6 @@ def processOne(fname, outdirloc, color) :
   infile.close()
   
   imageinfo=outinfo[-1]
-  
-  dzi_descriptor = """\
-<?xml version="1.0" encoding="UTF-8"?>
-<Image TileWidth="%(tile_width)d" 
-       TileHeight="%(tile_length)d" 
-       Overlap="1" 
-       Format="jpg" 
-       xmlns="http://schemas.microsoft.com/deepzoom/2008">
-       <Size Width="%(image_width_orig)d" Height="%(image_length_orig)d"/>
-</Image>
-""" % imageinfo
-  dname= dzi_template % dict(outdir = outdirloc, dzi_name=dzi_name)
-  f = open('%s' % dname, 'w')
-  f.write(dzi_descriptor)
-  f.close
-  
   imageinfo['image_lowest_level']=lowest_level
   imageinfo['data_location']=outdirloc;
   

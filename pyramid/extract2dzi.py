@@ -31,7 +31,6 @@ File directory generated
    
     dest-dir
       ImageProperties.xml
-      pyramid.dzi
       0 
         0_0.jpg
       1
@@ -56,12 +55,10 @@ except:
     raise
 
 t=fname.rsplit('/',1);
-dzi_name=t[-1].replace('.tif','.dzi');
 
 topdir_template = '%(outdir)s'
 dir_template = topdir_template +'/%(zoomno)d'
 tile_template = dir_template + '/%(tcolno)d_%(trowno)d.jpg'
-dzi_template = '%(outdir)s/%(dzi_name)s'
 image_template = '%(outdir)s/ImageProperties.xml'
 
 tiff = tifffile.TiffFile(fname)
@@ -229,22 +226,6 @@ for page in outpages:
 infile.close()
 
 imageinfo=outinfo[-1]
-
-dzi_descriptor = """\
-<?xml version="1.0" encoding="UTF-8"?>
-<Image TileWidth="%(tile_width)d" 
-       TileHeight="%(tile_length)d" 
-       Overlap="1" 
-       Format="jpg" 
-       xmlns="http://schemas.microsoft.com/deepzoom/2008">
-       <Size Width="%(image_width_orig)d" Height="%(image_length_orig)d"/>
-</Image>
-""" % imageinfo
-dname= dzi_template % dict(outdir = outdir, dzi_name=dzi_name)
-f = open('%s' % dname, 'w')
-f.write(dzi_descriptor)
-f.close
-
 imageinfo['image_lowest_level']=lowest_level
 imageinfo['data_location']=outdir;
 

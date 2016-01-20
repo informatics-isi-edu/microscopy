@@ -18,7 +18,8 @@ var CXI_MSG='Return Message';
 var MOBILE_AUTHENTICATE = true;
 var GUEST_USER = '********';
 var GUEST_PASSWORD = '********';
-var GLOBUS_AUTHN = true;
+var GLOBUS_AUTHN = false;
+var GOAUTHN = true;
 var SLIDE_PRINTER_ADDR = 'slide.example.org';
 var SLIDE_PRINTER_PORT = 9100;
 var SPECIMEN_PRINTER_ADDR = 'box.example.org';
@@ -118,7 +119,7 @@ var entityStack = [];
 var timestampsColumns = ['completion_time', 'deadline', 'request_time'];
 
 var labelTerms = ['Experiment Type', 'Probe'];
-var viewsList = ['Transfer', 'Printers', '+/- Age', '+/- Experiment Type', '+/- Gene', '+/- Probe', '+/- Species', '+/- Tissue'];
+var viewsList = ['Printers', '+/- Age', '+/- Experiment Type', '+/- Gene', '+/- Probe', '+/- Species', '+/- Tissue'];
 var slidesViewList = ['All', 'Unassigned'];
 var SCAN_HISTORY = ['Specimen', 'Experiment', 'Slide', 'search'];
 
@@ -149,7 +150,7 @@ var specimenDropDown = {
 };
 
 var buttonsEnableFunction = {
-		'globusTransferButton': hasScans,
+		//'globusTransferButton': hasScans,
 		'printSlideButton': hasExperiments,
 		'addButton': hasCheckedEntries,
 		'submitButton': hasCheckedFiles,
@@ -747,13 +748,15 @@ function renderLogin() {
 	}
 	var index = HOME.lastIndexOf('/webcli');
 	HOME = HOME.substring(0, index);
-	ERMREST_HOME = HOME + ERMREST_HOME;
-	CATALOG_HOME = HOME + CATALOG_HOME;
-	WEBAUTHN_HOME = HOME + WEBAUTHN_HOME;
-	PRINTER_HOME = HOME + PRINTER_HOME;
-	GLOBUS_TRANSFER_HOME = HOME + GLOBUS_TRANSFER_HOME;
-	ERMREST_SCHEMA_HOME = HOME + ERMREST_SCHEMA_HOME;
-	SERVICE_TRANSFER_HOME = HOME + SERVICE_TRANSFER_HOME;
+	ERMREST_HOME = window.location.origin + ERMREST_HOME;
+	CATALOG_HOME = window.location.origin + CATALOG_HOME;
+	WEBAUTHN_HOME = window.location.origin + WEBAUTHN_HOME;
+	PRINTER_HOME = window.location.origin + PRINTER_HOME;
+	GLOBUS_TRANSFER_HOME = window.location.origin + GLOBUS_TRANSFER_HOME;
+	ERMREST_SCHEMA_HOME = window.location.origin + ERMREST_SCHEMA_HOME;
+	SERVICE_TRANSFER_HOME = window.location.origin + SERVICE_TRANSFER_HOME;
+	getSession();
+	return;
 	if (isMobileSearch() && !MOBILE_AUTHENTICATE) {
 		submitMobileLogin();
 		return;
@@ -836,7 +839,9 @@ function renderLoginForm() {
 }
 
 function submitLogout() {
-	if (GLOBUS_AUTHN) {
+	if (GOAUTHN) {
+		deleteSession(window.location);
+	} else if (GLOBUS_AUTHN) {
 		token = $.cookie(goauth_cookie);
 		if (token != null) {
 			$.removeCookie(goauth_cookie);
@@ -857,7 +862,7 @@ function postSubmitLogout(data, textStatus, jqXHR, param) {
 }
 
 function errorSubmitLogout(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
-	window.location = window.location;
+	getSession(param);
 }
 
 function checkSubmitLogin(event) {
@@ -1770,7 +1775,7 @@ function displayUnassignedSlides() {
 	$('#addSlidesButton').hide();
 	$('#deleteExperimentButton').hide();
 	$('#printSlideButton').hide();
-	$('#globusTransferButton').hide();
+	//$('#globusTransferButton').hide();
 	$('#deleteSlideButton').hide();
 	$('#centerPanelMiddle').show();
 	$('#centerPanelTop').hide();
@@ -1818,7 +1823,7 @@ function appendSlides(item) {
 		var input = $('<input>');
 		input.attr({'type': 'checkbox',
 			'id': 'selectAllAssignedSlidesTh'});
-		input.click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
+		input.click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton'/*, 'globusTransferButton'*/]);});
 		th.append(input);
 		$.each(slideTableColumns, function(i, col) {
 			if (!slideNoDisplayColumns.contains(col)) {
@@ -1845,7 +1850,7 @@ function appendSlides(item) {
 			var input = $('<input>');
 			input.attr({'type': 'checkbox',
 				'slideId': row['ID']});
-			input.click(function(event) {checkAvailableSlides(event, 'slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
+			input.click(function(event) {checkAvailableSlides(event, 'slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton'/*, 'globusTransferButton'*/]);});
 			td.append(input);
 			$.each(slideTableColumns, function(j, col) {
 				if (!slideNoDisplayColumns.contains(col)) {
@@ -1869,7 +1874,7 @@ function appendSlides(item) {
 		});
 		*/
 		$('#selectAllAssignedSlidesTh').unbind('click');
-		$('#selectAllAssignedSlidesTh').click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton', 'globusTransferButton']);});
+		$('#selectAllAssignedSlidesTh').click(function(event) {checkUncheckAll('slidesTable', 'selectAllAssignedSlidesTh', ['printSlideButton'/*, 'globusTransferButton'*/]);});
 	}
 	
 	if (arr.length > 0 && item == 'Experiment') {
@@ -1907,9 +1912,9 @@ function appendSlides(item) {
 		}
 	}
 	if (arr.length > 0) {
-		$('#globusTransferButton').show();
-		$('#globusTransferButton').attr('disabled', 'disabled');
-		$('#globusTransferButton').addClass('disabledButton');
+		//$('#globusTransferButton').show();
+		//$('#globusTransferButton').attr('disabled', 'disabled');
+		//$('#globusTransferButton').addClass('disabledButton');
 		$('#deleteSlideButton').show();
 		$('#deleteSlideButton').attr('disabled', 'disabled');
 		$('#deleteSlideButton').addClass('disabledButton');
@@ -2625,16 +2630,16 @@ function displayScan(img, image) {
 	$('#transferButton').unbind('click');
 	$('#transferButton').click(function(event) {transferImage(image);});
 	$('#transferButton').show();
-	$('#enlargeButton').unbind('click');
+	//$('#enlargeButton').unbind('click');
 	if (image['Zoomify'] != null) {
-		$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
-		$('#enlargeButton').removeAttr('disabled');
-		$('#enlargeButton').removeClass('disabledButton');
+		//$('#enlargeButton').click(function(event) {enlargeImage(img, image);});
+		//$('#enlargeButton').removeAttr('disabled');
+		//$('#enlargeButton').removeClass('disabledButton');
 	} else {
-		$('#enlargeButton').attr('disabled', 'disabled');
-		$('#enlargeButton').addClass('disabledButton');
+		//$('#enlargeButton').attr('disabled', 'disabled');
+		//$('#enlargeButton').addClass('disabledButton');
 	}
-	$('#enlargeButton').show();
+	//$('#enlargeButton').show();
 	$('#deleteScanButton').show();
 
 	$('img', $('#centerPanelTop')).removeClass('highlighted');
@@ -2765,12 +2770,14 @@ function initCenterPanelButtons(panel) {
 	button.button({icons: {secondary: 'ui-icon-alert alert_background'}}).click(function(event) {deleteScan();});
 	button.addClass('deleteButton');
 
+	/*
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'enlargeButton');
 	button.attr('context', 'centerPanelBottom');
 	button.html('Enlarge Image');
 	button.button({icons: {primary: 'ui-icon-zoomin'}});
+	*/
 
 	button = $('<button>');
 	panel.append(button);
@@ -2787,12 +2794,14 @@ function initCenterPanelButtons(panel) {
 	button.button({icons: {secondary: 'ui-icon-alert alert_background'}}).click(function(event) {deleteSlide();});
 	button.addClass('deleteButton');
 
+	/*
 	button = $('<button>');
 	panel.append(button);
 	button.attr('id', 'globusTransferButton');
 	button.attr('context', 'centerPanelBottom');
 	button.html('Transfer');
 	button.button({icons: {primary: 'ui-icon-transferthick-e-w'}}).click(function(event) {submitTransfer();});
+	*/
 
 	button = $('<button>');
 	panel.append(button);
@@ -2972,7 +2981,7 @@ function postUpdateEntity(data, textStatus, jqXHR, param) {
 	$('#deleteSpecimenButton').hide();
 	if (item == 'Scan') {
 		$('#transferButton').show();
-		$('#enlargeButton').show();
+		//$('#enlargeButton').show();
 		$('#deleteScanButton').show();
 	} else if (item == 'Specimen') {
 		$('#printSpecimenButton').show();
@@ -3224,7 +3233,7 @@ function createSlide() {
 	$('#cancelCreateButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
-	$('#globusTransferButton').hide();
+	//$('#globusTransferButton').hide();
 	$('#deleteSlideButton').hide();
 	$('#printSpecimenButton').hide();
 	$('#deleteSpecimenButton').hide();
@@ -3493,7 +3502,7 @@ function renderTransferFiles(files) {
 	$('#submitButton').show();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
-	$('#globusTransferButton').hide();
+	//$('#globusTransferButton').hide();
 	$('#deleteSlideButton').hide();
 	$('#refreshActivityButton').attr('disabled', 'disabled');
 	$('#refreshActivityButton').addClass('disabledButton');
@@ -4084,7 +4093,7 @@ function createExperiment() {
 	$('#deleteSpecimenButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
-	$('#globusTransferButton').hide();
+	//$('#globusTransferButton').hide();
 	$('#deleteSlideButton').hide();
 }
 
@@ -4473,7 +4482,7 @@ function createSpecimen() {
 	$('#deleteSpecimenButton').hide();
 	$('#centerPanelMiddle').hide();
 	$('#centerPanelTop').show();
-	$('#globusTransferButton').hide();
+	//$('#globusTransferButton').hide();
 	$('#deleteSlideButton').hide();
 }
 
@@ -5535,5 +5544,47 @@ function genExperimentDescription() {
 	});
 
 	return ret.substr(0,15);
+}
+
+function getSession(param) {
+	var url = WEBAUTHN_HOME;
+	webcliAJAX.GET(url, 'application/json', true, successGetSession, param, errorGetSession, MAX_RETRIES+1);
+}
+
+function successGetSession(data, textStatus, jqXHR, param) {
+	if (data['client'] != null) {
+		USER = data['client'];
+		checkGlobusAuthorization();
+	} else {
+		//getGoauth(encodeSafeURIComponent(window.location));
+		USER = 'anonymous';
+		checkGlobusAuthorization();
+	}
+}
+
+function errorGetSession(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
+	if (jqXHR.status == 401 || jqXHR.status == 404) {
+		handleError(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+	} else {
+		handleError(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+	}
+}
+
+function getGoauth(referrer) {
+	var url = '/ermrest/authn/preauth?referrer='+referrer;
+	webcliAJAX.GET(url, 'application/x-www-form-urlencoded; charset=UTF-8', true, successGetGoauth, null, null, MAX_RETRIES+1);
+}
+
+function successGetGoauth(data, textStatus, jqXHR) {
+	var url = data['redirect_url'];
+	window.open(url, '_self');
+}
+function deleteSession(param) {
+	var url = WEBAUTHN_HOME;
+	webcliAJAX.DELETE(url, true, successDeleteSession, param, errorSubmitLogout, 0);
+}
+
+function successDeleteSession(data, textStatus, jqXHR, param) {
+	getSession(param);
 }
 

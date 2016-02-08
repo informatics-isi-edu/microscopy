@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # 
 # Copyright 2014 University of Southern California
@@ -91,9 +91,14 @@ def load(config_filename):
         logger.error('CZI directory must be given and exist.')
         return None
 
-    tiles = cfg.get('tiles', None)
-    if not tiles or not os.path.isdir(tiles):
-        logger.error('Tiles directory must be given and exist.')
+    czi2dzi = cfg.get('czi2dzi', None)
+    if not czi2dzi or not os.path.isfile(czi2dzi):
+        logger.error('Convert czi to dzi application must be given and exist.')
+        return None
+
+    viewer = cfg.get('viewer', None)
+    if not viewer:
+        logger.error('The viewer application must be given.')
         return None
 
     thumbnails = cfg.get('thumbnails', None)
@@ -101,49 +106,14 @@ def load(config_filename):
         logger.error('Thumbnails directory must be given and exist.')
         return None
 
-    tiff = cfg.get('tiff', None)
-    if not tiff or not os.path.isdir(tiff):
-        logger.error('Tiff directory must be given and exist.')
-        return None
-
     dzi = cfg.get('dzi', None)
     if not dzi or not os.path.isdir(dzi):
         logger.error('DZI directory must be given and exist.')
         return None
 
-    html = cfg.get('html', None)
-    if not html or not os.path.isdir(html):
-        logger.error('HTML directory must be given and exist.')
-        return None
-
-    app_path = cfg.get('app_path', None)
-    if not app_path:
-        logger.error('APP PATH must be given.')
-        return None
-
     http_storage = cfg.get('http_storage', None)
     if not http_storage:
         logger.error('HTTP Storage must be given.')
-        return None
-
-    extract = cfg.get('extract', None)
-    if not extract or not os.path.isfile(extract):
-        logger.error('Extract application must be given and exist.')
-        return None
-
-    extract_rgb = cfg.get('extract_rgb', None)
-    if not extract_rgb or not os.path.isfile(extract_rgb):
-        logger.error('Extract RGB application must be given and exist.')
-        return None
-
-    extract2dzi = cfg.get('extract2dzi', None)
-    if not extract2dzi or not os.path.isfile(extract2dzi):
-        logger.error('Extract to DZI application must be given and exist.')
-        return None
-
-    extract2dzi_rgb = cfg.get('extract2dzi_rgb', None)
-    if not extract2dzi_rgb or not os.path.isfile(extract2dzi_rgb):
-        logger.error('Extract to DZI RGB application must be given and exist.')
         return None
 
     czirules = cfg.get('czirules', None)
@@ -177,19 +147,13 @@ def load(config_filename):
                                baseuri=url, \
                                username=username, \
                                password=password, \
-                               tiles=tiles, \
                                thumbnails=thumbnails, \
                                czi=czi, \
-                               tiff=tiff, \
                                dzi=dzi, \
-                               html=html, \
-                               extract=extract, \
-                               extract_rgb=extract_rgb, \
-                               extract2dzi=extract2dzi, \
-                               extract2dzi_rgb=extract2dzi_rgb, \
+                               czi2dzi=czi2dzi, \
+                               viewer=viewer, \
                                czirules=czirules, \
                                showinf=showinf, \
-                               app_path=app_path, \
                                http_storage=http_storage, \
                                timeout=timeout, \
                                mail_server=mail_server, \

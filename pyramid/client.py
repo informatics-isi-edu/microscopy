@@ -321,7 +321,8 @@ class ErmrestClient (object):
                     obj[col] = metadata[col]
             body.append(obj)
             headers = {'Content-Type': 'application/json'}
-            self.send_request('PUT', url, json.dumps(body), headers, False)
+            resp = self.send_request('PUT', url, json.dumps(body), headers, False)
+            resp.read()
             self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".' % (slideId, scanId)) 
             self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
         

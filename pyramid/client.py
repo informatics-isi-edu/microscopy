@@ -135,6 +135,10 @@ class ErmrestClient (object):
         self.showinf = kwargs.get("showinf")
         self.timeout = kwargs.get("timeout")
         self.http_storage = kwargs.get("http_storage")
+        self.hatrac = kwargs.get("hatrac")
+        self.namespace = kwargs.get("namespace")
+        self.cookie = kwargs.get("cookie")
+        self.chunk_size = kwargs.get("chunk_size")
         self.header = None
         self.webconn = None
         self.logger.debug('Client initialized.')
@@ -184,7 +188,7 @@ class ErmrestClient (object):
             #headers["Content-Type"] = "application/x-www-form-urlencoded"
             #resp = self.send_request("POST", "/ermrest/authn/session", "username=%s&password=%s" % (self.username, self.password), headers, reconnect)
             #self.header = dict(Cookie=resp.getheader("set-cookie"))
-            self.header = None
+            self.header = {'Cookie': self.cookie}
         
     def close(self):
         """Closes the connection to the Ermrest service.
@@ -260,7 +264,7 @@ class ErmrestClient (object):
         scans = json.loads(resp.read())
         scanids = []
         for scan in scans:
-            if self.getCziFile(scan['Slide ID'], scan['ID']):
+            if self.hasCziFile(scan['Slide ID'], scan['ID']) == True:
                 scanids.append((scan['Slide ID'], scan['ID']))
         for slideId,scanId in scanids:
             f = self.getCziFile(slideId, scanId)
@@ -326,9 +330,40 @@ class ErmrestClient (object):
             self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".' % (slideId, scanId)) 
             self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
         
+    def hasCziFile(self, slideId=None, scanId=None):
+        """
+            Check if the file exists in hatrac
+        """
+        ret = False
+        try:
+            url = '%s/%s/%s/%s.czi' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(scanId, safe=''))
+            headers = {'Accept': '*'}
+            resp = self.send_request('HEAD', url, '', headers, False)
+            resp.read()
+            ret = True
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('HEAD exception "%s"' % str(ev))
+            self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+            pass
+        return ret
+                
     def getCziFile(self, slideId, scanId):
-        cziFile = '%s/%s/%s.czi' % (self.czi, slideId, scanId)
-        if os.path.isfile(cziFile):
-            return cziFile
-        return None
-        
+        shutil.rmtree('%s/%s' % (self.czi, self.namespace), True)
+        os.makedirs('%s/%s/%s' % (self.czi, self.namespace, slideId))
+        cziFile = '%s/%s/%s/%s.czi' % (self.czi, self.namespace, slideId, scanId)
+        url = '%s/%s/%s/%s.czi' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(scanId, safe=''))
+        headers = {'Accept': '*'}
+        resp = self.send_request('GET', url, '', headers, False)
+        file_size = int (resp.getheader('content-length'))
+        chunk_no = file_size / self.chunk_size
+        last_chunk_size = file_size % self.chunk_size
+        f = open(cziFile, "wb")
+        for index in range(chunk_no):
+            f.write(resp.read(self.chunk_size))
+        if last_chunk_size > 0:
+            f.write(resp.read(last_chunk_size))
+        f.close()
+        cziFile = '%s/%s/%s/%s.czi' % (self.czi, self.namespace, slideId, scanId)
+        return cziFile
+

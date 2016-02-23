@@ -136,10 +136,26 @@ def load(config_filename):
         logger.error('Ermrest password must be given.')
         return None
 
+    hatrac = cfg.get('hatrac', None)
+    if not hatrac:
+        logger.error('hatrac URL must be given.')
+        return None
+
+    namespace = cfg.get('namespace', None)
+    if not namespace:
+        logger.error('CIRM namespace must be given.')
+        return None
+
+    cookie = cfg.get('cookie', None)
+    if not cookie:
+        logger.error('CIRM cookie must be provided.')
+        return None
+
     mail_server = cfg.get('mail_server', None)
     mail_sender = cfg.get('mail_sender', None)
     mail_receiver = cfg.get('mail_receiver', None)
     timeout = cfg.get('timeout', 30)
+    chunk_size = cfg.get('chunk_size', 100000000)
 
     # Establish Ermrest client connection
     try:
@@ -147,6 +163,10 @@ def load(config_filename):
                                baseuri=url, \
                                username=username, \
                                password=password, \
+                               hatrac=hatrac, \
+                               cookie=cookie, \
+                               chunk_size=chunk_size, \
+                               namespace=namespace, \
                                thumbnails=thumbnails, \
                                czi=czi, \
                                dzi=dzi, \

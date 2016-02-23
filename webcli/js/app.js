@@ -2220,7 +2220,7 @@ function appendImage(images) {
 		centerPanel.append(img);
 		img.click(function(event) {displayScan($(this), image);});
 		if (image['Zoomify'] != null) {
-			img.dblclick(function(event) {enlargeImage($(this), image);});
+			//img.dblclick(function(event) {enlargeImage($(this), image);});
 		}
 	});
 	$('button[context="centerPanelBottom"]').hide();
@@ -5564,7 +5564,8 @@ function successGetSession(data, textStatus, jqXHR, param) {
 
 function errorGetSession(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 	if (jqXHR.status == 401 || jqXHR.status == 404) {
-		handleError(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+		USER = 'anonymous';
+		checkGlobusAuthorization();
 	} else {
 		handleError(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 	}

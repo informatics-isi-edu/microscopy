@@ -347,8 +347,12 @@ def array_to_jpeg(array, Y, X, jpegroot=None, quality=75):
         # drop single-channel dimension for grayscale array?
         array = array[:,:,0]
 
-    img = toimage(array)
-    img.save(jpegname, quality=quality)
+    try:
+        img = toimage(array)
+        img.save(jpegname, quality=quality)
+    except Exception, te:
+        print te, array.shape, Y, X, jpegroot, quality
+        raise te
 
 def metadata_to_xml(meta, channelno, channeldir):
     color_argb = meta['channel'][channelno]['color']

@@ -409,7 +409,7 @@ def main(czifilename, dzidirname=None):
 
     converter = LazyCziConverter(czifilename)
 
-    skip_existing = os.getenv('DZI_SKIP_EXISTING').lower() in ['t', 'true']
+    skip_existing = (os.getenv('DZI_SKIP_EXISTING') or '').lower() in ['t', 'true']
 
     tilesize = os.getenv('DZI_TILESIZE_YxX')
     if tilesize:

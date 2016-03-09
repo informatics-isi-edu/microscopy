@@ -409,6 +409,8 @@ def main(czifilename, dzidirname=None):
 
     converter = LazyCziConverter(czifilename)
 
+    skip_existing = os.getenv('DZI_SKIP_EXISTING').lower() in ['t', 'true']
+
     tilesize = os.getenv('DZI_TILESIZE_YxX')
     if tilesize:
         tilesize = tuple([ int(s) for s in tilesize.split('x') ])
@@ -472,7 +474,10 @@ def main(czifilename, dzidirname=None):
                         range_accum=pixel_range
                     )
 
-                    array_to_jpeg(tile, k, j, dzizoomdirname, quality)
+                    if skip_existing and os.access('%s/%d_%d.jpg' % (dzizoomdirname, j, k), os.F_OK):
+                        pass
+                    else:
+                        array_to_jpeg(tile, k, j, dzizoomdirname, quality)
 
         doc['channel'][channel]['valuerange'] = [ int(v) for v in pixel_range ]
         metadata_to_xml(doc, channel, dzichanneldirname)

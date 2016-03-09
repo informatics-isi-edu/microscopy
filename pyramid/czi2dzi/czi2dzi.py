@@ -130,6 +130,13 @@ class LazyCziConverter (object):
 
         sys.stderr.write('Estimating %d tiles per row at zoom level 1 or %d tile cache size\n' % (row_tile_count, self._tile_cache_size))
 
+        # get per-dimension distances and turn meter value into micrometer
+        self.mpps = dict([
+            (dx.get('Id'), float(dx.find('Value').text) * 1E6)
+            for dx in self._fo.metadata.findall('Metadata/Scaling/Items/Distance')
+        ])
+        sys.stderr.write('Image reported microns per pixel: %s\n' % self.mpps)
+
     def canvas_size(self):
         return self._bbox_zeroed[1]
 
@@ -364,12 +371,17 @@ def metadata_to_xml(meta, channelno, channeldir):
     channelDefaultRGB="%s" """ % (alpha, rgb)
     else:
         colorstuff = ""
+
+    mpps = set(meta['microns_per_pixel'].values())
+    assert len(mpps) == 1
+    pix_per_meter = 1.0 / (mpps.pop() * 1E-6)
         
     doc = \
 """<?xml version="1.0" encoding="UTF-8"?>
 <IMAGE_PROPERTIES
     width="%(W)d"
     height="%(H)d"
+    MeterScaleInPixel="%(PPM)f"
     numTiles="%(NT)d"
     numImages="1"
     version="2.0"
@@ -387,6 +399,7 @@ def metadata_to_xml(meta, channelno, channeldir):
     CN=meta['channel'][channelno]['cname_long'],
     W=meta['canvas_size'][0],
     H=meta['canvas_size'][1],
+    PPM=pix_per_meter,
     NT=meta['channel'][channelno]['ntiles'],
     TW=meta['tile_size'][0],
     TH=meta['tile_size'][1],
@@ -426,7 +439,7 @@ def main(czifilename, dzidirname=None):
         
     H, W = converter.canvas_size()
     spp = converter._fo.shape[-1]
-    doc = dict(channel=dict(), canvas_size=(W, H), tile_size=(tilesize[1], tilesize[0]), samples_per_pixel=spp)
+    doc = dict(channel=dict(), canvas_size=(W, H), tile_size=(tilesize[1], tilesize[0]), samples_per_pixel=spp, microns_per_pixel=converter.mpps)
 
     # map zoom levels to DZI zoom tier numbers
     zooms = list(converter._zoom_levels)

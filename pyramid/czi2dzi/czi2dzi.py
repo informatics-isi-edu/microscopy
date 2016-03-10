@@ -381,7 +381,7 @@ def metadata_to_xml(meta, channelno, channeldir):
 <IMAGE_PROPERTIES
     width="%(W)d"
     height="%(H)d"
-    MeterScaleInPixel="%(PPM)f"
+    meterScaleInPixel="%(PPM)f"
     numTiles="%(NT)d"
     numImages="1"
     version="2.0"

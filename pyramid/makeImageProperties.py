@@ -78,6 +78,7 @@ def makeXml(cfg):
                     numImages="1"
                     version="2.0"
                     levelScale="2"
+                    meterScaleInPixels="402738.62263391056"
                     tileWidth="%(tileSize)d"
                     overlap="%(overlap)d"
                     tileHeight="%(tileSize)d"

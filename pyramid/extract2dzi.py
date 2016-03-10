@@ -237,6 +237,7 @@ image_descriptor = """\
                   numTiles="%(total_tile_count)d" 
                   numImages="1" 
                   version="2.0" 
+                  meterScaleInPixels="402738.62263391056"
                   tileWidth="%(tile_width)d" 
                   tileHeight="%(tile_length)d" 
                   levelScale="%(level_scale)d"

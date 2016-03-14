@@ -5556,16 +5556,13 @@ function successGetSession(data, textStatus, jqXHR, param) {
 		USER = data['client'];
 		checkGlobusAuthorization();
 	} else {
-		//getGoauth(encodeSafeURIComponent(window.location));
-		USER = 'anonymous';
-		checkGlobusAuthorization();
+		getGoauth(encodeSafeURIComponent(window.location));
 	}
 }
 
 function errorGetSession(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
 	if (jqXHR.status == 401 || jqXHR.status == 404) {
-		USER = 'anonymous';
-		checkGlobusAuthorization();
+		getGoauth(encodeSafeURIComponent(window.location));
 	} else {
 		handleError(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
 	}
@@ -5582,10 +5579,57 @@ function successGetGoauth(data, textStatus, jqXHR) {
 }
 function deleteSession(param) {
 	var url = WEBAUTHN_HOME;
-	webcliAJAX.DELETE(url, true, successDeleteSession, param, errorSubmitLogout, 0);
+	webcliAJAX.DELETE(url, true, successDeleteSession, param, errorSubmitLogout, MAX_RETRIES+1);
 }
 
 function successDeleteSession(data, textStatus, jqXHR, param) {
-	getSession(param);
+	renderLogoutForm(param);
 }
 
+function errorDeleteSession(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {
+	handleError(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count);
+}
+
+function renderLogoutForm(param) {
+	var uiDiv = $('#app');
+	uiDiv.html('');
+	var logoDiv = $('<div>');
+	uiDiv.append(logoDiv);
+	var h1 = $('<h1>');
+	logoDiv.append(h1);
+	h1.html('Microscopy Image Manager');
+	h1.addClass('logo');
+	var fieldsetDiv = $('<div>');
+	uiDiv.append(fieldsetDiv);
+	fieldsetDiv.addClass('center_fieldset');
+	fieldsetDiv.append('<br/><br/>');
+	var fieldset = $('<fieldset>');
+	fieldsetDiv.append(fieldset);
+	var h2 = $('<h2>');
+	fieldset.append(h2);
+	h2.html('Logged out of Microscopy');
+	var p = $('<p>');
+	fieldset.append(p);
+	var em = $('<em>');
+	p.append(em);
+	em.html('You have successfully logged out.');
+	p = $('<p>');
+	fieldset.append(p);
+	p.html('If you are using a shared computer, please ensure you have also logged out ' +
+			'of any identity providers used during your session, ' +
+			'and shut down this browser to remove any session cookies.');
+	p = $('<p>');
+	fieldset.append(p);
+	var span = $('<span>');
+	p.append(span);
+	span.html('Continue to ');
+	var a = $('<a>');
+	p.append(a);
+	a.addClass('link-style banner-text');
+	a.attr('href', 'javascript:microscopyApp()');
+	a.html('Microscopy');
+}
+
+function microscopyApp() {
+	window.location = window.location.origin + '/webcli';
+}

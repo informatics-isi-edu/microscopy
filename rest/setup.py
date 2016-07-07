@@ -23,6 +23,7 @@ setup(name="microscopy",
       maintainer='isrd support',
       maintainer_email='isrd@isi.edu',
       packages=["microscopy"],
+      package_data={'microscopy':["*.wsgi"]},
       requires=["web.py", "psycopg2"],
       classifiers=[
         "Intended Audience :: Developers",

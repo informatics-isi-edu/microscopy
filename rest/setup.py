@@ -23,7 +23,7 @@ setup(name="microscopy",
       maintainer='misd support',
       maintainer_email='misd@isi.edu',
       packages=["microscopy"],
-      requires=["web.py", "psycopg2", "globusonline"],
+      requires=["web.py", "psycopg2"],
       classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",

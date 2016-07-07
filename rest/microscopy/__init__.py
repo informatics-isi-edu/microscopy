@@ -15,14 +15,10 @@
 #
 
 import printer
-import zoomify
-import transfer
 import webauthn2
 
 __all__ = [
-    'printer',
-    'zoomify',
-    'transfer'
+    'printer'
     ]
 
 ## setup web service configuration data
@@ -54,12 +50,10 @@ def web_urls():
         return C
 
     urls = (
-        # print job and print control, transfer, and zoomify
+        # print job and print control
         '/printer/([^/]+)/job', printerClass(printer.PrintJob, global_env.get('printers')),
         '/printer/([^/]+)/job/([^/]+)/', printerClass(printer.PrintJob, global_env.get('printers')),
-        '/printer/([^/]+)/control/([^/]+)/', printerClass(printer.PrintControl, global_env.get('printers')),
-        '/transfer', transfer.GlobusClient,
-        '/zoomify/(.*)', zoomify.Zoomify
+        '/printer/([^/]+)/control/([^/]+)/', printerClass(printer.PrintControl, global_env.get('printers'))
     )
 
     return tuple(urls)

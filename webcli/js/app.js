@@ -840,7 +840,7 @@ function renderLoginForm() {
 
 function submitLogout() {
 	if (GOAUTHN) {
-		deleteSession(window.location);
+		deleteSession('/webcli');
 	} else if (GLOBUS_AUTHN) {
 		token = $.cookie(goauth_cookie);
 		if (token != null) {
@@ -5578,12 +5578,22 @@ function successGetGoauth(data, textStatus, jqXHR) {
 	window.open(url, '_self');
 }
 function deleteSession(param) {
-	var url = WEBAUTHN_HOME;
+	var url = WEBAUTHN_HOME + '?logout_url=' + encodeSafeURIComponent(param);
 	webcliAJAX.DELETE(url, true, successDeleteSession, param, errorSubmitLogout, MAX_RETRIES+1);
 }
 
 function successDeleteSession(data, textStatus, jqXHR, param) {
-	renderLogoutForm(param);
+	var logout_url = null;
+	if (data !== undefined) {
+		data = JSON.parse(data);
+		logout_url = data['logout_url'];
+	}
+	logout_url = (logout_url != null ? logout_url : param);
+	if (logout_url != null) {
+		window.location = logout_url;
+	} else {
+		renderLogoutForm(param);
+	}
 }
 
 function errorDeleteSession(jqXHR, textStatus, errorThrown, retryCallback, url, contentType, processData, obj, async, successCallback, param, errorCallback, count) {

@@ -840,7 +840,7 @@ function renderLoginForm() {
 
 function submitLogout() {
 	if (GOAUTHN) {
-		deleteSession('/webcli');
+		deleteSession(window.location.protocol + '//' + window.location.host + '/webcli');
 	} else if (GLOBUS_AUTHN) {
 		token = $.cookie(goauth_cookie);
 		if (token != null) {

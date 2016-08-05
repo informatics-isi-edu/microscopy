@@ -5553,7 +5553,20 @@ function getSession(param) {
 
 function successGetSession(data, textStatus, jqXHR, param) {
 	if (data['client'] != null) {
-		USER = data['client'];
+		// New webauthen sends back a client Object
+		// Check for display_name first
+		if (data['client']['display_name'] !== undefined) {
+			USER = data['client']['display_name'];
+		// Then check for full_name
+		} else if (data['client']['full_name'] !== undefined) {
+			USER = data['client']['full_name'];
+		// Then check for email
+		} else if (data['client']['email'] !== undefined) {
+			USER = data['client']['email'];
+		// Default to client if none of the above because it's still using the old web authen service
+		} else {
+			USER = '';
+		}
 		checkGlobusAuthorization();
 	} else {
 		getGoauth(encodeSafeURIComponent(window.location));

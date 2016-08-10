@@ -120,8 +120,6 @@ class ErmrestClient (object):
         if len(host_port) > 1:
             self.port = host_port[1]
         self.use_goauth = kwargs.get("use_goauth")
-        self.username = kwargs.get("username")
-        self.password = kwargs.get("password")
         self.mail_server = kwargs.get("mail_server")
         self.mail_sender = kwargs.get("mail_sender")
         self.mail_receiver = kwargs.get("mail_receiver")
@@ -134,7 +132,6 @@ class ErmrestClient (object):
         self.czirules = kwargs.get("czirules")
         self.showinf = kwargs.get("showinf")
         self.timeout = kwargs.get("timeout")
-        self.http_storage = kwargs.get("http_storage")
         self.hatrac = kwargs.get("hatrac")
         self.namespace = kwargs.get("namespace")
         self.cookie = kwargs.get("cookie")
@@ -176,6 +173,7 @@ class ErmrestClient (object):
         else:
             raise ValueError('Scheme %s is not supported.' % self.scheme)
 
+        """
         if self.use_goauth:
             auth = base64.encodestring('%s:%s' % (self.username, self.password)).replace('\n', '')
             headers = dict(Authorization='Basic %s' % auth)
@@ -188,7 +186,8 @@ class ErmrestClient (object):
             #headers["Content-Type"] = "application/x-www-form-urlencoded"
             #resp = self.send_request("POST", "/ermrest/authn/session", "username=%s&password=%s" % (self.username, self.password), headers, reconnect)
             #self.header = dict(Cookie=resp.getheader("set-cookie"))
-            self.header = {'Cookie': self.cookie}
+        """
+        self.header = {'Cookie': self.cookie}
         
     def close(self):
         """Closes the connection to the Ermrest service.
@@ -317,8 +316,8 @@ class ErmrestClient (object):
             url = '%s/attributegroup/Scan/ID;%s' % (self.path, columns)
             body = []
             obj = {'ID': scanId,
-                   'Thumbnail': '%s/thumbnails/%s/%s.jpg' % (self.http_storage, slideId, scanId),
-                   'DZI': '%s/%s?url=%s/data/%s/Brigh/ImageProperties.xml' % (self.http_storage, self.viewer, self.http_storage, scanId)
+                   'Thumbnail': '/thumbnails/%s/%s.jpg' % (slideId, scanId),
+                   'DZI': '/%s?url=/data/%s/Brigh/ImageProperties.xml' % (self.viewer, scanId)
                    }
             for col in self.metadata:
                 if col in metadata and metadata[col] != None:

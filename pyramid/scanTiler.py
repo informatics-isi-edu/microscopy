@@ -84,8 +84,6 @@ def load(config_filename):
         logger.error('Ermrest URL must be given.')
         return None
     
-    goauthtoken = cfg.get('goauthtoken', None)
-    
     czi = cfg.get('czi', None)
     if not czi or not os.path.isdir(czi):
         logger.error('CZI directory must be given and exist.')
@@ -111,11 +109,6 @@ def load(config_filename):
         logger.error('DZI directory must be given and exist.')
         return None
 
-    http_storage = cfg.get('http_storage', None)
-    if not http_storage:
-        logger.error('HTTP Storage must be given.')
-        return None
-
     czirules = cfg.get('czirules', None)
     if not czirules or not os.path.isfile(czirules):
         logger.error('CZI rules file must be given and exist.')
@@ -124,16 +117,6 @@ def load(config_filename):
     showinf = cfg.get('showinf', None)
     if not showinf:
         logger.error('Extract metadata application must be given.')
-        return None
-
-    username = cfg.get('username', None)
-    if not username:
-        logger.error('Ermrest username must be given.')
-        return None
-        
-    password = cfg.get('password', None)
-    if not password:
-        logger.error('Ermrest password must be given.')
         return None
 
     hatrac = cfg.get('hatrac', None)
@@ -155,14 +138,12 @@ def load(config_filename):
     mail_sender = cfg.get('mail_sender', None)
     mail_receiver = cfg.get('mail_receiver', None)
     timeout = cfg.get('timeout', 30)
-    chunk_size = cfg.get('chunk_size', 100000000)
+    chunk_size = cfg.get('chunk_size', 10000000)
 
     # Establish Ermrest client connection
     try:
         client = ErmrestClient(metadata=metadata, \
                                baseuri=url, \
-                               username=username, \
-                               password=password, \
                                hatrac=hatrac, \
                                cookie=cookie, \
                                chunk_size=chunk_size, \
@@ -174,13 +155,11 @@ def load(config_filename):
                                viewer=viewer, \
                                czirules=czirules, \
                                showinf=showinf, \
-                               http_storage=http_storage, \
                                timeout=timeout, \
                                mail_server=mail_server, \
                                mail_sender=mail_sender, \
                                mail_receiver=mail_receiver,
-                               logger=logger,
-                               use_goauth=goauthtoken)
+                               logger=logger)
         client.connect()
     except MalformedURL as err:
         logger.error(err)

@@ -131,7 +131,7 @@ class ErmrestClient (object):
         self.czi = kwargs.get("czi")
         self.czirules = kwargs.get("czirules")
         self.showinf = kwargs.get("showinf")
-        self.timeout = kwargs.get("timeout")
+        self.timeout = kwargs.get("timeout") * 60
         self.hatrac = kwargs.get("hatrac")
         self.namespace = kwargs.get("namespace")
         self.cookie = kwargs.get("cookie")
@@ -257,7 +257,7 @@ class ErmrestClient (object):
                 raise
         
     def processScans(self):
-        url = '%s/entity/Scan/DZI::null::' % self.path
+        url = '%s/entity/Scan/!Filename::null::&DZI::null::' % self.path
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         scans = json.loads(resp.read())

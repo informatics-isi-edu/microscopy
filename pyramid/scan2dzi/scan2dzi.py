@@ -31,7 +31,7 @@ import json
 import sys
 import traceback
 
-from client import ErmrestClient, UnresolvedAddress, NetworkError, ProtocolError, MalformedURL
+from cziscan.client import ErmrestClient, UnresolvedAddress, NetworkError, ProtocolError, MalformedURL
 from logging.handlers import RotatingFileHandler    
 
 FORMAT = '%(asctime)s: %(levelname)s <%(module)s>: %(message)s'
@@ -74,7 +74,7 @@ def load(config_filename):
         else:
             f.close()
     else:
-        logger.error('Configuration file: "%s" does not exist.' % config_filename)
+        sys.stderr.write('Configuration file: "%s" does not exist.\n' % config_filename)
         return None
     
     # Ermrest settings
@@ -182,11 +182,13 @@ def load(config_filename):
     return client
 
 try:
+    if len(sys.argv) < 2:
+        raise
     config_filename = sys.argv[1]
     client = load(config_filename)
     if client:
         client.start()
 except:
-    sys.stderr.write('\nusage: scanTiler.py config-file\n\n')
-    raise
+    sys.stderr.write('\nusage: scan2dzi.py config-file\n\n')
+    sys.exit(1)
 

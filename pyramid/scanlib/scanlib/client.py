@@ -248,7 +248,8 @@ class ErmrestClient (object):
         while ready == False:
             try:
                 self.processScans()
-                time.sleep(self.timeout)
+                ready = True
+                #time.sleep(self.timeout)
             except:
                 et, ev, tb = sys.exc_info()
                 self.logger.error('got unexpected exception "%s"' % str(ev))
@@ -257,7 +258,7 @@ class ErmrestClient (object):
                 raise
         
     def processScans(self):
-        url = '%s/entity/Scan/!Filename::null::&DZI::null::' % self.path
+        url = '%s/entity/Scan/!Filename::null::&DZI::null::&czi2dzi::null::' % self.path
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         scans = json.loads(resp.read())
@@ -287,7 +288,11 @@ class ErmrestClient (object):
             if returncode != 0:
                 self.logger.error('Can not convert czi to dzi for "%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.czi, slideId, scanId, stdoutdata, stderrdata)) 
                 self.sendMail('FAILURE Tiles', 'Can not convert czi to dzi for "%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.czi, slideId, scanId, stdoutdata, stderrdata))
-                os.rename('%s', '%s.err' % (f, f))
+                #os.rename('%s', '%s.err' % (f, f))
+                """
+                Update the Scan table with the failure result.
+                """
+                self.reportFailure(slideId, scanId)
                 continue
             self.writeThumbnailFile(slideId, scanId)
             self.logger.debug('Extracting metadata for slide "%s", scan "%s"' % (slideId, scanId)) 
@@ -295,7 +300,7 @@ class ErmrestClient (object):
                                                 czirules=self.czirules, \
                                                 czifile=f, \
                                                 logger=self.logger)
-            columns = ["Thumbnail","DZI"]
+            columns = ["Thumbnail","DZI","czi2dzi"]
             try:
                 metadata = bioformatsClient.getMetadata()
                 returncode = 0
@@ -317,7 +322,8 @@ class ErmrestClient (object):
             body = []
             obj = {'ID': scanId,
                    'Thumbnail': '/thumbnails/%s/%s.jpg' % (slideId, scanId),
-                   'DZI': '/%s?url=/data/%s/Brigh/ImageProperties.xml' % (self.viewer, scanId)
+                   'DZI': '/%s?url=/data/%s/Brigh/ImageProperties.xml' % (self.viewer, scanId),
+                   "czi2dzi": 'success'
                    }
             for col in self.metadata:
                 if col in metadata and metadata[col] != None:
@@ -327,7 +333,31 @@ class ErmrestClient (object):
             resp = self.send_request('PUT', url, json.dumps(body), headers, False)
             resp.read()
             self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".' % (slideId, scanId)) 
-            self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
+            #self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
+        
+    def reportFailure(self, slideId, scanId):
+        """
+            Update the Scan table with the czi2dzi failure result.
+        """
+        try:
+            columns = ["Thumbnail","czi2dzi"]
+            url = '%s/attributegroup/Scan/ID;%s' % (self.path, columns)
+            body = []
+            obj = {'ID': scanId,
+                   'Thumbnail': '/thumbnails/generic/generic_genetic.png',
+                   "czi2dzi": 'error'
+                   }
+            body.append(obj)
+            headers = {'Content-Type': 'application/json'}
+            resp = self.send_request('PUT', url, json.dumps(body), headers, False)
+            resp.read()
+            self.logger.debug('SUCCEEDED updated the Scan table for the slide id "%s" and scan id "%s" with the czi2dzi result.' % (slideId, scanId)) 
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('got unexpected exception "%s"' % str(ev))
+            self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+            self.sendMail('FAILURE Tiles: reportFailure ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+            
         
     def hasCziFile(self, slideId=None, scanId=None):
         """

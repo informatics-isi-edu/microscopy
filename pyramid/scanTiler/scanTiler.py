@@ -31,7 +31,7 @@ import json
 import sys
 import traceback
 
-from cziscan.client import ErmrestClient, UnresolvedAddress, NetworkError, ProtocolError, MalformedURL
+from scanlib.client import ErmrestClient, UnresolvedAddress, NetworkError, ProtocolError, MalformedURL
 from logging.handlers import RotatingFileHandler    
 
 FORMAT = '%(asctime)s: %(levelname)s <%(module)s>: %(message)s'

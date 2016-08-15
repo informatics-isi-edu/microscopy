@@ -16,10 +16,10 @@
 
 from distutils.core import setup
 
-setup(name='cziscan',
-      description='generate tiles from a scan czi file',
+setup(name='scanlib',
+      description='library for generating tiles from a scan file',
       version='0.1',
-      packages=['cziscan'],
+      packages=['scanlib'],
       requires=["lxml"],
       classifiers=[
         'Intended Audience :: Developers',

@@ -7,13 +7,13 @@
 from distutils.core import setup
 
 setup(
-    name="scan2dzi",
-    description="Scan to DZI pyramidal tile converter",
+    name="scanTiler",
+    description="Script for converting a scan to DZI pyramidal tiles",
     version="0.1-prerelease",
     scripts=[
-        "scan2dzi.py",
+        "scanTiler.py",
     ],
-    requires=["cziscan"],
+    requires=["scanlib"],
     maintainer_email="support@misd.isi.edu",
     license='(new) BSD',
     classifiers=[

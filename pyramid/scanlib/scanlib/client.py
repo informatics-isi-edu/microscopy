@@ -150,7 +150,7 @@ class ErmrestClient (object):
             if not reconnect:
                 self.close()
                 self.connect(True)
-                self.sendMail('WARNING Tiles: HTTP BadStatusLine exception', 'The HTTPSConnection has been restarted\n')
+                #self.sendMail('WARNING Tiles: HTTP BadStatusLine exception', 'The HTTPSConnection has been restarted\n')
                 self.webconn.request(method, url, body, headers)
                 resp = self.webconn.getresponse()
             else:
@@ -158,7 +158,7 @@ class ErmrestClient (object):
         if not reconnect and resp.status in [FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT, METHOD_NOT_ALLOWED, CONFLICT]:
             self.close()
             self.connect(True)
-            self.sendMail('WARNING Tiles: HTTP exception: %d' % resp.status, 'The HTTPSConnection has been restarted\n')
+            #self.sendMail('WARNING Tiles: HTTP exception: %d' % resp.status, 'The HTTPSConnection has been restarted\n')
             self.webconn.request(method, url, body, headers)
             resp = self.webconn.getresponse()
         if resp.status not in [OK, CREATED, ACCEPTED, NO_CONTENT]:
@@ -292,9 +292,21 @@ class ErmrestClient (object):
                 """
                 Update the Scan table with the failure result.
                 """
-                self.reportFailure(slideId, scanId)
+                self.reportFailure(slideId, scanId, 'czi2dzi error')
                 continue
-            self.writeThumbnailFile(slideId, scanId)
+            try:
+                self.writeThumbnailFile(slideId, scanId)
+            except:
+                et, ev, tb = sys.exc_info()
+                self.logger.error('got unexpected exception "%s"' % str(ev))
+                self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+                self.sendMail('FAILURE Tiles: czi2dzi ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+                """
+                Update the Scan table with the failure result.
+                """
+                self.reportFailure(slideId, scanId, 'missing')
+                continue
+                
             self.logger.debug('Extracting metadata for slide "%s", scan "%s"' % (slideId, scanId)) 
             bioformatsClient = BioformatsClient(showinf=self.showinf, \
                                                 czirules=self.czirules, \
@@ -335,17 +347,18 @@ class ErmrestClient (object):
             self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".' % (slideId, scanId)) 
             #self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
         
-    def reportFailure(self, slideId, scanId):
+    def reportFailure(self, slideId, scanId, error_message):
         """
             Update the Scan table with the czi2dzi failure result.
         """
         try:
             columns = ["Thumbnail","czi2dzi"]
+            columns = ','.join([urllib.quote(col, safe='') for col in columns])
             url = '%s/attributegroup/Scan/ID;%s' % (self.path, columns)
             body = []
             obj = {'ID': scanId,
                    'Thumbnail': '/thumbnails/generic/generic_genetic.png',
-                   "czi2dzi": 'error'
+                   "czi2dzi": '%s' % error_message
                    }
             body.append(obj)
             headers = {'Content-Type': 'application/json'}
@@ -372,7 +385,7 @@ class ErmrestClient (object):
             ret = True
         except:
             et, ev, tb = sys.exc_info()
-            self.logger.error('HEAD exception "%s"' % str(ev))
+            self.logger.error('HEAD exception "%s" for the slide id "%s" and scan id "%s"' % (str(ev), slideId, scanId))
             self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
             pass
         return ret

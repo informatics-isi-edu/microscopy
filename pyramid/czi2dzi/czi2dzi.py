@@ -372,8 +372,11 @@ def metadata_to_xml(meta, channelno, channeldir):
     else:
         colorstuff = ""
 
-    mpps = set(meta['microns_per_pixel'].values())
-    assert len(mpps) == 1
+    mpps = meta['microns_per_pixel']
+    extra_dims = set(mpps.keys()).difference(set(['X', 'Y', 'Z']))
+    assert not extra_dims, extra_dims
+    mpps = set([ v for k, v in mpps.items() if k in ['X', 'Y'] ])
+    assert len(mpps) == 1, mpps
     pix_per_meter = 1.0 / (mpps.pop() * 1E-6)
         
     doc = \

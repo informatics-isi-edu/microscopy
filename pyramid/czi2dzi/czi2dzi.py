@@ -91,6 +91,7 @@ class LazyCziConverter (object):
                 self._channel_tier_maps[channel][zoom] = (bboxes, boxmap)
 
         channels = self._fo.metadata.findall('Metadata/DisplaySetting/Channels/Channel')
+        assert channels, 'found no Metadata/DisplaySetting/Channels/Channel elements in CZI metadata'
         self._channel_names_long = [ c.get('Name') for c in channels ]
         self._channel_names = [ c.find('ShortName').text for c in channels ]
         self._channel_colors = [ c.find('Color').text if c.find('Color') is not None else None for c in channels ]

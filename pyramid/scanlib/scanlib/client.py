@@ -205,10 +205,21 @@ class ErmrestClient (object):
             self.webconn = None
 
     def writeThumbnailFile(self, slide_id, scan_id):
+        scanDir='%s/%s' % (self.dzi, scan_id)
+        channels = []
+        for channel in os.listdir(scanDir):
+            if os.path.isdir('%s%s%s' % (scanDir, os.sep, channel)):
+               channels.append( channel)
         outdir = '%s/%s' % (self.thumbnails, slide_id)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        shutil.copyfile('%s/%s/Brigh/0/0_0.jpg' % (self.dzi, scan_id), '%s/%s.jpg' % (outdir, scan_id))
+        shutil.copyfile('%s/%s/%s/0/0_0.jpg' % (self.dzi, scan_id, channels[0]), '%s/%s.jpg' % (outdir, scan_id))
+        thumbnail = '/thumbnails/%s/%s.jpg' % (slide_id, scan_id)
+        urls = []
+        for channel in channels:
+            urls.append('url=/data/%s/%s/ImageProperties.xml' % (scan_id, channel))
+        return (thumbnail, '&'.join(urls))
+            
         
     def sendMail(self, subject, text):
         if self.mail_server and self.mail_sender and self.mail_receiver:
@@ -266,6 +277,9 @@ class ErmrestClient (object):
         for scan in scans:
             if self.hasCziFile(scan['Slide ID'], scan['ID']) == True:
                 scanids.append((scan['Slide ID'], scan['ID']))
+            else:
+                self.reportFailure(scan['Slide ID'], scan['ID'], 'missing file')
+                
         for slideId,scanId in scanids:
             f = self.getCziFile(slideId, scanId)
             self.logger.debug('Converting czi to dzi tiles for slide "%s", scan "%s"' % (slideId, scanId))
@@ -295,16 +309,16 @@ class ErmrestClient (object):
                 self.reportFailure(slideId, scanId, 'czi2dzi error')
                 continue
             try:
-                self.writeThumbnailFile(slideId, scanId)
+                thumbnail,urls = self.writeThumbnailFile(slideId, scanId)
             except:
                 et, ev, tb = sys.exc_info()
                 self.logger.error('got unexpected exception "%s"' % str(ev))
                 self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
-                self.sendMail('FAILURE Tiles: czi2dzi ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+                self.sendMail('FAILURE Tiles: write thumbnail ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
                 """
                 Update the Scan table with the failure result.
                 """
-                self.reportFailure(slideId, scanId, 'missing')
+                self.reportFailure(slideId, scanId, 'DZI failure')
                 continue
                 
             self.logger.debug('Extracting metadata for slide "%s", scan "%s"' % (slideId, scanId)) 
@@ -333,8 +347,8 @@ class ErmrestClient (object):
             url = '%s/attributegroup/Scan/ID;%s' % (self.path, columns)
             body = []
             obj = {'ID': scanId,
-                   'Thumbnail': '/thumbnails/%s/%s.jpg' % (slideId, scanId),
-                   'DZI': '/%s?url=/data/%s/Brigh/ImageProperties.xml' % (self.viewer, scanId),
+                   'Thumbnail': thumbnail,
+                   'DZI': '/%s?%s' % (self.viewer, urls),
                    "czi2dzi": 'success'
                    }
             for col in self.metadata:
@@ -387,6 +401,7 @@ class ErmrestClient (object):
             et, ev, tb = sys.exc_info()
             self.logger.error('HEAD exception "%s" for the slide id "%s" and scan id "%s"' % (str(ev), slideId, scanId))
             self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+            self.sendMail('FAILURE Tiles: Missing file', '%s\n' % 'HEAD exception "%s" for the slide id "%s" and scan id "%s"' % (str(ev), slideId, scanId))
             pass
         return ret
                 

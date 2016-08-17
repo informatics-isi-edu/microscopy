@@ -326,7 +326,7 @@ class LazyCziConverter (object):
                 # need to truncate or renormalize
                 if data.dtype == np.uint16 and dtype == np.uint8:
                     if self._channel_ranges is not None:
-                        v1 = self._channel_ranges[entry.start[self._C]]
+                        v1 = self._channel_ranges[entry.start[self._C]][1]
                         data = (data.astype(np.float32) * (1./v1) * 255).astype(np.uint8)
                     else:
                         # truncate assuming full-range
@@ -424,7 +424,9 @@ def main(czifilename, dzidirname=None):
         assert czifilename[-4:] == '.czi'
         dzidirname = czifilename[0:-4] + '.dzi'
 
-    converter = LazyCziConverter(czifilename)
+    renormalize = os.getenv('CZI_RENORMALIZE', 'f').lower() in ['t', 'true']
+        
+    converter = LazyCziConverter(czifilename, renormalize=renormalize)
 
     skip_existing = (os.getenv('DZI_SKIP_EXISTING') or '').lower() in ['t', 'true']
 

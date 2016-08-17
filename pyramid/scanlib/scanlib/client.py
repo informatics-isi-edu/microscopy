@@ -300,8 +300,9 @@ class ErmrestClient (object):
                 returncode = 1
             
             if returncode != 0:
-                self.logger.error('Can not convert czi to dzi for "%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.czi, slideId, scanId, stdoutdata, stderrdata)) 
-                self.sendMail('FAILURE Tiles', 'Can not convert czi to dzi for "%s/%s/%s".\nstdoutdata: %s\nstderrdata: %s\n' % (self.czi, slideId, scanId, stdoutdata, stderrdata))
+                self.logger.error('Can not convert czi to dzi for file "%s", slide "%s", scan "%s".\nstdoutdata: %s\nstderrdata: %s\n' % (f, slideId, scanId, stdoutdata, stderrdata)) 
+                self.sendMail('FAILURE Tiles', 'Can not convert czi to dzi for file "%s", slide "%s", scan "%s".\nstdoutdata: %s\nstderrdata: %s\n' % (f, slideId, scanId, stdoutdata, stderrdata))
+                os.remove(f)
                 #os.rename('%s', '%s.err' % (f, f))
                 """
                 Update the Scan table with the failure result.
@@ -315,6 +316,7 @@ class ErmrestClient (object):
                 self.logger.error('got unexpected exception "%s"' % str(ev))
                 self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
                 self.sendMail('FAILURE Tiles: write thumbnail ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+                os.remove(f)
                 """
                 Update the Scan table with the failure result.
                 """
@@ -343,6 +345,7 @@ class ErmrestClient (object):
                 os.remove('temp.xml')
                 columns.extend(self.metadata)
             
+            os.remove(f)
             columns = ','.join([urllib.quote(col, safe='') for col in columns])
             url = '%s/attributegroup/Scan/ID;%s' % (self.path, columns)
             body = []
@@ -406,9 +409,11 @@ class ErmrestClient (object):
         return ret
                 
     def getCziFile(self, slideId, scanId):
-        shutil.rmtree('%s/%s' % (self.czi, self.namespace), True)
-        os.makedirs('%s/%s/%s' % (self.czi, self.namespace, slideId))
-        cziFile = '%s/%s/%s/%s.czi' % (self.czi, self.namespace, slideId, scanId)
+        #shutil.rmtree('%s/%s' % (self.czi, self.namespace), True)
+        cziFile = '%s/%s/%s.czi' % (self.czi, self.namespace, scanId)
+        outdir = '%s/%s' % (self.czi, self.namespace)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
         url = '%s/%s/%s/%s.czi' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(scanId, safe=''))
         headers = {'Accept': '*'}
         resp = self.send_request('GET', url, '', headers, False)
@@ -421,6 +426,5 @@ class ErmrestClient (object):
         if last_chunk_size > 0:
             f.write(resp.read(last_chunk_size))
         f.close()
-        cziFile = '%s/%s/%s/%s.czi' % (self.czi, self.namespace, slideId, scanId)
         return cziFile
 

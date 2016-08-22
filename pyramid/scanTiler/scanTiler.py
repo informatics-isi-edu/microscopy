@@ -187,7 +187,10 @@ try:
     config_filename = sys.argv[1]
     client = load(config_filename)
     if client:
-        client.start()
+        try:
+            client.start()
+        except:
+            pass
 except:
     sys.stderr.write('\nusage: scan2dzi.py config-file\n\n')
     sys.exit(1)

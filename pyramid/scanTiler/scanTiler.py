@@ -134,6 +134,11 @@ def load(config_filename):
         logger.error('CIRM cookie must be provided.')
         return None
 
+    data_scratch = cfg.get('data_scratch', None)
+    if not data_scratch:
+        logger.error('data_scratch directory must be provided.')
+        return None
+
     mail_server = cfg.get('mail_server', None)
     mail_sender = cfg.get('mail_sender', None)
     mail_receiver = cfg.get('mail_receiver', None)
@@ -152,6 +157,7 @@ def load(config_filename):
                                czi=czi, \
                                dzi=dzi, \
                                czi2dzi=czi2dzi, \
+                               data_scratch=data_scratch, \
                                viewer=viewer, \
                                czirules=czirules, \
                                showinf=showinf, \

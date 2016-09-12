@@ -143,6 +143,7 @@ def load(config_filename):
     mail_sender = cfg.get('mail_sender', None)
     mail_receiver = cfg.get('mail_receiver', None)
     timeout = cfg.get('timeout', 30)
+    limit = cfg.get('limit', 5)
     chunk_size = cfg.get('chunk_size', 10000000)
 
     # Establish Ermrest client connection
@@ -162,6 +163,7 @@ def load(config_filename):
                                czirules=czirules, \
                                showinf=showinf, \
                                timeout=timeout, \
+                               limit=limit, \
                                mail_server=mail_server, \
                                mail_sender=mail_sender, \
                                mail_receiver=mail_receiver,

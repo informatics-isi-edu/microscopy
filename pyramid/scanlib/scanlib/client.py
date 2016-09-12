@@ -131,7 +131,9 @@ class ErmrestClient (object):
         self.czi = kwargs.get("czi")
         self.czirules = kwargs.get("czirules")
         self.showinf = kwargs.get("showinf")
+        self.data_scratch = kwargs.get("data_scratch")
         self.timeout = kwargs.get("timeout") * 60
+        self.limit = kwargs.get("limit")
         self.hatrac = kwargs.get("hatrac")
         self.namespace = kwargs.get("namespace")
         self.cookie = kwargs.get("cookie")
@@ -269,7 +271,7 @@ class ErmrestClient (object):
                 raise
         
     def processScans(self):
-        url = '%s/entity/Scan/!Filename::null::&DZI::null::&czi2dzi::null::' % self.path
+        url = '%s/entity/Scan/!Filename::null::&DZI::null::&czi2dzi::null::@sort(%s::desc::)?limit=%d' % (self.path,urllib.quote('File Date', safe=''),self.limit)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         scans = json.loads(resp.read())
@@ -280,6 +282,7 @@ class ErmrestClient (object):
             else:
                 self.reportFailure(scan['Slide ID'], scan['ID'], 'missing file')
                 
+        self.logger.debug('Processing %d scans.' % (len(scanids))) 
         for slideId,scanId in scanids:
             f = self.getCziFile(slideId, scanId)
             self.logger.debug('Converting czi to dzi tiles for slide "%s", scan "%s"' % (slideId, scanId))
@@ -297,6 +300,7 @@ class ErmrestClient (object):
                 self.logger.error('got unexpected exception "%s"' % str(ev))
                 self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
                 self.sendMail('FAILURE Tiles: czi2dzi ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+                os.chdir(currentDirectory)
                 returncode = 1
             
             if returncode != 0:
@@ -363,6 +367,7 @@ class ErmrestClient (object):
             resp.read()
             self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".' % (slideId, scanId)) 
             #self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
+        self.logger.debug('Ended Scans Processing.') 
         
     def reportFailure(self, slideId, scanId, error_message):
         """
@@ -409,22 +414,14 @@ class ErmrestClient (object):
         return ret
                 
     def getCziFile(self, slideId, scanId):
-        #shutil.rmtree('%s/%s' % (self.czi, self.namespace), True)
-        cziFile = '%s/%s/%s.czi' % (self.czi, self.namespace, scanId)
-        outdir = '%s/%s' % (self.czi, self.namespace)
+        cziFile = '%s/%s/%s.czi' % (self.data_scratch, self.namespace, scanId)
+        outdir = '%s/%s' % (self.data_scratch, self.namespace)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        url = '%s/%s/%s/%s.czi' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(scanId, safe=''))
-        headers = {'Accept': '*'}
+        url = '%s/%s/%s/%s.czi;versions' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(scanId, safe=''))
+        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
-        file_size = int (resp.getheader('content-length'))
-        chunk_no = file_size / self.chunk_size
-        last_chunk_size = file_size % self.chunk_size
-        f = open(cziFile, "wb")
-        for index in range(chunk_no):
-            f.write(resp.read(self.chunk_size))
-        if last_chunk_size > 0:
-            f.write(resp.read(last_chunk_size))
-        f.close()
+        srcFile = '%s%s'  % (self.czi, json.loads(resp.read())[0])
+        shutil.copyfile(srcFile, cziFile)
         return cziFile
 

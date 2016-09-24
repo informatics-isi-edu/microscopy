@@ -332,7 +332,7 @@ class ErmrestClient (object):
                                                 czirules=self.czirules, \
                                                 czifile=f, \
                                                 logger=self.logger)
-            columns = ["Thumbnail","DZI","czi2dzi"]
+            columns = ["Thumbnail","DZI","czi2dzi", "HTTP URL"]
             try:
                 metadata = bioformatsClient.getMetadata()
                 returncode = 0
@@ -356,6 +356,7 @@ class ErmrestClient (object):
             obj = {'ID': scanId,
                    'Thumbnail': thumbnail,
                    'DZI': '/%s?%s' % (self.viewer, urls),
+                   'HTTP URL': '%s/%s/%s/%s.czi' % (self.hatrac, self.namespace, slideId, scanId),
                    "czi2dzi": 'success'
                    }
             for col in self.metadata:

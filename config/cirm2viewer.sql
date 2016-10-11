@@ -204,6 +204,8 @@ UPDATE "Specimen" SET "Age Value" = substring("Age" FROM 1 for (position(' ' IN 
 
 ALTER TABLE "Experiment" DROP COLUMN "Experiment Description";
 ALTER TABLE "Experiment" DROP COLUMN "Tags";
+ALTER TABLE "Experiment" DROP CONSTRAINT "Experiment_Experiment Type_fkey";
+ALTER TABLE "Experiment" ADD CONSTRAINT "Experiment_Experiment Type_fkey" FOREIGN KEY ("Experiment Type") REFERENCES experiment_type (term);
 
 ALTER TABLE "Slide" DROP COLUMN "Rev.";
 ALTER TABLE "Slide" DROP COLUMN "Tags";
@@ -595,6 +597,7 @@ DROP TABLE "Gene";
 DROP TABLE "Probe";
 DROP TABLE "Species";
 DROP TABLE "Tissue";
+DROP TABLE "Experiment Type";
 
 DELETE FROM _ermrest.model_column_annotation;
 DELETE FROM _ermrest.model_key_annotation;
@@ -684,6 +687,12 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'image_grade_code', 'code', 'comment', '["top"]'),
 ('Microscopy', 'image_grade_code', 'code', 'description', '{"display": "Status"}'),
 
+('Microscopy', 'age', 'term', 'comment', '["title"]'),
+('Microscopy', 'experiment_type', 'term', 'comment', '["title"]'),
+('Microscopy', 'gene', 'term', 'comment', '["title"]'),
+('Microscopy', 'probe', 'term', 'comment', '["title"]'),
+('Microscopy', 'species', 'term', 'comment', '["title"]'),
+
 ('Microscopy', 'Scan', 'Thumbnail', 'comment', '["thumbnail", "hidden"]'),
 ('Microscopy', 'Scan', 'accession_number', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'age_stage', 'comment', '["hidden"]'),
@@ -748,6 +757,11 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 	"detailed" :{"markdown_pattern":"[**{{filename}}** ({{bytes}} Bytes)]({{HTTP URL}})","separator_markdown":"\n\n"}
 }'),
 
+('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+('Microscopy', 'Specimen', 'Tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+
+('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Probe}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+
 ('Microscopy', 'Slide', 'Specimen ID', 'tag:isrd.isi.edu,2016:column-display', 
 '{
 	"detailed": {"markdown_pattern": "[{{Specimen ID}}](/chaise/record/#1/Microscopy:Specimen/ID={{Specimen ID}})"},
@@ -769,7 +783,7 @@ INSERT INTO _ermrest.model_schema_annotation (schema_name, annotation_uri, annot
 INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation_uri, annotation_value) VALUES
 ('Microscopy', 'image_grade_code', 'comment', '["association"]'),
 ('Microscopy', 'annotation', 'comment', '["association"]'),
-('Microscopy', 'tissue', 'comment', '["association"]'),
+--('Microscopy', 'tissue', 'comment', '["association"]'),
 ('Microscopy', 'gender', 'comment', '["association"]'),
 ('Microscopy', 'age_stage', 'comment', '["association"]'),
 ('Microscopy', 'specimen_fixation', 'comment', '["association"]'),
@@ -778,7 +792,16 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'annotation_comment', 'comment', '["exclude"]'),
 ('Microscopy', 'anatomy', 'comment', '["exclude"]'),
 ('Microscopy', 'annotation_type', 'comment', '["exclude"]'),
+('Microscopy', 'image_status', 'comment', '["exclude"]'),
+('Microscopy', 'specimen_gene', 'comment', '["exclude"]'),
 ('Microscopy', 'Scan', 'comment', '["default"]'),
+
+('Microscopy', 'age', 'description', '{"display": "Age", "top_columns": ["term", "code"]}'),
+('Microscopy', 'experiment_type', 'description', '{"display": "Experiment Type", "top_columns": ["term", "code"]}'),
+('Microscopy', 'gene', 'description', '{"display": "Gene", "top_columns": ["term", "code"]}'),
+('Microscopy', 'probe', 'description', '{"display": "Probe", "top_columns": ["term", "code"]}'),
+('Microscopy', 'species', 'description', '{"display": "Species", "top_columns": ["term", "code"]}'),
+('Microscopy', 'tissue', 'description', '{"display": "Tissue"}'),
 
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:table-display', '{
 	"row_name" :{"row_markdown_pattern":"{{accession_number}}"}
@@ -789,19 +812,22 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"compact": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
+	"filter": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
 	"detailed": ["Thumbnail", "HTTP URL", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Image Size", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time", "resolution", "Scaling (per pixel)"]
 }'),
 
 ('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Section Date"]}'),
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"]
+	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"],
+	"filter": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"]
 }'),
 
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
+	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"],
+	"filter": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
 }')
 
 ;

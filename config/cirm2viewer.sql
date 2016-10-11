@@ -812,7 +812,6 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"compact": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
-	"filter": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
 	"detailed": ["Thumbnail", "HTTP URL", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Image Size", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time", "resolution", "Scaling (per pixel)"]
 }'),
 
@@ -820,16 +819,62 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"],
-	"filter": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"]
+	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"]
 }'),
 
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"],
-	"filter": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
+	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
 }')
 
+;
+
+CREATE VIEW "CIRM_Resources" AS
+SELECT 1 AS "ID",
+    'Microscopy'::text AS "Schema",
+    'Specimen'::text AS "Table",
+    'Specimen'::text AS "Data Type",
+    count(*) AS "Number Of Entries",
+    max("Specimen"."Section Date") AS "Last Updated"
+   FROM "Microscopy"."Specimen"
+UNION
+ SELECT 2 AS "ID",
+    'Microscopy'::text AS "Schema",
+    'Experiment'::text AS "Table",
+    'Experiment'::text AS "Data Type",
+    count(*) AS "Number Of Entries",
+    max("Experiment"."Experiment Date") AS "Last Updated"
+   FROM "Microscopy"."Experiment"
+UNION
+ SELECT 4 AS "ID",
+    'Microscopy'::text AS "Schema",
+    'Slide'::text AS "Table",
+    'Slide'::text AS "Data Type",
+    count("Slide"."ID") AS "Number Of Entries",
+    (SELECT max("Specimen"."Section Date") from "Specimen") AS "Last Updated"
+   FROM "Microscopy"."Slide"
+UNION
+ SELECT 5 AS "ID",
+    'Microscopy'::text AS "Schema",
+    'Scan'::text AS "Table",
+    'Scan'::text AS "Data Type",
+    count(*) AS "Number Of Entries",
+    max("Scan"."Acquisition Date") AS "Last Updated"
+   FROM "Microscopy"."Scan";
+
+INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'CIRM_Resources', 'tag:isrd.isi.edu,2016:recordlink', '{"mode": "tag:isrd.isi.edu,2016:recordlink/fragmentfilter", "resource": "search/"}'),
+('Microscopy', 'CIRM_Resources', 'tag:isrd.isi.edu,2016:visible-columns', '{"compact" : ["Data Type", "Number Of Entries", "Last Updated"]}')
+;
+
+INSERT INTO _ermrest.model_pseudo_key (schema_name, table_name, column_names) VALUES
+('Microscopy', 'CIRM_Resources', '{Table}')
+;
+
+INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'CIRM_Resources', 'Data Type', 'tag:isrd.isi.edu,2016:column-display','{"compact":{"markdown_pattern":"[{{Data Type}}](/chaise/search/#1/{{#encode}}{{{Schema}}}{{/encode}}:{{#encode}}{{{Table}}}{{/encode}})"}}')
 ;
 
 COMMIT;

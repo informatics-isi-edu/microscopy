@@ -99,6 +99,7 @@ CREATE TABLE experiment_type (
 ALTER TABLE experiment_type OWNER TO ermrestddl;
 
 INSERT INTO experiment_type(code, term) SELECT "Code" code, "ID" term FROM "Experiment Type";
+INSERT INTO experiment_type(code, term) VALUES ('Other', 'Other');
 
 CREATE TABLE probe (
     id serial NOT NULL PRIMARY KEY,
@@ -115,6 +116,7 @@ CREATE TABLE probe (
 ALTER TABLE probe OWNER TO ermrestddl;
 
 INSERT INTO probe(code, term) SELECT "Code" code, "ID" term FROM "Probe";
+INSERT INTO probe(code, term) VALUES ('Other', 'Other');
 
 CREATE TABLE species (
     id serial NOT NULL PRIMARY KEY,
@@ -197,6 +199,7 @@ ALTER TABLE "Specimen" DROP CONSTRAINT "Specimen_Tissue_fkey";
 
 ALTER TABLE "Specimen" ADD CONSTRAINT "Specimen_Species_fkey" FOREIGN KEY ("Species") REFERENCES species (term);
 ALTER TABLE "Specimen" ADD CONSTRAINT "Specimen_Tissue_fkey" FOREIGN KEY ("Tissue") REFERENCES tissue (term);
+ALTER TABLE "Specimen" ADD CONSTRAINT "Specimen_Gene_fkey" FOREIGN KEY ("Gene") REFERENCES gene (term);
 
 ALTER TABLE "Specimen" ADD COLUMN "Age Unit" text REFERENCES age (term);
 ALTER TABLE "Specimen" ADD COLUMN "Age Value" text ;
@@ -449,6 +452,124 @@ ALTER TABLE "Scan" DROP COLUMN "ID";
 ALTER TABLE "Scan" DROP COLUMN "Filename";
 
 --
+-- Update the required fields from Specimen and Experiment based on a guessing from the ID value
+--
+CREATE FUNCTION update_metadata() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+        row_specimen "Specimen"%rowtype;
+        row_experiment "Experiment"%rowtype;
+        row_experiment_type "experiment_type"%rowtype;
+        row_probe "probe"%rowtype;
+        row_species "probe"%rowtype;
+        row_tissue "tissue"%rowtype;
+        row_age_unit "age"%rowtype;
+        row_gene "gene"%rowtype;
+    BEGIN
+		FOR row_experiment IN SELECT * FROM "Experiment" WHERE "Experiment Type" IS NULL
+		LOOP
+			FOR row_experiment_type IN SELECT * FROM "experiment_type"
+			LOOP
+				IF upper(row_experiment."ID") LIKE ('%' || row_experiment_type.code || '%') THEN
+					UPDATE "Experiment" SET "Experiment Type" = row_experiment_type.term WHERE "Experiment"."ID" = row_experiment."ID";
+					EXIT;
+				END IF;
+			END LOOP;
+			IF (SELECT "Experiment Type" FROM "Experiment" WHERE "Experiment"."ID" = row_experiment."ID") IS NULL THEN
+				UPDATE "Experiment" SET "Experiment Type" = 'Other' WHERE "Experiment"."ID" = row_experiment."ID";
+			END IF;
+		END LOOP;
+
+		FOR row_experiment IN SELECT * FROM "Experiment" WHERE "Probe" IS NULL
+		LOOP
+			FOR row_probe IN SELECT * FROM "probe"
+			LOOP
+				IF upper(row_experiment."ID") LIKE ('%' || row_probe.code || '%') THEN
+					UPDATE "Experiment" SET "Probe" = row_probe.term WHERE "Experiment"."ID" = row_experiment."ID";
+					EXIT;
+				END IF;
+			END LOOP;
+			IF (SELECT "Probe" FROM "Experiment" WHERE "Experiment"."ID" = row_experiment."ID") IS NULL THEN
+				UPDATE "Experiment" SET "Probe" = 'Other' WHERE "Experiment"."ID" = row_experiment."ID";
+			END IF;
+		END LOOP;
+		
+		FOR row_specimen IN SELECT * FROM "Specimen" WHERE "Species" IS NULL
+		LOOP
+			FOR row_species IN SELECT * FROM "species"
+			LOOP
+				-- Test the first character from the ID following the date
+				IF lower(substring(split_part(row_specimen."ID", '-', 2) FROM 1 FOR 1)) = row_species.code THEN
+					UPDATE "Specimen" SET "Species" = row_species.term WHERE "Specimen"."ID" = row_specimen."ID";
+					EXIT;
+				END IF;
+			END LOOP;
+			IF (SELECT "Species" FROM "Specimen" WHERE "Specimen"."ID" = row_specimen."ID") IS NULL THEN
+				UPDATE "Specimen" SET "Species" = 'Other' WHERE "Specimen"."ID" = row_specimen."ID";
+			END IF;
+		END LOOP;
+		
+		FOR row_specimen IN SELECT * FROM "Specimen" WHERE "Tissue" IS NULL
+		LOOP
+			FOR row_tissue IN SELECT * FROM "tissue"
+			LOOP
+				IF upper(row_specimen."ID") LIKE ('%' || row_tissue.code || '%') THEN
+					UPDATE "Specimen" SET "Tissue" = row_tissue.term WHERE "Specimen"."ID" = row_specimen."ID";
+					EXIT;
+				END IF;
+			END LOOP;
+			IF (SELECT "Tissue" FROM "Specimen" WHERE "Specimen"."ID" = row_specimen."ID") IS NULL THEN
+				UPDATE "Specimen" SET "Tissue" = 'Other' WHERE "Specimen"."ID" = row_specimen."ID";
+			END IF;
+		END LOOP;
+		
+		FOR row_specimen IN SELECT * FROM "Specimen" WHERE "Age Unit" IS NULL
+		LOOP
+			FOR row_age_unit IN SELECT * FROM "age"
+			LOOP
+				IF upper(row_specimen."ID") LIKE ('%' || row_age_unit.code || '%') THEN
+					UPDATE "Specimen" SET "Age Unit" = row_age_unit.term WHERE "Specimen"."ID" = row_specimen."ID";
+					UPDATE "Specimen" SET "Age" = (' ' || row_age_unit.term) WHERE "Specimen"."ID" = row_specimen."ID";
+					EXIT;
+				END IF;
+			END LOOP;
+			IF (SELECT "Age Unit" FROM "Specimen" WHERE "Specimen"."ID" = row_specimen."ID") IS NULL THEN
+				UPDATE "Specimen" SET "Age Unit" = 'adult' WHERE "Specimen"."ID" = row_specimen."ID";
+				UPDATE "Specimen" SET "Age" = ' adult' WHERE "Specimen"."ID" = row_specimen."ID";
+			END IF;
+		END LOOP;
+		
+		FOR row_specimen IN SELECT * FROM "Specimen" WHERE "Gene" IS NULL
+		LOOP
+			FOR row_gene IN SELECT * FROM "gene"
+			LOOP
+				IF upper(row_specimen."ID") LIKE ('%' || upper(row_gene.code) || '%') THEN
+					UPDATE "Specimen" SET "Gene" = row_gene.term WHERE "Specimen"."ID" = row_specimen."ID";
+					UPDATE "Specimen" SET "Genes" = regexp_split_to_array(row_gene.term, ';') WHERE "Specimen"."ID" = row_specimen."ID";
+					EXIT;
+				END IF;
+			END LOOP;
+			IF (SELECT "Gene" FROM "Specimen" WHERE "Specimen"."ID" = row_specimen."ID") IS NULL THEN
+				UPDATE "Specimen" SET "Gene" = 'Wild Type' WHERE "Specimen"."ID" = row_specimen."ID";
+				UPDATE "Specimen" SET "Genes" = regexp_split_to_array('Wild Type', ';') WHERE "Specimen"."ID" = row_specimen."ID";
+			END IF;
+		END LOOP;
+		
+		FOR row_specimen IN SELECT * FROM "Specimen" WHERE "Specimen Identifier" IS NULL
+		LOOP
+			UPDATE "Specimen" SET "Specimen Identifier" = 'Unknown' WHERE "Specimen"."ID" = row_specimen."ID";
+		END LOOP;
+		
+		RETURN;
+    END;
+$$;
+
+SELECT update_metadata();
+
+DROP FUNCTION update_metadata();
+
+--
 -- Create triggers for the Scan, Slide, Experiment and Specimen tables
 --
 CREATE FUNCTION specimen_trigger() RETURNS trigger
@@ -587,6 +708,17 @@ CREATE FUNCTION scan_trigger() RETURNS trigger
 $$;
 
 CREATE TRIGGER scan_trigger BEFORE INSERT OR UPDATE ON "Scan" FOR EACH ROW EXECUTE PROCEDURE scan_trigger();
+
+ALTER TABLE "Experiment" ALTER COLUMN "Experiment Type" SET NOT NULL;
+ALTER TABLE "Experiment" ALTER COLUMN "Probe" SET NOT NULL;
+
+ALTER TABLE "Specimen" ALTER COLUMN "Species" SET NOT NULL;
+ALTER TABLE "Specimen" ALTER COLUMN "Age" SET NOT NULL;
+ALTER TABLE "Specimen" ALTER COLUMN "Tissue" SET NOT NULL;
+ALTER TABLE "Specimen" ALTER COLUMN "Gene" SET NOT NULL;
+ALTER TABLE "Specimen" ALTER COLUMN "Specimen Identifier" SET NOT NULL;
+ALTER TABLE "Specimen" ALTER COLUMN "Genes" SET NOT NULL;
+ALTER TABLE "Specimen" ALTER COLUMN "Age Unit" SET NOT NULL;
 
 --
 -- Drop the old CIRM vocabulary tables
@@ -819,16 +951,29 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"],
-	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"]
+	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"],
+	"entry/edit": ["ID", "Species", "Tissue", "Age", "Gene", "Initials", "Section Date", "Comment"],
+	"entry/create": ["ID", "Species", "Tissue", "Age Value",  "Age Unit", "Gene", "Initials", "Section Date", "Comment"]
 }'),
 
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"],
-	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
+	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"],
+	"entry/edit": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"],
+	"entry/create": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
 }')
 
+;
+
+INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri) VALUES
+('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'Experiment', 'ID', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Experiment', 'ID', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'Slide', 'ID', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Slide', 'ID', 'tag:isrd.isi.edu,2016:generated')
 ;
 
 CREATE VIEW "CIRM_Resources" AS
@@ -876,6 +1021,7 @@ INSERT INTO _ermrest.model_pseudo_key (schema_name, table_name, column_names) VA
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri, annotation_value) VALUES
 ('Microscopy', 'CIRM_Resources', 'Data Type', 'tag:isrd.isi.edu,2016:column-display','{"compact":{"markdown_pattern":"[{{Data Type}}](/chaise/search/#1/{{#encode}}{{{Schema}}}{{/encode}}:{{#encode}}{{{Table}}}{{/encode}})"}}')
 ;
+
 
 COMMIT;
 

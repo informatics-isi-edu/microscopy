@@ -570,9 +570,80 @@ SELECT update_metadata();
 DROP FUNCTION update_metadata();
 
 --
+-- Add the number of slides and scans for the Specimen, Experiment and Slide
+--
+ALTER TABLE "Experiment" ADD COLUMN "Number of Slides" INTEGER;
+ALTER TABLE "Experiment" ADD COLUMN "Number of Scans" INTEGER;
+ALTER TABLE "Specimen" ADD COLUMN "Number of Slides" INTEGER;
+ALTER TABLE "Specimen" ADD COLUMN "Number of Scans" INTEGER;
+ALTER TABLE "Slide" ADD COLUMN "Number of Scans" INTEGER;
+
+CREATE TABLE "Slides" AS SELECT * FROM "Slide" WHERE "ID" IN (SELECT DISTINCT slide_id FROM "Scan");
+
+CREATE FUNCTION update_number_of_scan_slide() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+        row_slide "Slides"%rowtype;
+        row_specimen "Specimen"%rowtype;
+        row_experiment "Experiment"%rowtype;
+        counter integer;
+    BEGIN
+		-- raise notice 'start slide';
+		FOR row_slide IN SELECT * FROM "Slides"
+		LOOP
+			counter := (SELECT count(*) FROM "Scan" WHERE "slide_id" = row_slide."ID");
+			-- raise notice 'counter: %', counter;
+			UPDATE "Slide" SET "Number of Scans" = counter WHERE "Slide"."ID" = row_slide."ID";
+			UPDATE "Slides" SET "Number of Scans" = counter WHERE "Slides"."ID" = row_slide."ID";
+		END LOOP;
+		UPDATE "Slide" SET "Number of Scans" = NULL WHERE "Number of Scans" = 0;
+		UPDATE "Slides" SET "Number of Scans" = NULL WHERE "Number of Scans" = 0;
+		
+		FOR row_specimen IN SELECT * FROM "Specimen"
+		LOOP
+			counter := (SELECT count(*) FROM "Slides" WHERE "Specimen ID" = row_specimen."ID");
+			UPDATE "Specimen" SET "Number of Slides" = counter WHERE "Specimen"."ID" = row_specimen."ID";
+		END LOOP;
+		
+		FOR row_specimen IN SELECT * FROM "Specimen"
+		LOOP
+			counter := (SELECT sum("Number of Scans") FROM "Slides" WHERE "ID" IN (SELECT "Slides"."ID" FROM "Slides", "Specimen" WHERE "Slides"."Specimen ID" = row_specimen."ID"));
+			UPDATE "Specimen" SET "Number of Scans" = counter WHERE "Specimen"."ID" = row_specimen."ID";
+		END LOOP;
+		
+		UPDATE "Specimen" SET "Number of Scans" = NULL WHERE "Number of Scans" = 0;
+		UPDATE "Specimen" SET "Number of Slides" = NULL WHERE "Number of Slides" = 0;
+		
+		FOR row_experiment IN SELECT * FROM "Experiment"
+		LOOP
+			counter := (SELECT count(*) FROM "Slides" WHERE "Experiment ID" = row_experiment."ID");
+			UPDATE "Experiment" SET "Number of Slides" = counter WHERE "Experiment"."ID" = row_experiment."ID";
+		END LOOP;
+		
+		FOR row_experiment IN SELECT * FROM "Experiment"
+		LOOP
+			counter := (SELECT sum("Number of Scans") FROM "Slides" WHERE "ID" IN (SELECT "Slides"."ID" FROM "Slides", "Experiment" WHERE "Slides"."Experiment ID" = row_experiment."ID"));
+			UPDATE "Experiment" SET "Number of Scans" = counter WHERE "Experiment"."ID" = row_experiment."ID";
+		END LOOP;
+		
+		UPDATE "Experiment" SET "Number of Scans" = NULL WHERE "Number of Scans" = 0;
+		UPDATE "Experiment" SET "Number of Slides" = NULL WHERE "Number of Slides" = 0;
+		
+        RETURN;
+    END;
+$$;
+
+SELECT update_number_of_scan_slide();
+
+DROP FUNCTION update_number_of_scan_slide();
+
+DROP TABLE "Slides";
+
+--
 -- Create triggers for the Scan, Slide, Experiment and Specimen tables
 --
-CREATE FUNCTION specimen_trigger() RETURNS trigger
+CREATE FUNCTION specimen_trigger_before() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
     DECLARE
@@ -606,25 +677,27 @@ CREATE FUNCTION specimen_trigger() RETURNS trigger
 		END IF;
 		NEW."Genes" := regexp_split_to_array(NEW."Gene",';');
 		NEW."Gene" := split_part(NEW."Gene", ';', 1);
-        sample_name := (SELECT species.code || tissue.code || NEW."Age Value" || age.code || gene.code || NEW."Specimen Identifier" FROM species, tissue, age, gene WHERE species.term = NEW."Species" AND tissue.term = NEW."Tissue" AND age.term = NEW."Age Unit" AND gene.term = NEW."Gene"); 
-        id_prefix := replace(to_char(NEW."Section Date", 'YYYY-MM-DD'), '-', '') || '-' || sample_name || '-' || NEW."Initials";
-        disambiguator := (SELECT max("Disambiguator") FROM "Specimen" WHERE "ID" LIKE (id_prefix || '%'));
-        IF (disambiguator IS NULL) THEN
-			NEW."ID" := id_prefix;
-			disambiguator := 0;
-		ELSE
-			disambiguator := disambiguator + 1;
-			NEW."ID" := id_prefix || '-' || disambiguator;
+		IF NEW."ID" IS NULL THEN
+	        sample_name := (SELECT species.code || tissue.code || NEW."Age Value" || age.code || gene.code || NEW."Specimen Identifier" FROM species, tissue, age, gene WHERE species.term = NEW."Species" AND tissue.term = NEW."Tissue" AND age.term = NEW."Age Unit" AND gene.term = NEW."Gene"); 
+	        id_prefix := replace(to_char(NEW."Section Date", 'YYYY-MM-DD'), '-', '') || '-' || sample_name || '-' || NEW."Initials";
+	        disambiguator := (SELECT max("Disambiguator") FROM "Specimen" WHERE "ID" LIKE (id_prefix || '%'));
+	        IF (disambiguator IS NULL) THEN
+				NEW."ID" := id_prefix;
+				disambiguator := 0;
+			ELSE
+				disambiguator := disambiguator + 1;
+				NEW."ID" := id_prefix || '-' || disambiguator;
+			END IF;
+			NEW."Disambiguator" := disambiguator;
 		END IF;
-		NEW."Disambiguator" := disambiguator;
 		NEW."Age" := NEW."Age Value" || ' ' || NEW."Age Unit";
         RETURN NEW;
     END;
 $$;
 
-CREATE TRIGGER specimen_trigger BEFORE INSERT OR UPDATE ON "Specimen" FOR EACH ROW EXECUTE PROCEDURE specimen_trigger();
+CREATE TRIGGER specimen_trigger_before BEFORE INSERT OR UPDATE ON "Specimen" FOR EACH ROW EXECUTE PROCEDURE specimen_trigger_before();
 
-CREATE FUNCTION experiment_trigger() RETURNS trigger
+CREATE FUNCTION experiment_trigger_before() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
     DECLARE
@@ -644,24 +717,26 @@ CREATE FUNCTION experiment_trigger() RETURNS trigger
 		IF (NEW."Initials" IS NULL) THEN
 			RAISE EXCEPTION 'Initials cannot be NULL';
 		END IF;
-        experiment_description := (SELECT experiment_type.code || probe.code FROM experiment_type, probe WHERE experiment_type.term = NEW."Experiment Type" AND probe.term = NEW."Probe"); 
-        id_prefix := replace(to_char(NEW."Experiment Date", 'YYYY-MM-DD'), '-', '') || '-' || experiment_description || '-' || NEW."Initials";
-        disambiguator := (SELECT max("Disambiguator") FROM "Experiment" WHERE "ID" LIKE (id_prefix || '%'));
-        IF (disambiguator IS NULL) THEN
-			NEW."ID" := id_prefix;
-			disambiguator := 0;
-		ELSE
-			disambiguator := disambiguator + 1;
-			NEW."ID" := id_prefix || '-' || disambiguator;
+		IF NEW."ID" IS NULL THEN
+	        experiment_description := (SELECT experiment_type.code || probe.code FROM experiment_type, probe WHERE experiment_type.term = NEW."Experiment Type" AND probe.term = NEW."Probe"); 
+	        id_prefix := replace(to_char(NEW."Experiment Date", 'YYYY-MM-DD'), '-', '') || '-' || experiment_description || '-' || NEW."Initials";
+	        disambiguator := (SELECT max("Disambiguator") FROM "Experiment" WHERE "ID" LIKE (id_prefix || '%'));
+	        IF (disambiguator IS NULL) THEN
+				NEW."ID" := id_prefix;
+				disambiguator := 0;
+			ELSE
+				disambiguator := disambiguator + 1;
+				NEW."ID" := id_prefix || '-' || disambiguator;
+			END IF;
+			NEW."Disambiguator" := disambiguator;
 		END IF;
-		NEW."Disambiguator" := disambiguator;
         RETURN NEW;
     END;
 $$;
 
-CREATE TRIGGER experiment_trigger BEFORE INSERT OR UPDATE ON "Experiment" FOR EACH ROW EXECUTE PROCEDURE experiment_trigger();
+CREATE TRIGGER experiment_trigger_before BEFORE INSERT OR UPDATE ON "Experiment" FOR EACH ROW EXECUTE PROCEDURE experiment_trigger_before();
 
-CREATE FUNCTION slide_trigger() RETURNS trigger
+CREATE FUNCTION slide_trigger_before() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
     DECLARE
@@ -670,22 +745,24 @@ CREATE FUNCTION slide_trigger() RETURNS trigger
 		IF (NEW."Specimen ID" IS NULL) THEN
 			RAISE EXCEPTION 'Specimen ID cannot be NULL';
 		END IF;
-        seq := (SELECT max("Seq.") FROM "Slide" WHERE "ID" LIKE (NEW."Specimen ID" || '%'));
-        IF (seq IS NULL) THEN
-			seq := 1;
-			NEW."ID" := NEW."Specimen ID" || '-01-000';
-		ELSE
-			seq := seq + 1;
-			NEW."ID" := NEW."Specimen ID" || '-' || substring(('0' || seq) FROM '..$') || '-000';
+		IF NEW."ID" IS NULL THEN
+	        seq := (SELECT max("Seq.") FROM "Slide" WHERE "ID" LIKE (NEW."Specimen ID" || '%'));
+	        IF (seq IS NULL) THEN
+				seq := 1;
+				NEW."ID" := NEW."Specimen ID" || '-01-000';
+			ELSE
+				seq := seq + 1;
+				NEW."ID" := NEW."Specimen ID" || '-' || substring(('0' || seq) FROM '..$') || '-000';
+			END IF;
+			New."Seq." := seq;
 		END IF;
-		New."Seq." := seq;
         RETURN NEW;
     END;
 $$;
 
-CREATE TRIGGER slide_trigger BEFORE INSERT OR UPDATE ON "Slide" FOR EACH ROW EXECUTE PROCEDURE slide_trigger();
+CREATE TRIGGER slide_trigger_before BEFORE INSERT OR UPDATE ON "Slide" FOR EACH ROW EXECUTE PROCEDURE slide_trigger_before();
 
-CREATE FUNCTION scan_trigger() RETURNS trigger
+CREATE FUNCTION scan_trigger_before() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
     DECLARE
@@ -707,8 +784,35 @@ CREATE FUNCTION scan_trigger() RETURNS trigger
     END;
 $$;
 
-CREATE TRIGGER scan_trigger BEFORE INSERT OR UPDATE ON "Scan" FOR EACH ROW EXECUTE PROCEDURE scan_trigger();
+CREATE TRIGGER scan_trigger_before BEFORE INSERT OR UPDATE ON "Scan" FOR EACH ROW EXECUTE PROCEDURE scan_trigger_before();
 
+CREATE FUNCTION scan_trigger_after() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+        counter integer;
+        specimen_id text;
+        experiment_id text;
+    BEGIN
+		counter := (SELECT count(*) FROM "Scan" WHERE "slide_id" = NEW.slide_id);
+		UPDATE "Slide" SET "Number of Scans" = counter WHERE "Slide"."ID" = NEW.slide_id;
+		specimen_id := (SELECT "Specimen ID" FROM "Slide" WHERE "ID" = NEW.slide_id);
+		counter := (SELECT sum("Number of Scans") FROM "Slide" WHERE "Slide"."Specimen ID" = specimen_id);
+		UPDATE "Specimen" SET "Number of Scans" = counter WHERE "Specimen"."ID" = specimen_id;
+		experiment_id := (SELECT "Experiment ID" FROM "Slide" WHERE "ID" = NEW.slide_id);
+		IF experiment_id IS NOT NULL THEN
+			counter := (SELECT sum("Number of Scans") FROM "Slide" WHERE "Slide"."Experiment ID" = experiment_id);
+			UPDATE "Experiment" SET "Number of Scans" = counter WHERE "Experiment"."ID" = experiment_id;
+		END IF;
+        RETURN NEW;
+    END;
+$$;
+
+CREATE TRIGGER scan_trigger_after AFTER INSERT OR UPDATE ON "Scan" FOR EACH ROW EXECUTE PROCEDURE scan_trigger_after();
+
+--
+-- Constraints for required fields
+--
 ALTER TABLE "Experiment" ALTER COLUMN "Experiment Type" SET NOT NULL;
 ALTER TABLE "Experiment" ALTER COLUMN "Probe" SET NOT NULL;
 
@@ -947,20 +1051,20 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	"detailed": ["Thumbnail", "HTTP URL", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Image Size", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time", "resolution", "Scaling (per pixel)"]
 }'),
 
-('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Section Date"]}'),
+('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Section Date", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"],
-	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment"],
+	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans"],
+	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans"],
 	"entry/edit": ["ID", "Species", "Tissue", "Age", "Gene", "Initials", "Section Date", "Comment"],
 	"entry/create": ["ID", "Species", "Tissue", "Age Value",  "Age Unit", "Gene", "Initials", "Section Date", "Comment"]
 }'),
 
-('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]}'),
+('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"],
-	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"],
+	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
+	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
 	"entry/edit": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"],
 	"entry/create": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
 }')

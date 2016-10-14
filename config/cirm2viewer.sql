@@ -540,7 +540,7 @@ CREATE FUNCTION update_metadata() RETURNS void
 			END LOOP;
 			IF (SELECT "Age Unit" FROM "Specimen" WHERE "Specimen"."ID" = row_specimen."ID") IS NULL THEN
 				UPDATE "Specimen" SET "Age Unit" = 'adult' WHERE "Specimen"."ID" = row_specimen."ID";
-				UPDATE "Specimen" SET "Age" = ' adult' WHERE "Specimen"."ID" = row_specimen."ID";
+				UPDATE "Specimen" SET "Age" = 'adult' WHERE "Specimen"."ID" = row_specimen."ID";
 			END IF;
 		END LOOP;
 		
@@ -656,6 +656,8 @@ ALTER TABLE "Experiment" ALTER COLUMN "Probe" SET NOT NULL;
 ALTER TABLE "Experiment" ALTER COLUMN "Probes" SET NOT NULL;
 ALTER TABLE "Experiment" ADD CONSTRAINT "Experiment_Probe_fkey" FOREIGN KEY ("Probe") REFERENCES "probe" ("term");
 
+UPDATE "Specimen" SET "Age" = substring("Age" FROM 2) WHERE substring("Age" FROM 1 FOR 1) = ' ';
+
 --
 -- Create triggers for the Scan, Slide, Experiment and Specimen tables
 --
@@ -706,7 +708,11 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 			END IF;
 			NEW."Disambiguator" := disambiguator;
 		END IF;
-		NEW."Age" := NEW."Age Value" || ' ' || NEW."Age Unit";
+		IF NEW."Age Value" IS NOT NULL THEN
+			NEW."Age" := NEW."Age Value" || ' ' || NEW."Age Unit";
+		ELSE
+			NEW."Age" := NEW."Age Unit";
+		END IF;
         RETURN NEW;
     END;
 $$;
@@ -1013,6 +1019,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'File Date', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'checksum', 'comment', '["hidden"]'),
 
+('Microscopy', 'Specimen', 'Genes', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'Section Date', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Species', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Age', 'comment', '["top"]'),
@@ -1021,6 +1028,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Number of Slides', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Number of Scans', 'comment', '["top"]'),
 
+('Microscopy', 'Experiment', 'Probes', 'comment', '["hidden"]'),
 ('Microscopy', 'Experiment', 'Experiment Date', 'comment', '["top"]'),
 ('Microscopy', 'Experiment', 'Experiment Type', 'comment', '["top"]'),
 ('Microscopy', 'Experiment', 'Probe', 'comment', '["top"]'),
@@ -1048,8 +1056,11 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 ('Microscopy', 'Specimen', 'Tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Age}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+('Microscopy', 'Specimen', 'Genes', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Genes}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
 ('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Probe}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+('Microscopy', 'Experiment', 'Experiment Type', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Experiment Type}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
 ('Microscopy', 'Slide', 'Specimen ID', 'tag:isrd.isi.edu,2016:column-display', 
 '{
@@ -1117,8 +1128,8 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
-	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
+	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
+	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
 	"entry": ["Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
 }')
 

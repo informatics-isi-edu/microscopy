@@ -44,7 +44,7 @@ INSERT INTO "Initials" SELECT "Initials" FROM "Experiment";
 
 CREATE TABLE "User" (
     "Initials" text PRIMARY KEY,
-    "Full Name" text
+    "Full Name" text UNIQUE
 );
 ALTER TABLE "User" OWNER TO ermrestddl;
 
@@ -347,6 +347,7 @@ CREATE TABLE embedding_medium (
 
 
 ALTER TABLE embedding_medium OWNER TO ermrestddl;
+INSERT INTO embedding_medium(code, term) VALUES ('--', '--');
 
 CREATE TABLE gender (
     id serial NOT NULL PRIMARY KEY,
@@ -370,6 +371,7 @@ CREATE TABLE image_status (
 
 
 ALTER TABLE image_status OWNER TO ermrestddl;
+INSERT INTO image_status(term) VALUES('--');
 
 CREATE TABLE specimen_fixation (
     id serial NOT NULL PRIMARY KEY,
@@ -385,6 +387,7 @@ CREATE TABLE specimen_fixation (
 
 
 ALTER TABLE specimen_fixation OWNER TO ermrestddl;
+INSERT INTO specimen_fixation(code, term) VALUES('--', '--');
 
 CREATE TABLE staining_protocol (
     id serial NOT NULL PRIMARY KEY,
@@ -399,6 +402,7 @@ CREATE TABLE staining_protocol (
 );
 
 ALTER TABLE staining_protocol OWNER TO ermrestddl;
+INSERT INTO staining_protocol(code, term) VALUES('--', '--');
 
 --
 -- Updated references from the Scan table
@@ -640,6 +644,18 @@ DROP FUNCTION update_number_of_scan_slide();
 
 DROP TABLE "Slides";
 
+ALTER TABLE "Scan" ADD CONSTRAINT "Scan_species_fkey" FOREIGN KEY ("species") REFERENCES "species" ("term");
+ALTER TABLE "Scan" ADD CONSTRAINT "Scan_submitter_fkey" FOREIGN KEY ("submitter") REFERENCES "User" ("Full Name");
+
+ALTER TABLE "Experiment" ADD COLUMN "Probes" text[];
+UPDATE "Experiment" SET "Probes" = regexp_split_to_array("Experiment"."Probe",';');
+UPDATE "Experiment" SET "Probe" = split_part("Probe", ';', 1);
+
+ALTER TABLE "Experiment" ADD CONSTRAINT "Experiment_Initials_fkey" FOREIGN KEY ("Initials") REFERENCES "User" ("Initials");
+ALTER TABLE "Experiment" ALTER COLUMN "Probe" SET NOT NULL;
+ALTER TABLE "Experiment" ALTER COLUMN "Probes" SET NOT NULL;
+ALTER TABLE "Experiment" ADD CONSTRAINT "Experiment_Probe_fkey" FOREIGN KEY ("Probe") REFERENCES "probe" ("term");
+
 --
 -- Create triggers for the Scan, Slide, Experiment and Specimen tables
 --
@@ -730,6 +746,7 @@ CREATE FUNCTION experiment_trigger_before() RETURNS trigger
 			END IF;
 			NEW."Disambiguator" := disambiguator;
 		END IF;
+		NEW."Probes" := regexp_split_to_array(NEW."Probe",';');
         RETURN NEW;
     END;
 $$;
@@ -761,6 +778,24 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
 $$;
 
 CREATE TRIGGER slide_trigger_before BEFORE INSERT OR UPDATE ON "Slide" FOR EACH ROW EXECUTE PROCEDURE slide_trigger_before();
+
+CREATE FUNCTION slide_trigger_after() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+        counter integer;
+    BEGIN
+		counter := (SELECT count(*) FROM "Slide" WHERE "Slide"."Specimen ID" = NEW."Specimen ID");
+		UPDATE "Specimen" SET "Number of Slides" = counter WHERE "Specimen"."ID" = NEW."Specimen ID";
+		IF NEW."Experiment ID" IS NOT NULL THEN
+			counter := (SELECT count(*) FROM "Slide" WHERE "Slide"."Experiment ID" = NEW."Experiment ID");
+			UPDATE "Experiment" SET "Number of Slides" = counter WHERE "Experiment"."ID" = NEW."Experiment ID";
+		END IF;
+        RETURN NEW;
+    END;
+$$;
+
+CREATE TRIGGER slide_trigger_after AFTER INSERT OR UPDATE ON "Slide" FOR EACH ROW EXECUTE PROCEDURE slide_trigger_after();
 
 CREATE FUNCTION scan_trigger_before() RETURNS trigger
     LANGUAGE plpgsql
@@ -949,22 +984,24 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'specimen_fixation', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'staining_protocol', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'status', 'comment', '["hidden"]'),
-('Microscopy', 'Scan', 'submitter', 'comment', '["top"]'),
-('Microscopy', 'Scan', 'age', 'comment', '["top"]'),
-('Microscopy', 'Scan', 'species', 'comment', '["top"]'),
-('Microscopy', 'Scan', 'gene', 'comment', '["top"]'),
 ('Microscopy', 'Scan', 'submitter', 'description', '{"display": "Submitted By"}'),
-('Microscopy', 'Scan', 'tissue', 'comment', '["top"]'),
 ('Microscopy', 'Scan', 'uri', 'comment', '["summary", "url", "hidden"]'),
 ('Microscopy', 'Scan', 'uri', 'description', '{"url_text": "View Image"}'),
 
-('Microscopy', 'Scan', 'Comment', 'comment', '["hidden"]'),
+('Microscopy', 'Scan', 'species', 'facetOrder', '1'),
+('Microscopy', 'Scan', 'gene', 'facetOrder', '2'),
+('Microscopy', 'Scan', 'tissue', 'facetOrder', '3'),
+('Microscopy', 'Scan', 'submitter', 'facetOrder', '4'),
+('Microscopy', 'Scan', 'submitted', 'facetOrder', '5'),
+('Microscopy', 'Scan', 'Acquisition Date', 'facetOrder', '6'),
+('Microscopy', 'Scan', 'Channel Name', 'facetOrder', '7'),
+('Microscopy', 'Scan', 'Channels', 'facetOrder', '8'),
+-- ('Microscopy', 'Scan', 'age', 'comment', '["top"]'),
+('Microscopy', 'Scan', 'Comment', 'facetOrder', '9'),
 ('Microscopy', 'Scan', 'Microscope', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Camera', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Objective', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Exposure Time', 'comment', '["hidden"]'),
-('Microscopy', 'Scan', 'Channels', 'comment', '["hidden"]'),
-('Microscopy', 'Scan', 'Channel Name', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Contrast Method', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Magnification', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Light Source Intensity', 'comment', '["hidden"]'),
@@ -975,7 +1012,23 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'czi2dzi', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'File Date', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'checksum', 'comment', '["hidden"]'),
-('Microscopy', 'Scan', 'submitted', 'comment', '["hidden"]'),
+
+('Microscopy', 'Specimen', 'Section Date', 'comment', '["top"]'),
+('Microscopy', 'Specimen', 'Species', 'comment', '["top"]'),
+('Microscopy', 'Specimen', 'Age', 'comment', '["top"]'),
+('Microscopy', 'Specimen', 'Tissue', 'comment', '["top"]'),
+('Microscopy', 'Specimen', 'Gene', 'comment', '["top"]'),
+('Microscopy', 'Specimen', 'Number of Slides', 'comment', '["top"]'),
+('Microscopy', 'Specimen', 'Number of Scans', 'comment', '["top"]'),
+
+('Microscopy', 'Experiment', 'Experiment Date', 'comment', '["top"]'),
+('Microscopy', 'Experiment', 'Experiment Type', 'comment', '["top"]'),
+('Microscopy', 'Experiment', 'Probe', 'comment', '["top"]'),
+('Microscopy', 'Experiment', 'Number of Slides', 'comment', '["top"]'),
+('Microscopy', 'Experiment', 'Number of Scans', 'comment', '["top"]'),
+
+('Microscopy', 'Slide', 'Seq.', 'comment', '["top"]'),
+('Microscopy', 'Slide', 'Number of Scans', 'comment', '["top"]'),
 
 ('Microscopy', 'Scan', 'species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 ('Microscopy', 'Scan', 'tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
@@ -1048,7 +1101,9 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"compact": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
-	"detailed": ["Thumbnail", "HTTP URL", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Image Size", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time", "resolution", "Scaling (per pixel)"]
+	"detailed": ["Thumbnail", "HTTP URL", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Image Size", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time", "resolution", "Scaling (per pixel)"],
+	"entry/edit": ["submitter", "species", "tissue", "gene", "gender", "age"],
+	"entry/create": ["submitter", "species", "tissue", "gene", "gender", "age"]
 }'),
 
 ('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Section Date", "Number of Slides", "Number of Scans"]}'),
@@ -1056,8 +1111,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 '{
 	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans"],
 	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans"],
-	"entry/edit": ["ID", "Species", "Tissue", "Age", "Gene", "Initials", "Section Date", "Comment"],
-	"entry/create": ["ID", "Species", "Tissue", "Age Value",  "Age Unit", "Gene", "Initials", "Section Date", "Comment"]
+	"entry": ["Species", "Tissue", "Age Value",  "Age Unit", "Gene", "Initials", "Section Date", "Comment"]
 }'),
 
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
@@ -1065,19 +1119,56 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 '{
 	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
 	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
-	"entry/edit": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"],
-	"entry/create": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
+	"entry": ["Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
 }')
 
 ;
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri) VALUES
-('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:generated'),
-('Microscopy', 'Experiment', 'ID', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Experiment', 'ID', 'tag:isrd.isi.edu,2016:generated'),
-('Microscopy', 'Slide', 'ID', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Slide', 'ID', 'tag:isrd.isi.edu,2016:generated')
+;
+
+INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Specimen', 'Genes', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Experiment', 'ID', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Experiment', 'Probes', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Slide', 'ID', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'slide_id', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'filename', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'HTTP URL', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'bytes', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Thumbnail', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Microscope', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Camera', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Objective', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Exposure Time', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Channels', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Channel Name', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Contrast Method', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Magnification', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Light Source Intensity', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Image Size', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Scaling (per pixel)', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'DZI', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'czi2dzi', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'File Date', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'Acquisition Date', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'id', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'checksum', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'accession_number', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'doi', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'ark', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'mime_type', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'description', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'resolution', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'uri', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'age', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'gene', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'last_modified', 'tag:isrd.isi.edu,2016:ignore', '["entry"]')
 ;
 
 CREATE VIEW "CIRM_Resources" AS
@@ -1128,5 +1219,4 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 
 COMMIT;
-
 

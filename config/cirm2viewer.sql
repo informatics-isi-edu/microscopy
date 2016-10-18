@@ -203,6 +203,8 @@ ALTER TABLE "Specimen" ADD CONSTRAINT "Specimen_Gene_fkey" FOREIGN KEY ("Gene") 
 
 ALTER TABLE "Specimen" ADD COLUMN "Age Unit" text REFERENCES age (term);
 ALTER TABLE "Specimen" ADD COLUMN "Age Value" text ;
+UPDATE "Specimen" SET "Age" = ' adult' WHERE "Age" = '0 adult';
+UPDATE "Specimen" SET "Age" = ' Post natal day' WHERE "Age" = '0 Post natal day';
 UPDATE "Specimen" SET "Age Value" = substring("Age" FROM 1 for (position(' ' IN "Age")-1)), "Age Unit" = substring("Age" FROM (position(' ' IN "Age") + 1)) WHERE "Age" IS NOT NULL;
 
 ALTER TABLE "Experiment" DROP COLUMN "Experiment Description";
@@ -708,7 +710,7 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 			END IF;
 			NEW."Disambiguator" := disambiguator;
 		END IF;
-		IF NEW."Age Value" IS NOT NULL THEN
+		IF NEW."Age Value" != '' THEN
 			NEW."Age" := NEW."Age Value" || ' ' || NEW."Age Unit";
 		ELSE
 			NEW."Age" := NEW."Age Unit";
@@ -816,7 +818,7 @@ CREATE FUNCTION scan_trigger_before() RETURNS trigger
 		NEW.description := (SELECT "Specimen Identifier" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		NEW.submitted := (SELECT "Experiment Date" FROM "Experiment", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
 		NEW.tissue := (SELECT "Tissue" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
-		NEW.age := (SELECT "Age Value" || ' ' || "Age Unit" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+		NEW.age := (SELECT "Age" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		NEW.gene := (SELECT "Gene" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		NEW.species := (SELECT "Species" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
         disambiguator := (SELECT COALESCE(max(cast(regexp_replace(description, '^.*-', '') as int)+1),1) FROM "Scan" WHERE slide_id = NEW.slide_id);
@@ -1056,7 +1058,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 ('Microscopy', 'Specimen', 'Tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
-('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Age}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{{Age}}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}"}}'),
 ('Microscopy', 'Specimen', 'Genes', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Genes}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
 ('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Probe}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),

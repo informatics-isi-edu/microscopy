@@ -65,6 +65,8 @@ class PrintControl (Printer):
                 res = cxi.utils.checkStatus(self.printer_id, self.printer_port)
             elif param == 'getConfiguration':
                 res = cxi.utils.checkConfig(self.printer_id, self.printer_port)
+            elif param == 'checkConnection':
+                res = cxi.utils.checkConnection(self.printer_id, self.printer_port)
         except:
             res = {}
             res[self.CXI_RET] = 0

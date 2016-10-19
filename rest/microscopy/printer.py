@@ -26,14 +26,18 @@ class Printer:
         self.CXI_MSG = 'Return Message'
         
     def setPrinter(self, id, printer):
-        self.printer_id, self.printer_port = printer
         if self.printers != None:
-            if id=='specimen':
+            if id == 'Specimen':
                 self.printer_id, self.printer_port = (self.printers['box_addr'], self.printers['box_port'])
-            elif id=='slide':
+            elif id == 'Slide':
                 self.printer_id, self.printer_port = (self.printers['slide_addr'], self.printers['slide_port'])
-        if printer != (self.printer_id, self.printer_port):
-            self.printer_id, self.printer_port = printer
+        
+        printer_id, printer_port = printer
+        
+        if printer_id != None:
+            self.printer_id = printer_id
+        if printer_port != None:
+            self.printer_port = printer_port
         
 class PrintControl (Printer):
     
@@ -42,7 +46,19 @@ class PrintControl (Printer):
         
     def GET(self, printerID, param):
         printer = web.input()
-        self.setPrinter(printerID, (printer['printer_id'], int(printer['printer_port'])))
+        printer_id = None
+        printer_port = None
+        try:
+           printer_id = printer['printer_id']
+        except:
+            pass
+           
+        try:
+           printer_port = int(printer['printer_port'])
+        except:
+            pass
+           
+        self.setPrinter(printerID, (printer_id, printer_port))
         response = []
         try:
             if param == 'getStatus':

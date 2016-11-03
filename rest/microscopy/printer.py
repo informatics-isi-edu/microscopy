@@ -27,9 +27,9 @@ class Printer:
         
     def setPrinter(self, id, printer):
         if self.printers != None:
-            if id == 'Specimen':
+            if id.lower() == 'specimen':
                 self.printer_id, self.printer_port = (self.printers['box_addr'], self.printers['box_port'])
-            elif id == 'Slide':
+            elif id.lower() == 'slide':
                 self.printer_id, self.printer_port = (self.printers['slide_addr'], self.printers['slide_port'])
         
         printer_id, printer_port = printer
@@ -117,8 +117,42 @@ class PrintJob (Printer):
     def __init__(self):
         Printer.__init__(self)
         
-    def GET(self, entity, jobID):
-        return "You want %s:%s\n" % (str(entity), str(jobID))
+    def GET(self, entity):
+        self.setPrinter(entity, (None, None))
+        params = web.input()
+        response = []
+        if entity == 'specimen':
+            id = params['ID']
+            section_date = params['Section Date']
+            sample_name = params['Sample Name']
+            initials = params['Initials']
+            disambiguator = params['Disambiguator']
+            comment = params['Comment']
+            try:
+                res = cxi.utils.makeBoxLabel(self.printer_id, self.printer_port, section_date, sample_name, initials, disambiguator, self.uri, id, comment)
+            except:
+                res = {}
+                res[self.CXI_RET] = 0
+                res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
+            response.append(res)
+        elif entity == 'slide':
+            id = params['ID']
+            experiment = params['Experiment ID']
+            experiment_date = params['Experiment Date']
+            sample_name = params['Sample Name']
+            experiment_description = params['Experiment Description']
+            initials = params['Initials']
+            sequence_num = params['Seq.']
+            revision = 0
+            try:
+                res = cxi.utils.makeSliceLabel(self.printer_id, self.printer_port, experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
+            except:
+                res = {}
+                res[self.CXI_RET] = 0
+                res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
+            response.append(res)
+                    
+        return json.dumps(response)
     
     def POST(self, entity):
         response = []

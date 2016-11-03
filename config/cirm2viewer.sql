@@ -227,6 +227,23 @@ ALTER TABLE "Scan" ADD COLUMN gene text;
 ALTER TABLE "Scan" ADD COLUMN checksum text;
 UPDATE "Scan" SET checksum = "ID";
 
+CREATE FUNCTION urlencode(text) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+    	ret text;
+    BEGIN
+		ret := (SELECT string_agg(
+			CASE
+				WHEN ch ~ '[:/?#\[\]@!$&\(\)*+,;= ]+' OR ch = E'\'' -- comment to close the ' 
+				THEN regexp_replace(upper(substring(ch::bytea::text, 3)), '(..)', E'%\\1', 'g')
+				ELSE ch
+			END, '')
+				FROM (SELECT ch FROM regexp_split_to_table($1, '') AS ch) AS s);
+		RETURN ret;
+	END;
+$$;
+
 CREATE FUNCTION update_scan_ID() RETURNS void
     LANGUAGE plpgsql
     AS $$
@@ -660,6 +677,44 @@ ALTER TABLE "Experiment" ADD CONSTRAINT "Experiment_Probe_fkey" FOREIGN KEY ("Pr
 
 UPDATE "Specimen" SET "Age" = substring("Age" FROM 2) WHERE substring("Age" FROM 1 FOR 1) = ' ';
 
+---
+--- Set the "Label" url
+ALTER TABLE "Specimen" ADD COLUMN "Label" text;
+
+UPDATE "Specimen" T1 SET "Label" = (
+SELECT '/microscopy/printer/specimen/job?ID=' || urlencode(T2."ID") || 
+'&' || urlencode('Section Date') || '=' || urlencode('' || T2."Section Date") ||
+'&' || urlencode('Sample Name') || '=' || urlencode(species.code || tissue.code || COALESCE("Age Value", '') || age.code || gene.code || T2."Specimen Identifier") ||
+'&Initials=' || urlencode(T2."Initials") ||
+'&Disambiguator=' || urlencode(T2."Disambiguator") ||
+'&Comment=' || urlencode(T2."Comment")
+FROM species, tissue, age, gene, "Specimen" T2 WHERE species.term = T2."Species" AND tissue.term = T2."Tissue" AND age.term = T2."Age Unit" AND gene.term = T2."Gene" and T2."ID" = T1."ID"); 
+
+ALTER TABLE "Slide" ADD COLUMN "Label" text;
+
+UPDATE "Slide" T1 SET "Label" = (
+	SELECT '/microscopy/printer/slide/job?ID=' || urlencode(T2."ID") || 
+	'&' || urlencode('Experiment ID') || '=' || urlencode(T2."Experiment ID") ||
+	'&' || urlencode('Seq.') || '=' || T2."Seq." ||
+	'&' || urlencode('Experiment Date') || '=' || urlencode('' || "Experiment"."Experiment Date") ||
+	'&' || urlencode('Sample Name') || '=' || urlencode(species.code || tissue.code || COALESCE("Age Value", '') || age.code || gene.code || "Specimen"."Specimen Identifier") ||
+	'&' || urlencode('Experiment Description') || '=' || urlencode(experiment_type.code || probe.code) ||
+	'&Initials=' || urlencode("Experiment"."Initials") 
+	FROM species, tissue, age, gene, "Slide" T2, "Specimen", "Experiment", experiment_type, probe 
+	WHERE 
+		species.term = "Specimen"."Species" AND 
+		tissue.term = "Specimen"."Tissue" AND 
+		age.term = "Specimen"."Age Unit" AND 
+		gene.term = "Specimen"."Gene" AND 
+		"Specimen"."ID" = T2."Specimen ID" AND 
+		"Experiment"."ID" = T2."Experiment ID" AND 
+		experiment_type.term = "Experiment"."Experiment Type" AND 
+		probe.term = "Experiment"."Probe" AND 
+		T1."Experiment ID" IS NOT NULL AND 
+		T2."Experiment ID" IS NOT NULL AND T2."ID" = T1."ID"
+) 
+WHERE T1."Experiment ID" IS NOT NULL; 
+
 --
 -- Create triggers for the Scan, Slide, Experiment and Specimen tables
 --
@@ -695,12 +750,15 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 		IF (NEW."Initials" IS NULL) THEN
 			RAISE EXCEPTION 'Initials cannot be NULL';
 		END IF;
+		IF (NEW."Comment" IS NULL) THEN
+			NEW."Comment" := '';
+		END IF;
 		NEW."Genes" := regexp_split_to_array(NEW."Gene",';');
 		NEW."Gene" := split_part(NEW."Gene", ';', 1);
 		IF NEW."ID" IS NULL THEN
-	        sample_name := (SELECT species.code || tissue.code || NEW."Age Value" || age.code || gene.code || NEW."Specimen Identifier" FROM species, tissue, age, gene WHERE species.term = NEW."Species" AND tissue.term = NEW."Tissue" AND age.term = NEW."Age Unit" AND gene.term = NEW."Gene"); 
+	        sample_name := (SELECT species.code || tissue.code || NEW."Age Value" || age.code || gene.code || NEW."Specimen Identifier" FROM "Microscopy".species species, "Microscopy".tissue tissue, "Microscopy".age age, "Microscopy".gene gene WHERE species.term = NEW."Species" AND tissue.term = NEW."Tissue" AND age.term = NEW."Age Unit" AND gene.term = NEW."Gene"); 
 	        id_prefix := replace(to_char(NEW."Section Date", 'YYYY-MM-DD'), '-', '') || '-' || sample_name || '-' || NEW."Initials";
-	        disambiguator := (SELECT max("Disambiguator") FROM "Specimen" WHERE "ID" LIKE (id_prefix || '%'));
+	        disambiguator := (SELECT max("Disambiguator") FROM "Microscopy"."Specimen" WHERE "ID" LIKE (id_prefix || '%'));
 	        IF (disambiguator IS NULL) THEN
 				NEW."ID" := id_prefix;
 				disambiguator := 0;
@@ -715,6 +773,12 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 		ELSE
 			NEW."Age" := NEW."Age Unit";
 		END IF;
+		NEW."Label" := '/microscopy/printer/slide/job?ID=' || "Microscopy".urlencode(NEW."ID") ||
+			'&' || "Microscopy".urlencode('Section Date') || '=' || "Microscopy".urlencode('' || NEW."Section Date") ||
+			'&' || "Microscopy".urlencode('Sample Name') || '=' || "Microscopy".urlencode(sample_name) ||
+			'&Initials=' || "Microscopy".urlencode(NEW."Initials") ||
+			'&Disambiguator=' || "Microscopy".urlencode(NEW."Disambiguator") ||
+			'&Comment=' || "Microscopy".urlencode(NEW."Comment");
         RETURN NEW;
     END;
 $$;
@@ -742,9 +806,9 @@ CREATE FUNCTION experiment_trigger_before() RETURNS trigger
 			RAISE EXCEPTION 'Initials cannot be NULL';
 		END IF;
 		IF NEW."ID" IS NULL THEN
-	        experiment_description := (SELECT experiment_type.code || probe.code FROM experiment_type, probe WHERE experiment_type.term = NEW."Experiment Type" AND probe.term = NEW."Probe"); 
+	        experiment_description := (SELECT experiment_type.code || probe.code FROM "Microscopy".experiment_type experiment_type, "Microscopy".probe probe WHERE experiment_type.term = NEW."Experiment Type" AND probe.term = NEW."Probe"); 
 	        id_prefix := replace(to_char(NEW."Experiment Date", 'YYYY-MM-DD'), '-', '') || '-' || experiment_description || '-' || NEW."Initials";
-	        disambiguator := (SELECT max("Disambiguator") FROM "Experiment" WHERE "ID" LIKE (id_prefix || '%'));
+	        disambiguator := (SELECT max("Disambiguator") FROM "Microscopy"."Experiment" WHERE "ID" LIKE (id_prefix || '%'));
 	        IF (disambiguator IS NULL) THEN
 				NEW."ID" := id_prefix;
 				disambiguator := 0;
@@ -766,12 +830,16 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
     AS $$
     DECLARE
         seq integer;
+        row_experiment "Microscopy"."Experiment"%rowtype;
+        row_specimen "Microscopy"."Specimen"%rowtype;
+        sample_name text;
+        experiment_description text;
     BEGIN
 		IF (NEW."Specimen ID" IS NULL) THEN
 			RAISE EXCEPTION 'Specimen ID cannot be NULL';
 		END IF;
 		IF NEW."ID" IS NULL THEN
-	        seq := (SELECT max("Seq.") FROM "Slide" WHERE "ID" LIKE (NEW."Specimen ID" || '%'));
+	        seq := (SELECT max("Seq.") FROM "Microscopy"."Slide" WHERE "ID" LIKE (NEW."Specimen ID" || '%'));
 	        IF (seq IS NULL) THEN
 				seq := 1;
 				NEW."ID" := NEW."Specimen ID" || '-01-000';
@@ -780,6 +848,19 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
 				NEW."ID" := NEW."Specimen ID" || '-' || substring(('0' || seq) FROM '..$') || '-000';
 			END IF;
 			New."Seq." := seq;
+		END IF;
+		IF NEW."Experiment ID" IS NOT NULL THEN
+			SELECT * INTO row_experiment FROM "Microscopy"."Experiment" WHERE "ID" = NEW."Experiment ID";
+			SELECT * INTO row_specimen FROM "Microscopy"."Specimen" WHERE "ID" = NEW."Specimen ID";
+	        sample_name := (SELECT species.code || tissue.code || row_specimen."Age Value" || age.code || gene.code || row_specimen."Specimen Identifier" FROM "Microscopy".species species, "Microscopy".tissue tissue, "Microscopy".age age, "Microscopy".gene gene WHERE species.term = row_specimen."Species" AND tissue.term = row_specimen."Tissue" AND age.term = row_specimen."Age Unit" AND gene.term = row_specimen."Gene"); 
+			experiment_description := (SELECT experiment_type.code || probe.code FROM "Microscopy".experiment_type experiment_type, "Microscopy".probe probe WHERE experiment_type.term = row_experiment."Experiment Type" AND probe.term = row_experiment."Probe");
+	        NEW."Label" := '/microscopy/printer/slide/job?ID=' || "Microscopy".urlencode(NEW."ID") ||
+				'&' || "Microscopy".urlencode('Experiment ID') || '=' || "Microscopy".urlencode(NEW."Experiment ID") ||
+				'&' || "Microscopy".urlencode('Seq.') || '=' || NEW."Seq." ||
+				'&' || "Microscopy".urlencode('Experiment Date') || '=' || "Microscopy".urlencode('' || row_experiment."Experiment Date") ||
+				'&' || "Microscopy".urlencode('Sample Name') || '=' || "Microscopy".urlencode(sample_name) ||
+				'&' || "Microscopy".urlencode('Experiment Description') || '=' || "Microscopy".urlencode(experiment_description) ||
+				'&Initials=' || "Microscopy".urlencode(row_experiment."Initials");
 		END IF;
         RETURN NEW;
     END;
@@ -793,11 +874,11 @@ CREATE FUNCTION slide_trigger_after() RETURNS trigger
     DECLARE
         counter integer;
     BEGIN
-		counter := (SELECT count(*) FROM "Slide" WHERE "Slide"."Specimen ID" = NEW."Specimen ID");
-		UPDATE "Specimen" SET "Number of Slides" = counter WHERE "Specimen"."ID" = NEW."Specimen ID";
+		counter := (SELECT count(*) FROM "Microscopy"."Slide" WHERE "Specimen ID" = NEW."Specimen ID");
+		UPDATE "Microscopy"."Specimen" SET "Number of Slides" = counter WHERE "ID" = NEW."Specimen ID";
 		IF NEW."Experiment ID" IS NOT NULL THEN
-			counter := (SELECT count(*) FROM "Slide" WHERE "Slide"."Experiment ID" = NEW."Experiment ID");
-			UPDATE "Experiment" SET "Number of Slides" = counter WHERE "Experiment"."ID" = NEW."Experiment ID";
+			counter := (SELECT count(*) FROM "Microscopy"."Slide" WHERE "Experiment ID" = NEW."Experiment ID");
+			UPDATE "Microscopy"."Experiment" SET "Number of Slides" = counter WHERE "ID" = NEW."Experiment ID";
 		END IF;
         RETURN NEW;
     END;
@@ -814,14 +895,14 @@ CREATE FUNCTION scan_trigger_before() RETURNS trigger
  		IF (NEW.slide_id IS NULL) THEN
 			RAISE EXCEPTION 'slide_id cannot be NULL';
 		END IF;
-		NEW.submitter := (SELECT "Full Name" FROM "User", "Slide", "Experiment" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID" AND "Experiment"."Initials" = "User"."Initials");
-		NEW.description := (SELECT "Specimen Identifier" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
-		NEW.submitted := (SELECT "Experiment Date" FROM "Experiment", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
-		NEW.tissue := (SELECT "Tissue" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
-		NEW.age := (SELECT "Age" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
-		NEW.gene := (SELECT "Gene" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
-		NEW.species := (SELECT "Species" FROM "Specimen", "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
-        disambiguator := (SELECT COALESCE(max(cast(regexp_replace(description, '^.*-', '') as int)+1),1) FROM "Scan" WHERE slide_id = NEW.slide_id);
+		NEW.submitter := (SELECT "Full Name" FROM "Microscopy"."User" "User", "Microscopy"."Slide" "Slide", "Microscopy"."Experiment" "Experiment" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID" AND "Experiment"."Initials" = "User"."Initials");
+		NEW.description := (SELECT "Specimen Identifier" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+		NEW.submitted := (SELECT "Experiment Date" FROM "Microscopy"."Experiment" "Experiment", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
+		NEW.tissue := (SELECT "Tissue" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+		NEW.age := (SELECT "Age" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+		NEW.gene := (SELECT "Gene" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+		NEW.species := (SELECT "Species" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+        disambiguator := (SELECT COALESCE(max(cast(regexp_replace(description, '^.*-', '') as int)+1),1) FROM "Microscopy"."Scan" WHERE slide_id = NEW.slide_id);
 		New.description := NEW.slide_id || '-' || disambiguator;
         RETURN NEW;
     END;
@@ -837,15 +918,15 @@ CREATE FUNCTION scan_trigger_after() RETURNS trigger
         specimen_id text;
         experiment_id text;
     BEGIN
-		counter := (SELECT count(*) FROM "Scan" WHERE "slide_id" = NEW.slide_id);
-		UPDATE "Slide" SET "Number of Scans" = counter WHERE "Slide"."ID" = NEW.slide_id;
-		specimen_id := (SELECT "Specimen ID" FROM "Slide" WHERE "ID" = NEW.slide_id);
-		counter := (SELECT sum("Number of Scans") FROM "Slide" WHERE "Slide"."Specimen ID" = specimen_id);
-		UPDATE "Specimen" SET "Number of Scans" = counter WHERE "Specimen"."ID" = specimen_id;
-		experiment_id := (SELECT "Experiment ID" FROM "Slide" WHERE "ID" = NEW.slide_id);
+		counter := (SELECT count(*) FROM "Microscopy"."Scan" WHERE "slide_id" = NEW.slide_id);
+		UPDATE "Microscopy"."Slide" SET "Number of Scans" = counter WHERE "ID" = NEW.slide_id;
+		specimen_id := (SELECT "Specimen ID" FROM "Microscopy"."Slide" WHERE "ID" = NEW.slide_id);
+		counter := (SELECT sum("Number of Scans") FROM "Microscopy"."Slide" WHERE "Specimen ID" = specimen_id);
+		UPDATE "Microscopy"."Specimen" SET "Number of Scans" = counter WHERE "ID" = specimen_id;
+		experiment_id := (SELECT "Experiment ID" FROM "Microscopy"."Slide" WHERE "ID" = NEW.slide_id);
 		IF experiment_id IS NOT NULL THEN
-			counter := (SELECT sum("Number of Scans") FROM "Slide" WHERE "Slide"."Experiment ID" = experiment_id);
-			UPDATE "Experiment" SET "Number of Scans" = counter WHERE "Experiment"."ID" = experiment_id;
+			counter := (SELECT sum("Number of Scans") FROM "Microscopy"."Slide" WHERE "Experiment ID" = experiment_id);
+			UPDATE "Microscopy"."Experiment" SET "Number of Scans" = counter WHERE "ID" = experiment_id;
 		END IF;
         RETURN NEW;
     END;
@@ -1029,6 +1110,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Gene', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Number of Slides', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Number of Scans', 'comment', '["top"]'),
+('Microscopy', 'Specimen', 'Label', 'comment', '["hidden"]'),
 
 ('Microscopy', 'Experiment', 'Probes', 'comment', '["hidden"]'),
 ('Microscopy', 'Experiment', 'Experiment Date', 'comment', '["top"]'),
@@ -1037,6 +1119,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Experiment', 'Number of Slides', 'comment', '["top"]'),
 ('Microscopy', 'Experiment', 'Number of Scans', 'comment', '["top"]'),
 
+('Microscopy', 'Slide', 'Label', 'comment', '["hidden"]'),
 ('Microscopy', 'Slide', 'Seq.', 'comment', '["top"]'),
 ('Microscopy', 'Slide', 'Number of Scans', 'comment', '["top"]'),
 
@@ -1047,13 +1130,25 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Scan', 'Thumbnail', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[![]({{Thumbnail}}){width=400 height=400}](/chaise/viewer/#1/Microscopy:Scan/id={{id}}){target=_blank}","separator_markdown":"  "},
-	"compact" :{"markdown_pattern":"[![]({{Thumbnail}}){width=100 height=100}](/chaise/viewer/#1/Microscopy:Scan/id={{id}}){target=_blank}","separator_markdown":"  "}
+	"detailed" :{"markdown_pattern":"[![]({{Thumbnail}}){width=400 height=400}](/chaise/viewer/#1/Microscopy:Scan/id={{#encode}}{{id}}{{/encode}}){target=_blank}","separator_markdown":"  "},
+	"compact" :{"markdown_pattern":"[![]({{Thumbnail}}){width=100 height=100}](/chaise/viewer/#1/Microscopy:Scan/id={{#encode}}{{id}}{{/encode}}){target=_blank}","separator_markdown":"  "}
 }'),
 
 ('Microscopy', 'Scan', 'HTTP URL', 'tag:isrd.isi.edu,2016:column-display', 
 '{
 	"detailed" :{"markdown_pattern":"[**{{filename}}** ({{bytes}} Bytes)]({{HTTP URL}})","separator_markdown":"\n\n"}
+}'),
+
+('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
+'{
+	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"},
+	"compact" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"}
+}'),
+
+('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
+'{
+	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"},
+	"compact" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"}
 }'),
 
 ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
@@ -1066,13 +1161,13 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Slide', 'Specimen ID', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed": {"markdown_pattern": "[{{Specimen ID}}](/chaise/record/#1/Microscopy:Specimen/ID={{Specimen ID}})"},
-	"compact": {"markdown_pattern": "[{{Specimen ID}}](/chaise/record/#1/Microscopy:Specimen/ID={{Specimen ID}})"}
+	"detailed": {"markdown_pattern": "[{{Specimen ID}}](/chaise/record/#1/Microscopy:Specimen/ID={{#encode}}{{Specimen ID}}{{/encode}})"},
+	"compact": {"markdown_pattern": "[{{Specimen ID}}](/chaise/record/#1/Microscopy:Specimen/ID={{#encode}}{{Specimen ID}}{{/encode}})"}
 }'),
 ('Microscopy', 'Slide', 'Experiment ID', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed": {"markdown_pattern": "[{{Experiment ID}}](/chaise/record/#1/Microscopy:Experiment/ID={{Experiment ID}})"},
-	"compact": {"markdown_pattern": "[{{Experiment ID}}](/chaise/record/#1/Microscopy:Experiment/ID={{Experiment ID}})"}
+	"detailed": {"markdown_pattern": "[{{Experiment ID}}](/chaise/record/#1/Microscopy:Experiment/ID={{#encode}}{{Experiment ID}}{{/encode}})"},
+	"compact": {"markdown_pattern": "[{{Experiment ID}}](/chaise/record/#1/Microscopy:Experiment/ID={{#encode}}{{Experiment ID}}{{/encode}})"}
 }')
 ;
 
@@ -1105,12 +1200,21 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'species', 'description', '{"display": "Species", "top_columns": ["term", "code"]}'),
 ('Microscopy', 'tissue', 'description', '{"display": "Tissue"}'),
 
+('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:table-display', '{
+	"row_name" :{"row_markdown_pattern":"{{ID}}"}
+}'),
+('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:table-display', '{
+	"row_name" :{"row_markdown_pattern":"{{ID}}"}
+}'),
+('Microscopy', 'Slide', 'tag:isrd.isi.edu,2016:table-display', '{
+	"row_name" :{"row_markdown_pattern":"{{ID}}"}
+}'),
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:table-display', '{
 	"row_name" :{"row_markdown_pattern":"{{accession_number}}"}
 }'),
 
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:recordlink', '{"mode": "tag:isrd.isi.edu,2016:recordlink/fragmentfilter", "resource": "viewer/"}'),
-('Microscopy', 'Scan', 'description', '{"sortedBy": "Acquisition Date", "top_columns": ["Thumbnail", "description", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"]}'),
+('Microscopy', 'Scan', 'description', '{"sortedBy": "Acquisition Date", "sortOrder": "desc", "top_columns": ["Thumbnail", "description", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"]}'),
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"compact": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
@@ -1119,15 +1223,15 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	"entry/create": ["submitter", "species", "tissue", "gene", "gender", "age"]
 }'),
 
-('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Section Date", "Number of Slides", "Number of Scans"]}'),
+('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "sortOrder": "desc", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Section Date", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans"],
-	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans"],
+	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
+	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
 	"entry": ["Species", "Tissue", "Age Value",  "Age Unit", "Gene", "Initials", "Section Date", "Comment"]
 }'),
 
-('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
+('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "sortOrder": "desc", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
@@ -1181,7 +1285,14 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'uri', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Scan', 'age', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Scan', 'gene', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
-('Microscopy', 'Scan', 'last_modified', 'tag:isrd.isi.edu,2016:ignore', '["entry"]')
+('Microscopy', 'Scan', 'last_modified', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Specimen', 'Number of Slides', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Specimen', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Experiment', 'Number of Slides', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Experiment', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Slide', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]')
 ;
 
 CREATE VIEW "CIRM_Resources" AS
@@ -1229,7 +1340,6 @@ INSERT INTO _ermrest.model_pseudo_key (schema_name, table_name, column_names) VA
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri, annotation_value) VALUES
 ('Microscopy', 'CIRM_Resources', 'Data Type', 'tag:isrd.isi.edu,2016:column-display','{"compact":{"markdown_pattern":"[{{Data Type}}](/chaise/search/#1/{{#encode}}{{{Schema}}}{{/encode}}:{{#encode}}{{{Table}}}{{/encode}})"}}')
 ;
-
 
 COMMIT;
 

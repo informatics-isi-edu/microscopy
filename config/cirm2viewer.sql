@@ -308,6 +308,13 @@ CREATE TABLE anatomy (
 
 ALTER TABLE anatomy OWNER TO ermrestddl;
 
+INSERT INTO anatomy(code,term) VALUES
+('Kidney', 'Kidney'),
+('Bone', 'Bone'),
+('Neural Tube', 'Neural Tube'),
+('Other', 'Other'),
+('Lung', 'Lung');
+
 CREATE TABLE annotation_type (
     id serial NOT NULL PRIMARY KEY,
     superclass_id text REFERENCES annotation_type(code),
@@ -322,6 +329,11 @@ CREATE TABLE annotation_type (
 
 
 ALTER TABLE annotation_type OWNER TO ermrestddl;
+
+INSERT INTO annotation_type(term) VALUES
+('rectangle'), 
+('arrow'), 
+('section');
 
 CREATE TABLE annotation (
     id serial NOT NULL PRIMARY KEY,
@@ -1237,7 +1249,13 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
 	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
 	"entry": ["Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
+}'),
+
+('Microscopy', 'specimen_gene', 'tag:isrd.isi.edu,2016:table-display', 
+'{
+	"compact": {"row_markdown_pattern":"**{{Gene ID}}**{.vocab}","separator_markdown":" "}
 }')
+
 
 ;
 

@@ -859,7 +859,7 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
 				seq := seq + 1;
 				NEW."ID" := NEW."Specimen ID" || '-' || substring(('0' || seq) FROM '..$') || '-000';
 			END IF;
-			New."Seq." := seq;
+			NEW."Seq." := seq;
 		END IF;
 		IF NEW."Experiment ID" IS NOT NULL THEN
 			SELECT * INTO row_experiment FROM "Microscopy"."Experiment" WHERE "ID" = NEW."Experiment ID";
@@ -1154,13 +1154,13 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
 	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"}
+	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**]({{Label}}){{/Label}}","separator_markdown":"\n\n"}
 }'),
 
 ('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
 	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"}
+	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**]({{Label}}){{/Label}}","separator_markdown":"\n\n"}
 }'),
 
 ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
@@ -1213,16 +1213,16 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'tissue', 'description', '{"display": "Tissue"}'),
 
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:table-display', '{
-	"row_name" :{"row_markdown_pattern":"{{ID}}"}
+	"row_name" :{"row_markdown_pattern":"{{{ID}}}"}
 }'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:table-display', '{
-	"row_name" :{"row_markdown_pattern":"{{ID}}"}
+	"row_name" :{"row_markdown_pattern":"{{{ID}}}"}
 }'),
 ('Microscopy', 'Slide', 'tag:isrd.isi.edu,2016:table-display', '{
-	"row_name" :{"row_markdown_pattern":"{{ID}}"}
+	"row_name" :{"row_markdown_pattern":"{{{ID}}}"}
 }'),
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:table-display', '{
-	"row_name" :{"row_markdown_pattern":"{{accession_number}}"}
+	"row_name" :{"row_markdown_pattern":"{{{accession_number}}}"}
 }'),
 
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:recordlink', '{"mode": "tag:isrd.isi.edu,2016:recordlink/fragmentfilter", "resource": "viewer/"}'),
@@ -1254,8 +1254,16 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'specimen_gene', 'tag:isrd.isi.edu,2016:table-display', 
 '{
 	"compact": {"row_markdown_pattern":"**{{Gene ID}}**{.vocab}","separator_markdown":" "}
-}')
+}'),
 
+
+('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "specimen_gene_Specimen ID_fkey"],
+		["Microscopy", "Slide_Box ID_fkey"]
+	]
+}')
 
 ;
 
@@ -1269,8 +1277,10 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Genes', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Specimen', 'Disambiguator', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Experiment', 'ID', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Experiment', 'Probes', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Experiment', 'Disambiguator', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Slide', 'ID', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Scan', 'slide_id', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Scan', 'filename', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),

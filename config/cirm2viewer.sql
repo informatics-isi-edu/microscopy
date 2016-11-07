@@ -486,6 +486,8 @@ ALTER TABLE "Scan" RENAME COLUMN "File Size" TO bytes;
 ALTER TABLE "Scan" DROP COLUMN "ID";
 ALTER TABLE "Scan" DROP COLUMN "Filename";
 
+UPDATE "Scan" SET filename = split_part(filename, 'slideid=', 2) WHERE filename LIKE '%slideid=%';
+
 --
 -- Update the required fields from Specimen and Experiment based on a guessing from the ID value
 --
@@ -1097,7 +1099,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'Acquisition Date', 'facetOrder', '6'),
 ('Microscopy', 'Scan', 'Channel Name', 'facetOrder', '7'),
 ('Microscopy', 'Scan', 'Channels', 'facetOrder', '8'),
--- ('Microscopy', 'Scan', 'age', 'comment', '["top"]'),
+('Microscopy', 'Scan', 'age', 'comment', '["top"]'),
 ('Microscopy', 'Scan', 'Comment', 'facetOrder', '9'),
 ('Microscopy', 'Scan', 'Microscope', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Camera', 'comment', '["hidden"]'),

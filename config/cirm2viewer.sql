@@ -595,7 +595,7 @@ CREATE FUNCTION update_metadata() RETURNS void
 		
 		FOR row_specimen IN SELECT * FROM "Specimen" WHERE "Specimen Identifier" IS NULL
 		LOOP
-			UPDATE "Specimen" SET "Specimen Identifier" = 'Unknown' WHERE "Specimen"."ID" = row_specimen."ID";
+			UPDATE "Specimen" SET "Specimen Identifier" = '' WHERE "Specimen"."ID" = row_specimen."ID";
 		END LOOP;
 		
 		RETURN;
@@ -747,7 +747,7 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 			NEW."Age Value" := '';
 		END IF;
 		IF (NEW."Specimen Identifier" IS NULL) THEN
-			RAISE EXCEPTION 'Specimen Identifier cannot be NULL';
+			NEW."Specimen Identifier" := '';
 		END IF;
 		IF (NEW."Species" IS NULL) THEN
 			RAISE EXCEPTION 'Species cannot be NULL';
@@ -1125,6 +1125,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Number of Slides', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Number of Scans', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Label', 'comment', '["hidden"]'),
+('Microscopy', 'Specimen', 'Specimen Identifier', 'comment', '["hidden"]'),
 
 ('Microscopy', 'Experiment', 'Probes', 'comment', '["hidden"]'),
 ('Microscopy', 'Experiment', 'Experiment Date', 'comment', '["top"]'),
@@ -1320,6 +1321,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Number of Slides', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Specimen', 'Specimen Identifier', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Experiment', 'Number of Slides', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Experiment', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Slide', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]')

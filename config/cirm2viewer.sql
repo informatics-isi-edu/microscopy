@@ -648,10 +648,10 @@ CREATE FUNCTION update_metadata() RETURNS void
 			UPDATE "Specimen" SET age_rank = val where "ID" = row_specimen."ID";
 		END LOOP;
 		
-		-- FOR row_scan IN SELECT * FROM "Scan"
-		-- LOOP
-			-- UPDATE "Scan" SET age_rank  = (SELECT "Specimen".age_rank FROM "Specimen", "Slide" WHERE "Scan".id = row_scan.id AND row_scan."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
-		-- END LOOP;
+		FOR row_scan IN SELECT * FROM "Scan"
+		LOOP
+			UPDATE "Scan" T1 SET age_rank  = (SELECT "Specimen".age_rank FROM "Specimen", "Slide", "Scan" T2 WHERE T1."ID" = T2."ID" AND T2."ID" = row_scan."ID" AND row_scan."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID") WHERE T1."ID" = row_scan."ID";
+		END LOOP;
 		
 		RETURN;
     END;
@@ -661,7 +661,7 @@ SELECT update_metadata();
 
 DROP FUNCTION update_metadata();
 
-UPDATE "Scan" T1 SET age_rank  = (SELECT "Specimen".age_rank FROM "Specimen", "Scan" T2, "Slide" WHERE T1.id = T2.id AND T1."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+-- UPDATE "Scan" T1 SET age_rank  = (SELECT "Specimen".age_rank FROM "Specimen", "Scan" T2, "Slide" WHERE T1.id = T2.id AND T1."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 
 ALTER TABLE "Scan" DROP COLUMN "ID";
 

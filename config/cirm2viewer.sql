@@ -798,6 +798,7 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
         sample_name text;
         id_prefix text;
         disambiguator integer;
+        age_offset integer;
     BEGIN
 		IF (NEW."Age Unit" IS NULL) THEN
 			RAISE EXCEPTION 'Age Unit cannot be NULL';
@@ -846,6 +847,28 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 		ELSE
 			NEW."Age" := NEW."Age Unit";
 		END IF;
+		IF NEW."Age Unit" = 'embryonic day' THEN
+			age_offset := 0;
+		ELSIF NEW."Age Unit" = 'Post natal day' THEN
+			age_offset := 1000;
+		ELSIF NEW."Age Unit" = 'hours' THEN
+			age_offset := 2000;
+		ELSIF NEW."Age Unit" = 'days' THEN
+			age_offset := 3000;
+		ELSIF NEW."Age Unit" = 'weeks' THEN
+			age_offset := 4000;
+		ELSIF NEW."Age Unit" = 'months' THEN
+			age_offset := 5000;
+		ELSIF NEW."Age Unit" = 'adult' THEN
+			age_offset := 6000;
+		ELSE 
+			age_offset := 0;
+		END IF;
+			
+		IF NEW."Age Unit" = 'adult' THEN
+			age_offset := age_offset + 200;
+		END IF;
+		NEW.age_rank := age_offset + to_number(NEW."Age Value", '99999.99');
 		NEW."Label" := '/microscopy/printer/slide/job?ID=' || "Microscopy".urlencode(NEW."ID") ||
 			'&' || "Microscopy".urlencode('Section Date') || '=' || "Microscopy".urlencode('' || NEW."Section Date") ||
 			'&' || "Microscopy".urlencode('Sample Name') || '=' || "Microscopy".urlencode(sample_name) ||
@@ -973,6 +996,7 @@ CREATE FUNCTION scan_trigger_before() RETURNS trigger
 		NEW.submitted := (SELECT "Experiment Date" FROM "Microscopy"."Experiment" "Experiment", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
 		NEW.tissue := (SELECT "Tissue" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		NEW.age := (SELECT "Age" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+		NEW.age_rank := (SELECT "age_rank" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		NEW.gene := (SELECT "Gene" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		NEW.species := (SELECT "Species" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
         disambiguator := (SELECT COALESCE(max(cast(regexp_replace(description, '^.*-', '') as int)+1),1) FROM "Microscopy"."Scan" WHERE slide_id = NEW.slide_id);

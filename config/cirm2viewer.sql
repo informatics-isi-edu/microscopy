@@ -460,7 +460,7 @@ ALTER TABLE "Scan" ADD COLUMN status text REFERENCES image_status(term);
 ALTER TABLE "Scan" ADD COLUMN last_modified date DEFAULT now() NOT NULL;
 ALTER TABLE "Scan" ADD COLUMN age_rank numeric;
 ALTER TABLE "Specimen" ADD COLUMN age_rank numeric;
-
+ALTER TABLE "Scan" ADD COLUMN "Disambiguator" int8;
 --
 -- Populate the new columns of the Scan table
 --
@@ -507,6 +507,8 @@ CREATE FUNCTION update_metadata() RETURNS void
         row_gene "gene"%rowtype;
         age_offset integer;
         val numeric;
+        disambiguator integer;
+        slide text;
     BEGIN
 		FOR row_experiment IN SELECT * FROM "Experiment" WHERE "Experiment Type" IS NULL
 		LOOP
@@ -651,6 +653,16 @@ CREATE FUNCTION update_metadata() RETURNS void
 		FOR row_scan IN SELECT * FROM "Scan"
 		LOOP
 			UPDATE "Scan" T1 SET age_rank  = (SELECT "Specimen".age_rank FROM "Specimen", "Slide", "Scan" T2 WHERE T1."ID" = T2."ID" AND T2."ID" = row_scan."ID" AND row_scan."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID") WHERE T1."ID" = row_scan."ID";
+		END LOOP;
+		
+		FOR slide IN SELECT DISTINCT slide_id FROM "Scan"
+		LOOP
+			disambiguator := 0;
+			FOR row_scan IN SELECT * FROM "Scan" WHERE slide_id = slide
+			LOOP
+				disambiguator := disambiguator + 1;
+				UPDATE "Scan" SET "Disambiguator" = disambiguator WHERE "ID" = row_scan."ID";
+			END LOOP;
 		END LOOP;
 		
 		RETURN;

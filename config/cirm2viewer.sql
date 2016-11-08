@@ -1243,14 +1243,14 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**]({{Label}}){{/Label}}","separator_markdown":"\n\n"}
+	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
+	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**]({{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
 }'),
 
 ('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}})","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**]({{Label}}){{/Label}}","separator_markdown":"\n\n"}
+	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
+	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**]({{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
 }'),
 
 ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),

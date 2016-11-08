@@ -668,11 +668,11 @@ ALTER TABLE "Scan" DROP COLUMN "ID";
 --
 -- Add the number of slides and scans for the Specimen, Experiment and Slide
 --
-ALTER TABLE "Experiment" ADD COLUMN "Number of Slides" INTEGER;
-ALTER TABLE "Experiment" ADD COLUMN "Number of Scans" INTEGER;
-ALTER TABLE "Specimen" ADD COLUMN "Number of Slides" INTEGER;
-ALTER TABLE "Specimen" ADD COLUMN "Number of Scans" INTEGER;
-ALTER TABLE "Slide" ADD COLUMN "Number of Scans" INTEGER;
+ALTER TABLE "Experiment" ADD COLUMN "Number of Slides" int8;
+ALTER TABLE "Experiment" ADD COLUMN "Number of Scans" int8;
+ALTER TABLE "Specimen" ADD COLUMN "Number of Slides" int8;
+ALTER TABLE "Specimen" ADD COLUMN "Number of Scans" int8;
+ALTER TABLE "Slide" ADD COLUMN "Number of Scans" int8;
 
 CREATE TABLE "Slides" AS SELECT * FROM "Slide" WHERE "ID" IN (SELECT DISTINCT slide_id FROM "Scan");
 

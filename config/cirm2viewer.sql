@@ -458,6 +458,8 @@ ALTER TABLE "Scan" ADD COLUMN resolution text;
 ALTER TABLE "Scan" ADD COLUMN uri text;
 ALTER TABLE "Scan" ADD COLUMN status text REFERENCES image_status(term);
 ALTER TABLE "Scan" ADD COLUMN last_modified date DEFAULT now() NOT NULL;
+ALTER TABLE "Scan" ADD COLUMN age_rank numeric;
+ALTER TABLE "Specimen" ADD COLUMN age_rank numeric;
 
 --
 -- Populate the new columns of the Scan table
@@ -483,7 +485,6 @@ UPDATE "Scan" SET accession_number = "ID";
 ALTER TABLE "Scan" RENAME COLUMN "Slide ID" TO slide_id;
 ALTER TABLE "Scan" RENAME COLUMN "Original Filename" TO filename;
 ALTER TABLE "Scan" RENAME COLUMN "File Size" TO bytes;
-ALTER TABLE "Scan" DROP COLUMN "ID";
 ALTER TABLE "Scan" DROP COLUMN "Filename";
 
 UPDATE "Scan" SET filename = split_part(filename, 'slideid=', 2) WHERE filename LIKE '%slideid=%';
@@ -497,12 +498,15 @@ CREATE FUNCTION update_metadata() RETURNS void
     DECLARE
         row_specimen "Specimen"%rowtype;
         row_experiment "Experiment"%rowtype;
+        row_scan "Scan"%rowtype;
         row_experiment_type "experiment_type"%rowtype;
         row_probe "probe"%rowtype;
         row_species "probe"%rowtype;
         row_tissue "tissue"%rowtype;
         row_age_unit "age"%rowtype;
         row_gene "gene"%rowtype;
+        age_offset integer;
+        val numeric;
     BEGIN
 		FOR row_experiment IN SELECT * FROM "Experiment" WHERE "Experiment Type" IS NULL
 		LOOP
@@ -598,6 +602,57 @@ CREATE FUNCTION update_metadata() RETURNS void
 			UPDATE "Specimen" SET "Specimen Identifier" = '' WHERE "Specimen"."ID" = row_specimen."ID";
 		END LOOP;
 		
+		FOR row_specimen IN SELECT * FROM "Specimen"
+		LOOP
+			IF row_specimen."Age Unit" = 'embryonic day' THEN
+				age_offset := 0;
+			ELSIF row_specimen."Age Unit" = 'Post natal day' THEN
+				age_offset := 1000;
+			ELSIF row_specimen."Age Unit" = 'hours' THEN
+				age_offset := 2000;
+			ELSIF row_specimen."Age Unit" = 'days' THEN
+				age_offset := 3000;
+			ELSIF row_specimen."Age Unit" = 'weeks' THEN
+				age_offset := 4000;
+			ELSIF row_specimen."Age Unit" = 'months' THEN
+				age_offset := 5000;
+			ELSIF row_specimen."Age Unit" = 'adult' THEN
+				age_offset := 6000;
+			ELSE 
+				age_offset := 0;
+			END IF;
+				
+			IF row_specimen."Age Value" = '12wk' THEN
+				val := age_offset + 12;
+			ELSIF row_specimen."Age Value" = '15.5.5' THEN
+				val := age_offset + 15.5;
+			ELSIF row_specimen."Age Value" = '1yr' THEN
+				val := age_offset + 200 + 1;
+			ELSIF row_specimen."Age Value" = '15,5' THEN
+				val := age_offset + 15.5;
+			ELSIF row_specimen."Age Value" = '2m' THEN
+				val := age_offset + 100 + 2;
+			ELSIF row_specimen."Age Value" = '6w' THEN
+				val := age_offset + 6;
+			ELSIF row_specimen."Age Value" = 'P2' THEN
+				val := age_offset;
+			ELSIF row_specimen."Age Value" = '' OR row_specimen."Age Value" IS NULL THEN
+				val := age_offset;
+			ELSE
+				IF row_specimen."Age Unit" = 'adult' THEN
+					age_offset := age_offset + 200;
+				END IF;
+				val := age_offset + to_number(row_specimen."Age Value", '99999.99');
+			END IF;
+				
+			UPDATE "Specimen" SET age_rank = val where "ID" = row_specimen."ID";
+		END LOOP;
+		
+		-- FOR row_scan IN SELECT * FROM "Scan"
+		-- LOOP
+			-- UPDATE "Scan" SET age_rank  = (SELECT "Specimen".age_rank FROM "Specimen", "Slide" WHERE "Scan".id = row_scan.id AND row_scan."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+		-- END LOOP;
+		
 		RETURN;
     END;
 $$;
@@ -605,6 +660,10 @@ $$;
 SELECT update_metadata();
 
 DROP FUNCTION update_metadata();
+
+UPDATE "Scan" T1 SET age_rank  = (SELECT "Specimen".age_rank FROM "Specimen", "Scan" T2, "Slide" WHERE T1.id = T2.id AND T1."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
+
+ALTER TABLE "Scan" DROP COLUMN "ID";
 
 --
 -- Add the number of slides and scans for the Specimen, Experiment and Slide
@@ -1069,6 +1128,8 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Scan', 'Thumbnail', 'comment', '["thumbnail", "hidden"]'),
 ('Microscopy', 'Scan', 'accession_number', 'comment', '["hidden"]'),
+('Microscopy', 'Scan', 'age', 'description', '{"rank": "age_rank"}'),
+('Microscopy', 'Scan', 'age_rank', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'age_stage', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'ark', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'bytes', 'comment', '["hidden"]'),
@@ -1119,6 +1180,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Genes', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'Section Date', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Species', 'comment', '["top"]'),
+('Microscopy', 'Specimen', 'Age', 'description', '{"rank": "age_rank"}'),
 ('Microscopy', 'Specimen', 'Age', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Tissue', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Gene', 'comment', '["top"]'),
@@ -1126,6 +1188,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Number of Scans', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Label', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'Specimen Identifier', 'comment', '["hidden"]'),
+('Microscopy', 'Specimen', 'age_rank', 'comment', '["hidden"]'),
 
 ('Microscopy', 'Experiment', 'Probes', 'comment', '["hidden"]'),
 ('Microscopy', 'Experiment', 'Experiment Date', 'comment', '["top"]'),
@@ -1324,7 +1387,9 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Specimen Identifier', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Experiment', 'Number of Slides', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Experiment', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
-('Microscopy', 'Slide', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]')
+('Microscopy', 'Slide', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Specimen', 'age_rank', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Scan', 'age_rank', 'tag:isrd.isi.edu,2016:ignore', '["entry"]')
 ;
 
 CREATE VIEW "CIRM_Resources" AS

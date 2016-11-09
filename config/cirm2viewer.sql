@@ -25,13 +25,30 @@ ALTER TABLE "Scan" DROP COLUMN "Tags";
 --
 UPDATE "Scan" SET "Thumbnail" = replace("Thumbnail", 'generic_genetic.png', 'generic_mixed.png');
 
+CREATE FUNCTION urlencode(text) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+    	ret text;
+    BEGIN
+		ret := (SELECT string_agg(
+			CASE
+				WHEN ch ~ '[:/?#\[\]@!$&\(\)*+,;= ]+' OR ch = E'\'' -- comment to close the ' 
+				THEN regexp_replace(upper(substring(ch::bytea::text, 3)), '(..)', E'%\\1', 'g')
+				ELSE ch
+			END, '')
+				FROM (SELECT ch FROM regexp_split_to_table($1, '') AS ch) AS s);
+		RETURN ret;
+	END;
+$$;
+
 --
 -- Refer cirm-www for cirm-dev
 -- Those 3 updates will be run only on cirm-dev
 -- Comment them if you run the script on cirm-staging or cirm-www
 --
-UPDATE "Scan" SET "HTTP URL" = 'https://cirm.isrd.isi.edu/hatrac/Microscopy/' || "Slide ID" || '/' || "Filename";
-UPDATE "Scan" SET "Thumbnail" = 'https://cirm.isrd.isi.edu' || "Thumbnail";
+UPDATE "Scan" SET "HTTP URL" = 'https://cirm.isrd.isi.edu/hatrac/Microscopy/' || urlencode("Slide ID") || '/' || urlencode("Filename");
+UPDATE "Scan" SET "Thumbnail" = 'https://cirm.isrd.isi.edu/thumbnails/' || urlencode("Slide ID") || '/' || "ID" || '.jpg' WHERE "Thumbnail" like '%.jpg';
 UPDATE "Scan" SET "DZI" = 'https://cirm.isrd.isi.edu' || "DZI";
 
 --
@@ -226,23 +243,6 @@ ALTER TABLE "Scan" ADD COLUMN age text;
 ALTER TABLE "Scan" ADD COLUMN gene text;
 ALTER TABLE "Scan" ADD COLUMN checksum text;
 UPDATE "Scan" SET checksum = "ID";
-
-CREATE FUNCTION urlencode(text) RETURNS text
-    LANGUAGE plpgsql
-    AS $$
-    DECLARE
-    	ret text;
-    BEGIN
-		ret := (SELECT string_agg(
-			CASE
-				WHEN ch ~ '[:/?#\[\]@!$&\(\)*+,;= ]+' OR ch = E'\'' -- comment to close the ' 
-				THEN regexp_replace(upper(substring(ch::bytea::text, 3)), '(..)', E'%\\1', 'g')
-				ELSE ch
-			END, '')
-				FROM (SELECT ch FROM regexp_split_to_table($1, '') AS ch) AS s);
-		RETURN ret;
-	END;
-$$;
 
 CREATE FUNCTION update_scan_ID() RETURNS void
     LANGUAGE plpgsql

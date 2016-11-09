@@ -880,7 +880,11 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 		IF NEW."Age Unit" = 'adult' THEN
 			age_offset := age_offset + 200;
 		END IF;
-		NEW.age_rank := age_offset + to_number(NEW."Age Value", '99999.99');
+		BEGIN
+			NEW.age_rank := age_offset + to_number(NEW."Age Value", '99999.99');
+		EXCEPTION WHEN others THEN
+			NEW.age_rank := age_offset;
+		END;
 		NEW."Label" := '/microscopy/printer/slide/job?ID=' || "Microscopy".urlencode(NEW."ID") ||
 			'&' || "Microscopy".urlencode('Section Date') || '=' || "Microscopy".urlencode('' || NEW."Section Date") ||
 			'&' || "Microscopy".urlencode('Sample Name') || '=' || "Microscopy".urlencode(sample_name) ||
@@ -1342,7 +1346,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 '{
 	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
 	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
-	"entry": ["Species", "Tissue", "Age Value",  "Age Unit", "Gene", "Initials", "Section Date", "Comment"]
+	"entry": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age Value",  ["Microscopy", "Specimen_Age Unit_fkey"], ["Microscopy", "Specimen_Gene_fkey"], ["Microscopy", "Specimen_Initials_fkey"], "Section Date", "Comment"]
 }'),
 
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "sortOrder": "desc", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
@@ -1350,7 +1354,14 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 '{
 	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
 	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
-	"entry": ["Initials", "Experiment Date", "Experiment Type", "Probe", "Comment"]
+	"entry": [["Microscopy", "Experiment_Initials_fkey"], "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], ["Microscopy", "Experiment_Probe_fkey"], "Comment"]
+}'),
+
+('Microscopy', 'Slide', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"detailed": ["ID", "Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
+	"compact": ["ID", "Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
+	"entry": ["Seq.", ["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment"]
 }'),
 
 ('Microscopy', 'specimen_gene', 'tag:isrd.isi.edu,2016:table-display', 

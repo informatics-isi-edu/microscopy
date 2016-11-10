@@ -1019,6 +1019,10 @@ CREATE FUNCTION scan_trigger_before() RETURNS trigger
 	        NEW."Disambiguator" := disambiguator;
 			New.description := NEW.slide_id || '-' || disambiguator;
 			New.accession_number := NEW.slide_id || '-' || disambiguator;
+			NEW.id := nextval('"Microscopy"."Scan_id_seq"'::regclass);
+			IF (NEW."last_modified" IS NULL) THEN
+				NEW."last_modified" := now();
+			END IF;
         END IF;
         RETURN NEW;
     END;

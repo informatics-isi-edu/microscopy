@@ -1292,7 +1292,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'Thumbnail', 'tag:isrd.isi.edu,2016:column-display', 
 '{
 	"detailed" :{"markdown_pattern":"[![]({{Thumbnail}}){width=400 height=400}](/chaise/viewer/#1/Microscopy:Scan/id={{#encode}}{{id}}{{/encode}}){target=_blank}","separator_markdown":"  "},
-	"compact" :{"markdown_pattern":"[![]({{Thumbnail}}){width=100 height=100}](/chaise/viewer/#1/Microscopy:Scan/id={{#encode}}{{id}}{{/encode}}){target=_blank}","separator_markdown":"  "}
+	"compact" :{"markdown_pattern":"[![]({{Thumbnail}}){width=100 height=100}](/chaise/record/#1/Microscopy:Scan/id={{#encode}}{{id}}{{/encode}}){target=_blank}","separator_markdown":"  "}
 }'),
 
 ('Microscopy', 'Scan', 'HTTP URL', 'tag:isrd.isi.edu,2016:column-display', 
@@ -1427,7 +1427,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	"row_name" :{"row_markdown_pattern":"{{{accession_number}}}"}
 }'),
 
-('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:recordlink', '{"mode": "tag:isrd.isi.edu,2016:recordlink/fragmentfilter", "resource": "viewer/"}'),
+('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:recordlink', '{"mode": "tag:isrd.isi.edu,2016:recordlink/fragmentfilter", "resource": "record/"}'),
 ('Microscopy', 'Scan', 'description', '{"sortedBy": "Acquisition Date", "sortOrder": "desc", "top_columns": ["Thumbnail", "description", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"]}'),
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{

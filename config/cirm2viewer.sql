@@ -444,6 +444,7 @@ INSERT INTO staining_protocol(code, term) VALUES('--', '--');
 -- Add RBK columns to the Scan table
 --
 
+ALTER TABLE "Scan" ADD COLUMN probe text;
 ALTER TABLE "Scan" ADD COLUMN accession_number text;
 ALTER TABLE "Scan" ADD COLUMN doi text;
 ALTER TABLE "Scan" ADD COLUMN ark text;
@@ -834,6 +835,7 @@ UPDATE "Slide" T1 SET "Label" = (
 ) 
 WHERE T1."Experiment ID" IS NOT NULL; 
 
+UPDATE "Scan" T1 SET  probe = (SELECT "Probe" FROM "Experiment", "Scan" T2, "Slide" WHERE T1.id = T2.id AND T1."slide_id" = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
 --
 -- Create triggers for the Scan, Slide, Experiment and Specimen tables
 --
@@ -1043,6 +1045,7 @@ CREATE FUNCTION scan_trigger_before() RETURNS trigger
 		END IF;
 		NEW.submitter := (SELECT "Full Name" FROM "Microscopy"."User" "User", "Microscopy"."Slide" "Slide", "Microscopy"."Experiment" "Experiment" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID" AND "Experiment"."Initials" = "User"."Initials");
 		NEW.submitted := (SELECT "Experiment Date" FROM "Microscopy"."Experiment" "Experiment", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
+		NEW.probe := (SELECT "Probe" FROM "Microscopy"."Experiment" "Experiment", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
 		NEW.tissue := (SELECT "Tissue" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		NEW.age := (SELECT "Age" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		NEW.age_rank := (SELECT "age_rank" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
@@ -1233,16 +1236,11 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'uri', 'comment', '["summary", "url", "hidden"]'),
 ('Microscopy', 'Scan', 'uri', 'description', '{"url_text": "View Image"}'),
 
-('Microscopy', 'Scan', 'species', 'facetOrder', '1'),
-('Microscopy', 'Scan', 'gene', 'facetOrder', '2'),
-('Microscopy', 'Scan', 'tissue', 'facetOrder', '3'),
-('Microscopy', 'Scan', 'submitter', 'facetOrder', '4'),
-('Microscopy', 'Scan', 'submitted', 'facetOrder', '5'),
-('Microscopy', 'Scan', 'Acquisition Date', 'facetOrder', '6'),
-('Microscopy', 'Scan', 'Channel Name', 'facetOrder', '7'),
-('Microscopy', 'Scan', 'Channels', 'facetOrder', '8'),
-('Microscopy', 'Scan', 'age', 'comment', '["top"]'),
-('Microscopy', 'Scan', 'Comment', 'facetOrder', '9'),
+('Microscopy', 'Scan', 'submitter', 'facetOrder', '1'),
+('Microscopy', 'Scan', 'species', 'facetOrder', '2'),
+('Microscopy', 'Scan', 'age', 'facetOrder', '3'),
+('Microscopy', 'Scan', 'gene', 'facetOrder', '4'),
+('Microscopy', 'Scan', 'probe', 'facetOrder', '5'),
 ('Microscopy', 'Scan', 'Microscope', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Camera', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Objective', 'comment', '["hidden"]'),
@@ -1258,26 +1256,22 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'File Date', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'checksum', 'comment', '["hidden"]'),
 
+('Microscopy', 'Specimen', 'Initials', 'facetOrder', '1'),
+('Microscopy', 'Specimen', 'Species', 'facetOrder', '2'),
+('Microscopy', 'Specimen', 'Age', 'facetOrder', '3'),
+('Microscopy', 'Specimen', 'Gene', 'facetOrder', '4'),
+('Microscopy', 'Specimen', 'Tissue', 'facetOrder', '5'),
 ('Microscopy', 'Specimen', 'Genes', 'comment', '["hidden"]'),
-('Microscopy', 'Specimen', 'Section Date', 'comment', '["top"]'),
-('Microscopy', 'Specimen', 'Species', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Age', 'description', '{"rank": "age_rank"}'),
-('Microscopy', 'Specimen', 'Age', 'comment', '["top"]'),
-('Microscopy', 'Specimen', 'Tissue', 'comment', '["top"]'),
-('Microscopy', 'Specimen', 'Gene', 'comment', '["top"]'),
-('Microscopy', 'Specimen', 'Number of Slides', 'comment', '["top"]'),
-('Microscopy', 'Specimen', 'Number of Scans', 'comment', '["top"]'),
 ('Microscopy', 'Specimen', 'Label', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'Specimen Identifier', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'age_rank', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'Initials', 'description', '{"display": "Submitted By"}'),
 
+('Microscopy', 'Experiment', 'Initials', 'facetOrder', '1'),
+('Microscopy', 'Experiment', 'Probe', 'facetOrder', '2'),
+('Microscopy', 'Experiment', 'Experiment Type', 'facetOrder', '3'),
 ('Microscopy', 'Experiment', 'Probes', 'comment', '["hidden"]'),
-('Microscopy', 'Experiment', 'Experiment Date', 'comment', '["top"]'),
-('Microscopy', 'Experiment', 'Experiment Type', 'comment', '["top"]'),
-('Microscopy', 'Experiment', 'Probe', 'comment', '["top"]'),
-('Microscopy', 'Experiment', 'Number of Slides', 'comment', '["top"]'),
-('Microscopy', 'Experiment', 'Number of Scans', 'comment', '["top"]'),
 ('Microscopy', 'Experiment', 'Initials', 'description', '{"display": "Submitted By"}'),
 
 ('Microscopy', 'Slide', 'Label', 'comment', '["hidden"]'),

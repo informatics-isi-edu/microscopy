@@ -201,7 +201,8 @@ INSERT INTO age(code, term) SELECT "Code" code, "ID" term FROM "Age";
 
 CREATE TABLE specimen_gene (
 	"Specimen ID" text REFERENCES "Specimen" ("ID"),
-	"Gene ID" text REFERENCES gene (term)
+	"Gene ID" text REFERENCES gene (term),
+	PRIMARY KEY ("Specimen ID","Gene ID")
 );
 ALTER TABLE specimen_gene OWNER TO ermrestddl;
 
@@ -745,6 +746,34 @@ $$;
 SELECT update_number_of_scan_slide();
 
 DROP FUNCTION update_number_of_scan_slide();
+
+DROP TABLE "Slides";
+
+CREATE TABLE "Slides" AS SELECT * FROM "Slide" WHERE "ID" NOT IN (SELECT DISTINCT slide_id FROM "Scan");
+
+CREATE FUNCTION update_number_of_slides() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+        row_specimen "Specimen"%rowtype;
+        counter integer;
+    BEGIN
+		-- raise notice 'start slide';
+		FOR row_specimen IN SELECT * FROM "Specimen" WHERE "Number of Slides" IS NULL
+		LOOP
+			counter := (SELECT count(*) FROM "Slides" WHERE "Specimen ID" = row_specimen."ID");
+			UPDATE "Specimen" SET "Number of Slides" = counter WHERE "Specimen"."ID" = row_specimen."ID";
+		END LOOP;
+		
+		UPDATE "Specimen" SET "Number of Slides" = NULL WHERE "Number of Slides" = 0;
+		
+        RETURN;
+    END;
+$$;
+
+SELECT update_number_of_slides();
+
+DROP FUNCTION update_number_of_slides();
 
 DROP TABLE "Slides";
 

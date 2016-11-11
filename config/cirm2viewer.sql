@@ -1339,6 +1339,59 @@ INSERT INTO _ermrest.model_schema_annotation (schema_name, annotation_uri, annot
 ;
 
 INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'age_stage', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'anatomy', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'annotation_type', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'embedding_medium', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'gender', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'specimen_fixation', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'staining_protocol', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'probe', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'species', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'tissue', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'gene', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'age', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+('Microscopy', 'experiment_type', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"compact": ["code", "term"]
+}'),
+
 ('Microscopy', 'image_grade_code', 'comment', '["association"]'),
 ('Microscopy', 'annotation', 'comment', '["association"]'),
 --('Microscopy', 'tissue', 'comment', '["association"]'),

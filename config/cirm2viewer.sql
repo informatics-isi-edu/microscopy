@@ -68,13 +68,16 @@ ALTER TABLE "User" OWNER TO ermrestddl;
 
 INSERT INTO "User"("Initials") SELECT DISTINCT id FROM "Initials";
 UPDATE "User" SET "Full Name" ="Initials";
+UPDATE "User" SET "Full Name" = 'Serban Voinea' WHERE "Initials" = 'SV';
 
 DROP TABLE "Initials";
 
 --
 -- Add Specimen.Initials a FK to User.Initials
 --
-ALTER TABLE "Specimen" ADD CONSTRAINT "Specimen_Initials_fkey" FOREIGN KEY ("Initials") REFERENCES "User" ("Initials");
+ALTER TABLE "Specimen" ALTER COLUMN "Initials" TYPE text;
+UPDATE "Specimen" SET "Initials" = 'Serban Voinea' WHERE "Initials" = 'SV';
+ALTER TABLE "Specimen" ADD CONSTRAINT "Specimen_Initials_fkey" FOREIGN KEY ("Initials") REFERENCES "User" ("Full Name");
 
 --
 -- Drop columns FROM Specimen
@@ -784,7 +787,9 @@ ALTER TABLE "Experiment" ADD COLUMN "Probes" text[];
 UPDATE "Experiment" SET "Probes" = regexp_split_to_array("Experiment"."Probe",';');
 UPDATE "Experiment" SET "Probe" = split_part("Probe", ';', 1);
 
-ALTER TABLE "Experiment" ADD CONSTRAINT "Experiment_Initials_fkey" FOREIGN KEY ("Initials") REFERENCES "User" ("Initials");
+ALTER TABLE "Experiment" ALTER COLUMN "Initials" TYPE text;
+UPDATE "Experiment" SET "Initials" = 'Serban Voinea' WHERE "Initials" = 'SV';
+ALTER TABLE "Experiment" ADD CONSTRAINT "Experiment_Initials_fkey" FOREIGN KEY ("Initials") REFERENCES "User" ("Full Name");
 ALTER TABLE "Experiment" ALTER COLUMN "Probe" SET NOT NULL;
 ALTER TABLE "Experiment" ALTER COLUMN "Probes" SET NOT NULL;
 ALTER TABLE "Experiment" ADD CONSTRAINT "Experiment_Probe_fkey" FOREIGN KEY ("Probe") REFERENCES "probe" ("term");
@@ -1265,6 +1270,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Label', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'Specimen Identifier', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'age_rank', 'comment', '["hidden"]'),
+('Microscopy', 'Specimen', 'Initials', 'description', '{"display": "Submitted By"}'),
 
 ('Microscopy', 'Experiment', 'Probes', 'comment', '["hidden"]'),
 ('Microscopy', 'Experiment', 'Experiment Date', 'comment', '["top"]'),
@@ -1272,6 +1278,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Experiment', 'Probe', 'comment', '["top"]'),
 ('Microscopy', 'Experiment', 'Number of Slides', 'comment', '["top"]'),
 ('Microscopy', 'Experiment', 'Number of Scans', 'comment', '["top"]'),
+('Microscopy', 'Experiment', 'Initials', 'description', '{"display": "Submitted By"}'),
 
 ('Microscopy', 'Slide', 'Label', 'comment', '["hidden"]'),
 ('Microscopy', 'Slide', 'Seq.', 'comment', '["top"]'),
@@ -1423,6 +1430,8 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ;
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'Specimen', 'Initials', 'tag:misd.isi.edu,2015:display', '{"name" : "Submitted By"}'),
+('Microscopy', 'Experiment', 'Initials', 'tag:misd.isi.edu,2015:display', '{"name" : "Submitted By"}'),
 ('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Genes', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),

@@ -848,7 +848,7 @@ UPDATE "Specimen" SET "Age" = substring("Age" FROM 2) WHERE substring("Age" FROM
 ALTER TABLE "Specimen" ADD COLUMN "Label" text;
 
 UPDATE "Specimen" T1 SET "Label" = (
-SELECT '/microscopy/printer/specimen/job?ID=' || urlencode(T2."ID") || 
+SELECT 'ID=' || urlencode(T2."ID") || 
 '&' || urlencode('Section Date') || '=' || urlencode('' || T2."Section Date") ||
 '&' || urlencode('Sample Name') || '=' || urlencode(species.code || tissue.code || COALESCE("Age Value", '') || age.code || gene.code || T2."Specimen Identifier") ||
 '&Initials=' || urlencode(T2."Initials") ||
@@ -859,7 +859,7 @@ FROM species, tissue, age, gene, "Specimen" T2 WHERE species.term = T2."Species"
 ALTER TABLE "Slide" ADD COLUMN "Label" text;
 
 UPDATE "Slide" T1 SET "Label" = (
-	SELECT '/microscopy/printer/slide/job?ID=' || urlencode(T2."ID") || 
+	SELECT 'ID=' || urlencode(T2."ID") || 
 	'&' || urlencode('Experiment ID') || '=' || urlencode(T2."Experiment ID") ||
 	'&' || urlencode('Seq.') || '=' || T2."Seq." ||
 	'&' || urlencode('Experiment Date') || '=' || urlencode('' || "Experiment"."Experiment Date") ||
@@ -967,7 +967,7 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 		EXCEPTION WHEN others THEN
 			NEW.age_rank := age_offset;
 		END;
-		NEW."Label" := '/microscopy/printer/slide/job?ID=' || "Microscopy".urlencode(NEW."ID") ||
+		NEW."Label" := 'ID=' || "Microscopy".urlencode(NEW."ID") ||
 			'&' || "Microscopy".urlencode('Section Date') || '=' || "Microscopy".urlencode('' || NEW."Section Date") ||
 			'&' || "Microscopy".urlencode('Sample Name') || '=' || "Microscopy".urlencode(sample_name) ||
 			'&Initials=' || "Microscopy".urlencode(NEW."Initials") ||
@@ -1048,7 +1048,7 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
 			SELECT * INTO row_specimen FROM "Microscopy"."Specimen" WHERE "ID" = NEW."Specimen ID";
 	        sample_name := (SELECT species.code || tissue.code || row_specimen."Age Value" || age.code || gene.code || row_specimen."Specimen Identifier" FROM "Microscopy".species species, "Microscopy".tissue tissue, "Microscopy".age age, "Microscopy".gene gene WHERE species.term = row_specimen."Species" AND tissue.term = row_specimen."Tissue" AND age.term = row_specimen."Age Unit" AND gene.term = row_specimen."Gene"); 
 			experiment_description := (SELECT experiment_type.code || probe.code FROM "Microscopy".experiment_type experiment_type, "Microscopy".probe probe WHERE experiment_type.term = row_experiment."Experiment Type" AND probe.term = row_experiment."Probe");
-	        NEW."Label" := '/microscopy/printer/slide/job?ID=' || "Microscopy".urlencode(NEW."ID") ||
+	        NEW."Label" := 'ID=' || "Microscopy".urlencode(NEW."ID") ||
 				'&' || "Microscopy".urlencode('Experiment ID') || '=' || "Microscopy".urlencode(NEW."Experiment ID") ||
 				'&' || "Microscopy".urlencode('Seq.') || '=' || NEW."Seq." ||
 				'&' || "Microscopy".urlencode('Experiment Date') || '=' || "Microscopy".urlencode('' || row_experiment."Experiment Date") ||
@@ -1346,14 +1346,14 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**]({{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
+	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/specimen/job?{{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
+	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/specimen/job?{{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
 }'),
 
 ('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[**Print Label**]({{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**]({{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
+	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/slide/job?{{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
+	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/slide/job?{{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
 }'),
 
 ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),

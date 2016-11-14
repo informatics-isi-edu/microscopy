@@ -75,12 +75,16 @@ UPDATE "Experiment" SET "Initials" = 'PW' WHERE "Initials" = 'PHW' ;
 UPDATE "Specimen" SET "Initials" = 'PW' WHERE "Initials" = 'PHW' ;
 UPDATE "Experiment" SET "Initials" = 'XH' WHERE "Initials" = 'Xh' or "Initials" ='Xhe';
 UPDATE "Specimen" SET "Initials" = 'XH' WHERE "Initials" = 'Xh' or "Initials" ='Xhe';
+UPDATE "Experiment" SET "Initials" = 'KC' WHERE "Initials" = 'KLC';
+UPDATE "Specimen" SET "Initials" = 'KC' WHERE "Initials" = 'KLC';
+UPDATE "Experiment" SET "Initials" = 'JL' WHERE "Initials" = 'TL';
+UPDATE "Specimen" SET "Initials" = 'JL' WHERE "Initials" = 'TL';
 
 
 CREATE TEMPORARY TABLE "Initials"(id text);
 INSERT INTO "Initials" SELECT DISTINCT "Initials" FROM "Specimen";
 INSERT INTO "Initials" SELECT DISTINCT "Initials" FROM "Experiment" WHERE "Initials" NOT IN (SELECT DISTINCT "Initials" FROM "Specimen"); 
-DELETE FROM "Initials" WHERE id IN ('ga', 'Jam', 'JL.', 'Xh', 'Xhe', 'sk', 'SKP', 'EAR', 'CDL', 'PHW');
+DELETE FROM "Initials" WHERE id IN ('ga', 'Jam', 'JL.', 'Xh', 'Xhe', 'sk', 'SKP', 'EAR', 'CDL', 'PHW', 'KLC', 'TL');
 
 CREATE TABLE "User" (
     "Initials" text PRIMARY KEY,
@@ -90,6 +94,7 @@ ALTER TABLE "User" OWNER TO ermrestddl;
 
 INSERT INTO "User" ("Initials", "Full Name") VALUES
 ('AC','Aldo Castillo'),
+('AK','Albert Kim'),
 ('CL','Can Lui'),
 ('ER','Elisabeth Rutledge'),
 ('GA','Greg Alvarado'),
@@ -104,9 +109,12 @@ INSERT INTO "User" ("Initials", "Full Name") VALUES
 ('MK','Mia Krautzberger'),
 ('OM','Odysse Michos'),
 ('PW','Peter Whitney'),
-('QU','Qiuyu Guo'),
+('QG','Qiuyu Guo'),
+('RES','Robert Schuler'),
+('RKP','Riana Parvez'),
 ('RS','Rosa Sierra'),
 ('SK','Sanjeev Kumar'),
+('SR','Seth Ruffins'),
 ('SV','Serban Voinea'),
 ('TT','Tracy Tran'),
 ('VHA','Victoria Hora -Acosta'),

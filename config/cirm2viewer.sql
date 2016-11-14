@@ -55,9 +55,32 @@ UPDATE "Scan" SET "DZI" = 'https://cirm.isrd.isi.edu' || "DZI";
 -- Create a table for the submitters names
 -- For now, the name name is the same with the initial
 --
+
+--
+-- Remove Duplicates
+--
+UPDATE "Experiment" SET "Initials" = 'GA' WHERE "Initials" = 'ga';
+UPDATE "Specimen" SET "Initials" = 'GA' WHERE "Initials" = 'ga';
+UPDATE "Experiment" SET "Initials" = 'JAM' WHERE "Initials" = 'Jam';
+UPDATE "Specimen" SET "Initials" = 'JAM' WHERE "Initials" = 'Jam';
+UPDATE "Experiment" SET "Initials" = 'ER' WHERE "Initials" = 'EAR';
+UPDATE "Specimen" SET "Initials" = 'ER' WHERE "Initials" = 'EAR';
+UPDATE "Experiment" SET "Initials" = 'CL' WHERE "Initials" = 'CDL';
+UPDATE "Specimen" SET "Initials" = 'CL' WHERE "Initials" = 'CDL';
+UPDATE "Experiment" SET "Initials" = 'JL' WHERE "Initials" = 'JL.';
+UPDATE "Specimen" SET "Initials" = 'JL' WHERE "Initials" = 'JL.';
+UPDATE "Experiment" SET "Initials" = 'SK' WHERE "Initials" = 'sk' or "Initials" ='SKP';
+UPDATE "Specimen" SET "Initials" = 'SK' WHERE "Initials" = 'sk' or "Initials" ='SKP';
+UPDATE "Experiment" SET "Initials" = 'PW' WHERE "Initials" = 'PHW' ;
+UPDATE "Specimen" SET "Initials" = 'PW' WHERE "Initials" = 'PHW' ;
+UPDATE "Experiment" SET "Initials" = 'XH' WHERE "Initials" = 'Xh' or "Initials" ='Xhe';
+UPDATE "Specimen" SET "Initials" = 'XH' WHERE "Initials" = 'Xh' or "Initials" ='Xhe';
+
+
 CREATE TEMPORARY TABLE "Initials"(id text);
-INSERT INTO "Initials" SELECT "Initials" FROM "Specimen";
-INSERT INTO "Initials" SELECT "Initials" FROM "Experiment"; 
+INSERT INTO "Initials" SELECT DISTINCT "Initials" FROM "Specimen";
+INSERT INTO "Initials" SELECT DISTINCT "Initials" FROM "Experiment" WHERE "Initials" NOT IN (SELECT DISTINCT "Initials" FROM "Specimen"); 
+DELETE FROM "Initials" WHERE id IN ('ga', 'Jam', 'JL.', 'Xh', 'Xhe', 'sk', 'SKP', 'EAR', 'CDL', 'PHW');
 
 CREATE TABLE "User" (
     "Initials" text PRIMARY KEY,
@@ -65,10 +88,33 @@ CREATE TABLE "User" (
 );
 ALTER TABLE "User" OWNER TO ermrestddl;
 
+INSERT INTO "User" ("Initials", "Full Name") VALUES
+('AC','Aldo Castillo'),
+('CL','Can Lui'),
+('ER','Elisabeth Rutledge'),
+('GA','Greg Alvarado'),
+('HH','Hironori Hojo'),
+('JAM','Jill McMahon'),
+('JJG','Jinjin Guo'),
+('KC','Kristen Chen'),
+('JL','Jing Liu'),
+('LL','Lick Lai'),
+('LLO','Lori O’Brian'),
+('MD','Mark Dessing'),
+('MK','Mia Krautzberger'),
+('OM','Odysse Michos'),
+('PW','Peter Whitney'),
+('QU','Qiuyu Guo'),
+('RS','Rosa Sierra'),
+('SK','Sanjeev Kumar'),
+('SV','Serban Voinea'),
+('TT','Tracy Tran'),
+('VHA','Victoria Hora -Acosta'),
+('XH','Xinjun He')
+;
 
-INSERT INTO "User"("Initials") SELECT DISTINCT id FROM "Initials";
-UPDATE "User" SET "Full Name" ="Initials";
-UPDATE "User" SET "Full Name" = 'Serban Voinea' WHERE "Initials" = 'SV';
+INSERT INTO "User"("Initials") SELECT DISTINCT id FROM "Initials" WHERE id NOT in (SELECT "Initials" FROM "User");
+UPDATE "User" SET "Full Name" ="Initials" WHERE "Full Name" IS NULL;
 
 DROP TABLE "Initials";
 
@@ -76,7 +122,7 @@ DROP TABLE "Initials";
 -- Add Specimen.Initials a FK to User.Initials
 --
 ALTER TABLE "Specimen" ALTER COLUMN "Initials" TYPE text;
-UPDATE "Specimen" SET "Initials" = 'Serban Voinea' WHERE "Initials" = 'SV';
+UPDATE "Specimen" T1 SET "Initials" = (SELECT "Full Name" FROM "User", "Specimen" T2 WHERE T1."ID" = T2."ID" AND T2."Initials" = "User"."Initials");
 ALTER TABLE "Specimen" ADD CONSTRAINT "Specimen_Initials_fkey" FOREIGN KEY ("Initials") REFERENCES "User" ("Full Name");
 
 --
@@ -789,7 +835,7 @@ UPDATE "Experiment" SET "Probes" = regexp_split_to_array("Experiment"."Probe",';
 UPDATE "Experiment" SET "Probe" = split_part("Probe", ';', 1);
 
 ALTER TABLE "Experiment" ALTER COLUMN "Initials" TYPE text;
-UPDATE "Experiment" SET "Initials" = 'Serban Voinea' WHERE "Initials" = 'SV';
+UPDATE "Experiment" T1 SET "Initials" = (SELECT "Full Name" FROM "User", "Experiment" T2 WHERE T1."ID" = T2."ID" AND T2."Initials" = "User"."Initials");
 ALTER TABLE "Experiment" ADD CONSTRAINT "Experiment_Initials_fkey" FOREIGN KEY ("Initials") REFERENCES "User" ("Full Name");
 ALTER TABLE "Experiment" ALTER COLUMN "Probe" SET NOT NULL;
 ALTER TABLE "Experiment" ALTER COLUMN "Probes" SET NOT NULL;
@@ -1211,6 +1257,10 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'species', 'term', 'comment', '["title"]'),
 
 ('Microscopy', 'Scan', 'Thumbnail', 'comment', '["thumbnail", "hidden"]'),
+('Microscopy', 'Scan', 'Channels', 'comment', '["hidden"]'),
+('Microscopy', 'Scan', 'Channel Name', 'comment', '["hidden"]'),
+('Microscopy', 'Scan', 'Disambiguator', 'comment', '["hidden"]'),
+('Microscopy', 'Scan', 'last_modified', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'accession_number', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'age', 'description', '{"rank": "age_rank"}'),
 ('Microscopy', 'Scan', 'age_rank', 'comment', '["hidden"]'),
@@ -1394,6 +1444,12 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'specimen_fixation', 'comment', '["association"]'),
 ('Microscopy', 'embedding_medium', 'comment', '["association"]'),
 ('Microscopy', 'staining_protocol', 'comment', '["association"]'),
+('Microscopy', 'age_stage', 'facet', '["hidden"]'),
+('Microscopy', 'specimen_fixation', 'facet', '["hidden"]'),
+('Microscopy', 'embedding_medium', 'facet', '["hidden"]'),
+('Microscopy', 'staining_protocol', 'facet', '["hidden"]'),
+('Microscopy', 'gender', 'facet', '["hidden"]'),
+('Microscopy', 'annotation', 'facet', '["hidden"]'),
 ('Microscopy', 'annotation_comment', 'comment', '["exclude"]'),
 ('Microscopy', 'anatomy', 'comment', '["exclude"]'),
 ('Microscopy', 'annotation_type', 'comment', '["exclude"]'),

@@ -1710,6 +1710,7 @@ UNION
    FROM "Microscopy"."Scan";
 
 INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'CIRM_Resources', 'tag:misd.isi.edu,2015:display', '{"name" : "CIRM Resources"}'),
 ('Microscopy', 'CIRM_Resources', 'tag:isrd.isi.edu,2016:recordlink', '{"mode": "tag:isrd.isi.edu,2016:recordlink/fragmentfilter", "resource": "search/"}'),
 ('Microscopy', 'CIRM_Resources', 'tag:isrd.isi.edu,2016:visible-columns', '{"compact" : ["Data Type", "Number Of Entries", "Last Updated"]}')
 ;

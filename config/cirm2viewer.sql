@@ -859,10 +859,10 @@ UPDATE "Specimen" T1 SET "Label" = (
 SELECT 'ID=' || urlencode(T2."ID") || 
 '&' || urlencode('Section Date') || '=' || urlencode('' || T2."Section Date") ||
 '&' || urlencode('Sample Name') || '=' || urlencode(species.code || tissue.code || COALESCE("Age Value", '') || age.code || gene.code || T2."Specimen Identifier") ||
-'&Initials=' || urlencode(T2."Initials") ||
+'&Initials=' || urlencode("User"."Initials") ||
 '&Disambiguator=' || urlencode(T2."Disambiguator") ||
 '&Comment=' || urlencode(T2."Comment")
-FROM species, tissue, age, gene, "Specimen" T2 WHERE species.term = T2."Species" AND tissue.term = T2."Tissue" AND age.term = T2."Age Unit" AND gene.term = T2."Gene" and T2."ID" = T1."ID"); 
+FROM species, tissue, age, gene, "User", "Specimen" T2 WHERE T2."Initials" = "User"."Full Name" AND species.term = T2."Species" AND tissue.term = T2."Tissue" AND age.term = T2."Age Unit" AND gene.term = T2."Gene" and T2."ID" = T1."ID"); 
 
 ALTER TABLE "Slide" ADD COLUMN "Label" text;
 
@@ -873,9 +873,10 @@ UPDATE "Slide" T1 SET "Label" = (
 	'&' || urlencode('Experiment Date') || '=' || urlencode('' || "Experiment"."Experiment Date") ||
 	'&' || urlencode('Sample Name') || '=' || urlencode(species.code || tissue.code || COALESCE("Age Value", '') || age.code || gene.code || "Specimen"."Specimen Identifier") ||
 	'&' || urlencode('Experiment Description') || '=' || urlencode(experiment_type.code || probe.code) ||
-	'&Initials=' || urlencode("Experiment"."Initials") 
-	FROM species, tissue, age, gene, "Slide" T2, "Specimen", "Experiment", experiment_type, probe 
+	'&Initials=' || urlencode("User"."Initials") 
+	FROM species, tissue, age, gene, "User", "Slide" T2, "Specimen", "Experiment", experiment_type, probe 
 	WHERE 
+		"User"."Full Name" = "Experiment"."Initials" AND 
 		species.term = "Specimen"."Species" AND 
 		tissue.term = "Specimen"."Tissue" AND 
 		age.term = "Specimen"."Age Unit" AND 
@@ -898,6 +899,7 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
     AS $$
     DECLARE
         sample_name text;
+        initials text;
         id_prefix text;
         disambiguator integer;
         age_offset integer;
@@ -924,7 +926,7 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 			RAISE EXCEPTION 'Section Date cannot be NULL';
 		END IF;
 		IF (NEW."Initials" IS NULL) THEN
-			RAISE EXCEPTION 'Initials cannot be NULL';
+			RAISE EXCEPTION 'Submitted By cannot be NULL';
 		END IF;
 		IF (NEW."Comment" IS NULL) THEN
 			NEW."Comment" := '';
@@ -932,8 +934,9 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 		NEW."Genes" := regexp_split_to_array(NEW."Gene",';');
 		NEW."Gene" := split_part(NEW."Gene", ';', 1);
 		IF NEW."ID" IS NULL THEN
+			initials := (SELECT "Initials" FROM "Microscopy"."User" "User" WHERE "User"."Full Name" = NEW."Initials");
 	        sample_name := (SELECT species.code || tissue.code || NEW."Age Value" || age.code || gene.code || NEW."Specimen Identifier" FROM "Microscopy".species species, "Microscopy".tissue tissue, "Microscopy".age age, "Microscopy".gene gene WHERE species.term = NEW."Species" AND tissue.term = NEW."Tissue" AND age.term = NEW."Age Unit" AND gene.term = NEW."Gene"); 
-	        id_prefix := replace(to_char(NEW."Section Date", 'YYYY-MM-DD'), '-', '') || '-' || sample_name || '-' || NEW."Initials";
+	        id_prefix := replace(to_char(NEW."Section Date", 'YYYY-MM-DD'), '-', '') || '-' || sample_name || '-' || initials;
 	        disambiguator := (SELECT max("Disambiguator") FROM "Microscopy"."Specimen" WHERE "ID" LIKE (id_prefix || '%'));
 	        IF (disambiguator IS NULL) THEN
 				NEW."ID" := id_prefix;
@@ -975,10 +978,11 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 		EXCEPTION WHEN others THEN
 			NEW.age_rank := age_offset;
 		END;
+		initials := (SELECT "Initials" FROM "Microscopy"."User" "User" WHERE "User"."Full Name" = NEW."Initials");
 		NEW."Label" := 'ID=' || "Microscopy".urlencode(NEW."ID") ||
 			'&' || "Microscopy".urlencode('Section Date') || '=' || "Microscopy".urlencode('' || NEW."Section Date") ||
 			'&' || "Microscopy".urlencode('Sample Name') || '=' || "Microscopy".urlencode(sample_name) ||
-			'&Initials=' || "Microscopy".urlencode(NEW."Initials") ||
+			'&Initials=' || "Microscopy".urlencode(initials) ||
 			'&Disambiguator=' || "Microscopy".urlencode(NEW."Disambiguator") ||
 			'&Comment=' || "Microscopy".urlencode(NEW."Comment");
         RETURN NEW;
@@ -992,6 +996,7 @@ CREATE FUNCTION experiment_trigger_before() RETURNS trigger
     AS $$
     DECLARE
         experiment_description text;
+        initials text;
         id_prefix text;
         disambiguator integer;
     BEGIN
@@ -1005,11 +1010,12 @@ CREATE FUNCTION experiment_trigger_before() RETURNS trigger
 			RAISE EXCEPTION 'Experiment Date cannot be NULL';
 		END IF;
 		IF (NEW."Initials" IS NULL) THEN
-			RAISE EXCEPTION 'Initials cannot be NULL';
+			RAISE EXCEPTION 'Submitted By cannot be NULL';
 		END IF;
 		IF NEW."ID" IS NULL THEN
+			initials := (SELECT "Initials" FROM "Microscopy"."User" "User" WHERE "User"."Full Name" = NEW."Initials");
 	        experiment_description := (SELECT experiment_type.code || probe.code FROM "Microscopy".experiment_type experiment_type, "Microscopy".probe probe WHERE experiment_type.term = NEW."Experiment Type" AND probe.term = NEW."Probe"); 
-	        id_prefix := replace(to_char(NEW."Experiment Date", 'YYYY-MM-DD'), '-', '') || '-' || experiment_description || '-' || NEW."Initials";
+	        id_prefix := replace(to_char(NEW."Experiment Date", 'YYYY-MM-DD'), '-', '') || '-' || experiment_description || '-' || initials;
 	        disambiguator := (SELECT max("Disambiguator") FROM "Microscopy"."Experiment" WHERE "ID" LIKE (id_prefix || '%'));
 	        IF (disambiguator IS NULL) THEN
 				NEW."ID" := id_prefix;
@@ -1035,6 +1041,7 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
         row_experiment "Microscopy"."Experiment"%rowtype;
         row_specimen "Microscopy"."Specimen"%rowtype;
         sample_name text;
+        initials text;
         experiment_description text;
     BEGIN
 		IF (NEW."Specimen ID" IS NULL) THEN
@@ -1054,6 +1061,7 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
 		IF NEW."Experiment ID" IS NOT NULL THEN
 			SELECT * INTO row_experiment FROM "Microscopy"."Experiment" WHERE "ID" = NEW."Experiment ID";
 			SELECT * INTO row_specimen FROM "Microscopy"."Specimen" WHERE "ID" = NEW."Specimen ID";
+			initials := (SELECT "Initials" FROM "Microscopy"."User" "User" WHERE "User"."Full Name" = row_experiment."Initials");
 	        sample_name := (SELECT species.code || tissue.code || row_specimen."Age Value" || age.code || gene.code || row_specimen."Specimen Identifier" FROM "Microscopy".species species, "Microscopy".tissue tissue, "Microscopy".age age, "Microscopy".gene gene WHERE species.term = row_specimen."Species" AND tissue.term = row_specimen."Tissue" AND age.term = row_specimen."Age Unit" AND gene.term = row_specimen."Gene"); 
 			experiment_description := (SELECT experiment_type.code || probe.code FROM "Microscopy".experiment_type experiment_type, "Microscopy".probe probe WHERE experiment_type.term = row_experiment."Experiment Type" AND probe.term = row_experiment."Probe");
 	        NEW."Label" := 'ID=' || "Microscopy".urlencode(NEW."ID") ||
@@ -1062,7 +1070,7 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
 				'&' || "Microscopy".urlencode('Experiment Date') || '=' || "Microscopy".urlencode('' || row_experiment."Experiment Date") ||
 				'&' || "Microscopy".urlencode('Sample Name') || '=' || "Microscopy".urlencode(sample_name) ||
 				'&' || "Microscopy".urlencode('Experiment Description') || '=' || "Microscopy".urlencode(experiment_description) ||
-				'&Initials=' || "Microscopy".urlencode(row_experiment."Initials");
+				'&Initials=' || "Microscopy".urlencode(initials);
 		END IF;
         RETURN NEW;
     END;
@@ -1097,7 +1105,7 @@ CREATE FUNCTION scan_trigger_before() RETURNS trigger
  		IF (NEW.slide_id IS NULL) THEN
 			RAISE EXCEPTION 'slide_id cannot be NULL';
 		END IF;
-		NEW.submitter := (SELECT "Full Name" FROM "Microscopy"."User" "User", "Microscopy"."Slide" "Slide", "Microscopy"."Experiment" "Experiment" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID" AND "Experiment"."Initials" = "User"."Initials");
+		NEW.submitter := (SELECT "Full Name" FROM "Microscopy"."User" "User", "Microscopy"."Slide" "Slide", "Microscopy"."Experiment" "Experiment" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID" AND "Experiment"."Initials" = "User"."Full Name");
 		NEW.submitted := (SELECT "Experiment Date" FROM "Microscopy"."Experiment" "Experiment", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
 		NEW.probe := (SELECT "Probe" FROM "Microscopy"."Experiment" "Experiment", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
 		NEW.tissue := (SELECT "Tissue" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");

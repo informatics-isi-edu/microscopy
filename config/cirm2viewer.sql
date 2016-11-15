@@ -1044,6 +1044,7 @@ CREATE FUNCTION experiment_trigger_before() RETURNS trigger
 			RAISE EXCEPTION 'Submitted By cannot be NULL';
 		END IF;
 		IF NEW."ID" IS NULL THEN
+			NEW."Probes" := ARRAY[NEW."Probe"];
 			initials := (SELECT "Initials" FROM "Microscopy"."User" "User" WHERE "User"."Full Name" = NEW."Initials");
 	        experiment_description := (SELECT experiment_type.code || probe.code FROM "Microscopy".experiment_type experiment_type, "Microscopy".probe probe WHERE experiment_type.term = NEW."Experiment Type" AND probe.term = NEW."Probe"); 
 	        id_prefix := replace(to_char(NEW."Experiment Date", 'YYYY-MM-DD'), '-', '') || '-' || experiment_description || '-' || initials;
@@ -1056,13 +1057,35 @@ CREATE FUNCTION experiment_trigger_before() RETURNS trigger
 				NEW."ID" := id_prefix || '-' || disambiguator;
 			END IF;
 			NEW."Disambiguator" := disambiguator;
+		ELSE
+			IF NOT (NEW."Probes" @> ARRAY[NEW."Probe"]) THEN
+				NEW."Probes" := array_append(NEW."Probes", NEW."Probe");
+			END IF;
 		END IF;
-		NEW."Probes" := regexp_split_to_array(NEW."Probe",';');
+		NEW."Probe" := NEW."Probes"[1];
         RETURN NEW;
     END;
 $$;
 
 CREATE TRIGGER experiment_trigger_before BEFORE INSERT OR UPDATE ON "Experiment" FOR EACH ROW EXECUTE PROCEDURE experiment_trigger_before();
+
+CREATE FUNCTION experiment_trigger_after() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+        counter integer;
+        last_position integer;
+    BEGIN
+	    last_position := array_length(NEW."Probes", 1);
+		counter := (SELECT count(*) FROM "Microscopy"."experiment_probe" WHERE "Experiment ID" = NEW."ID" AND "Probe ID" = NEW."Probes"[last_position]);
+		IF counter = 0 THEN
+			INSERT INTO "Microscopy"."experiment_probe"("Experiment ID", "Probe ID") VALUES (NEW."ID", NEW."Probes"[last_position]);
+		END IF;
+        RETURN NEW;
+    END;
+$$;
+
+CREATE TRIGGER experiment_trigger_after AFTER INSERT OR UPDATE ON "Experiment" FOR EACH ROW EXECUTE PROCEDURE experiment_trigger_after();
 
 CREATE FUNCTION slide_trigger_before() RETURNS trigger
     LANGUAGE plpgsql

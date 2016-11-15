@@ -940,9 +940,8 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 		IF (NEW."Comment" IS NULL) THEN
 			NEW."Comment" := '';
 		END IF;
-		NEW."Genes" := regexp_split_to_array(NEW."Gene",';');
-		NEW."Gene" := split_part(NEW."Gene", ';', 1);
 		IF NEW."ID" IS NULL THEN
+			NEW."Genes" := ARRAY[NEW."Gene"];
 			initials := (SELECT "Initials" FROM "Microscopy"."User" "User" WHERE "User"."Full Name" = NEW."Initials");
 	        sample_name := (SELECT species.code || tissue.code || NEW."Age Value" || age.code || gene.code || NEW."Specimen Identifier" FROM "Microscopy".species species, "Microscopy".tissue tissue, "Microscopy".age age, "Microscopy".gene gene WHERE species.term = NEW."Species" AND tissue.term = NEW."Tissue" AND age.term = NEW."Age Unit" AND gene.term = NEW."Gene"); 
 	        id_prefix := replace(to_char(NEW."Section Date", 'YYYY-MM-DD'), '-', '') || '-' || sample_name || '-' || initials;
@@ -955,7 +954,12 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 				NEW."ID" := id_prefix || '-' || disambiguator;
 			END IF;
 			NEW."Disambiguator" := disambiguator;
+		ELSE
+			IF NOT (NEW."Genes" @> ARRAY[NEW."Gene"]) THEN
+				NEW."Genes" := array_append(NEW."Genes", NEW."Gene");
+			END IF;
 		END IF;
+		NEW."Gene" := NEW."Genes"[1];
 		IF NEW."Age Value" != '' THEN
 			NEW."Age" := NEW."Age Value" || ' ' || NEW."Age Unit";
 		ELSE
@@ -999,6 +1003,24 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 $$;
 
 CREATE TRIGGER specimen_trigger_before BEFORE INSERT OR UPDATE ON "Specimen" FOR EACH ROW EXECUTE PROCEDURE specimen_trigger_before();
+
+CREATE FUNCTION specimen_trigger_after() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+        counter integer;
+        last_position integer;
+    BEGIN
+	    last_position := array_length(NEW."Genes", 1);
+		counter := (SELECT count(*) FROM "Microscopy"."specimen_gene" WHERE "Specimen ID" = NEW."ID" AND "Gene ID" = NEW."Genes"[last_position]);
+		IF counter = 0 THEN
+			INSERT INTO "Microscopy"."specimen_gene"("Specimen ID", "Gene ID") VALUES (NEW."ID", NEW."Genes"[last_position]);
+		END IF;
+        RETURN NEW;
+    END;
+$$;
+
+CREATE TRIGGER specimen_trigger_after AFTER INSERT OR UPDATE ON "Specimen" FOR EACH ROW EXECUTE PROCEDURE specimen_trigger_after();
 
 CREATE FUNCTION experiment_trigger_before() RETURNS trigger
     LANGUAGE plpgsql
@@ -1369,6 +1391,9 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 	"detailed" :{"markdown_pattern":"[**{{filename}}** ({{bytes}} Bytes)]({{HTTP URL}})","separator_markdown":"\n\n"}
 }'),
 
+('Microscopy', 'probe', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+('Microscopy', 'gene', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
 	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/specimen/job?{{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
@@ -1384,7 +1409,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 ('Microscopy', 'Specimen', 'Tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 ('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{{Age}}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}"}}'),
-('Microscopy', 'Specimen', 'Genes', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Genes}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+('Microscopy', 'Specimen', 'Gene', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Gene}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
 ('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Probe}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 ('Microscopy', 'Experiment', 'Experiment Type', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Experiment Type}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
@@ -1516,7 +1541,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "sortOrder": "desc", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Section Date", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
+	"detailed": ["ID", "Species", "Tissue", "Age", "Gene", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
 	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
 	"entry": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age Value",  ["Microscopy", "Specimen_Age Unit_fkey"], ["Microscopy", "Specimen_Gene_fkey"], ["Microscopy", "Specimen_Initials_fkey"], "Section Date", "Comment"]
 }'),

@@ -265,6 +265,15 @@ ALTER TABLE specimen_gene OWNER TO ermrestddl;
 
 INSERT INTO specimen_gene("Specimen ID", "Gene ID") SELECT "Specimen"."ID" "Specimen ID", regexp_split_to_table("Specimen"."Gene",';') "Gene ID" FROM "Specimen";
 
+CREATE TABLE experiment_probe (
+	"Experiment ID" text REFERENCES "Experiment" ("ID"),
+	"Probe ID" text REFERENCES probe (term),
+	PRIMARY KEY ("Experiment ID","Probe ID")
+);
+ALTER TABLE experiment_probe OWNER TO ermrestddl;
+
+INSERT INTO experiment_probe("Experiment ID", "Probe ID") SELECT "Experiment"."ID" "Experiment ID", regexp_split_to_table("Experiment"."Probe",';') "Probe ID" FROM "Experiment";
+
 --
 -- Updated references to the new vocabulary tables
 -- Drop unused columns
@@ -1471,6 +1480,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'annotation_type', 'comment', '["exclude"]'),
 ('Microscopy', 'image_status', 'comment', '["exclude"]'),
 ('Microscopy', 'specimen_gene', 'comment', '["exclude"]'),
+('Microscopy', 'experiment_probe', 'comment', '["exclude"]'),
 ('Microscopy', 'Scan', 'comment', '["default"]'),
 
 ('Microscopy', 'age', 'description', '{"display": "Age", "top_columns": ["term", "code"]}'),
@@ -1514,7 +1524,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "sortOrder": "desc", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
+	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
 	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
 	"entry": [["Microscopy", "Experiment_Initials_fkey"], "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], ["Microscopy", "Experiment_Probe_fkey"], "Comment"]
 }'),
@@ -1523,7 +1533,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 '{
 	"detailed": ["ID", "Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
 	"compact": ["ID", "Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
-	"entry": ["Seq.", ["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment"]
+	"entry": [["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment"]
 }'),
 
 ('Microscopy', 'specimen_gene', 'tag:isrd.isi.edu,2016:table-display', 
@@ -1537,6 +1547,20 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	"detailed": [
 		["Microscopy", "specimen_gene_Specimen ID_fkey"],
 		["Microscopy", "Slide_Box ID_fkey"]
+	]
+}'),
+
+('Microscopy', 'experiment_probe', 'tag:isrd.isi.edu,2016:table-display', 
+'{
+	"compact": {"row_markdown_pattern":"**{{Probe ID}}**{.vocab}","separator_markdown":" "}
+}'),
+
+
+('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "experiment_probe_Experiment ID_fkey"],
+		["Microscopy", "Slide_Experiment ID_fkey"]
 	]
 }')
 
@@ -1592,6 +1616,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'gene', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Scan', 'last_modified', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+('Microscopy', 'Slide', 'Seq.', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Number of Slides', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),

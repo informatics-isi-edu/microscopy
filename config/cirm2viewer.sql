@@ -1265,6 +1265,9 @@ DELETE FROM _ermrest.model_schema_annotation;
 DELETE FROM _ermrest.model_table_annotation;
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'User', 'Initials', 'comment', '["top"]'),
+('Microscopy', 'User', 'Full Name', 'comment', '["top"]'),
+
 ('Microscopy', 'age_stage', 'code', 'comment', '["hidden"]'),
 ('Microscopy', 'age_stage', 'description', 'comment', '["hidden"]'),
 ('Microscopy', 'age_stage', 'id', 'comment', '["dataset", "hidden"]'),

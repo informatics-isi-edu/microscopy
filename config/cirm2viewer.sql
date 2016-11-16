@@ -1621,6 +1621,9 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ;
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'Specimen', 'ID', 'description', '{"display": "Specimen ID"}'),
+('Microscopy', 'Experiment', 'ID', 'description', '{"display": "Experiment ID"}'),
+('Microscopy', 'Slide', 'ID', 'description', '{"display": "Slide ID"}'),
 ('Microscopy', 'Specimen', 'Initials', 'tag:misd.isi.edu,2015:display', '{"name" : "Submitted By"}'),
 ('Microscopy', 'Experiment', 'Initials', 'tag:misd.isi.edu,2015:display', '{"name" : "Submitted By"}'),
 ('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
@@ -1720,6 +1723,9 @@ INSERT INTO _ermrest.model_pseudo_key (schema_name, table_name, column_names) VA
 ;
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'Specimen', 'ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Specimen ID"}'),
+('Microscopy', 'Slide', 'ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Slide ID"}'),
+('Microscopy', 'Experiment', 'ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Experiment ID"}'),
 ('Microscopy', 'CIRM_Resources', 'Data Type', 'tag:isrd.isi.edu,2016:column-display','{"compact":{"markdown_pattern":"[{{Data Type}}](/chaise/search/#1/{{#encode}}{{{Schema}}}{{/encode}}:{{#encode}}{{{Table}}}{{/encode}})"}}')
 ;
 

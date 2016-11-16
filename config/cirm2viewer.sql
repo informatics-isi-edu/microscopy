@@ -1050,12 +1050,7 @@ CREATE FUNCTION experiment_trigger_before() RETURNS trigger
 				NEW."ID" := id_prefix || '-' || disambiguator;
 			END IF;
 			NEW."Disambiguator" := disambiguator;
-		ELSE
-			IF NOT (NEW."Probes" @> ARRAY[NEW."Probe"]) THEN
-				NEW."Probes" := array_append(NEW."Probes", NEW."Probe");
-			END IF;
 		END IF;
-		NEW."Probe" := NEW."Probes"[1];
         RETURN NEW;
     END;
 $$;
@@ -1067,12 +1062,10 @@ CREATE FUNCTION experiment_trigger_after() RETURNS trigger
     AS $$
     DECLARE
         counter integer;
-        last_position integer;
     BEGIN
-	    last_position := array_length(NEW."Probes", 1);
-		counter := (SELECT count(*) FROM "Microscopy"."experiment_probe" WHERE "Experiment ID" = NEW."ID" AND "Probe ID" = NEW."Probes"[last_position]);
+		counter := (SELECT count(*) FROM "Microscopy"."experiment_probe" WHERE "Experiment ID" = NEW."ID" AND "Probe ID" = NEW."Probe");
 		IF counter = 0 THEN
-			INSERT INTO "Microscopy"."experiment_probe"("Experiment ID", "Probe ID") VALUES (NEW."ID", NEW."Probes"[last_position]);
+			INSERT INTO "Microscopy"."experiment_probe"("Experiment ID", "Probe ID") VALUES (NEW."ID", NEW."Probe");
 		END IF;
         RETURN NEW;
     END;
@@ -1218,6 +1211,25 @@ CREATE FUNCTION specimen_gene_trigger_after() RETURNS trigger
 $$;
 
 CREATE TRIGGER specimen_gene_trigger_after AFTER INSERT OR UPDATE ON "specimen_gene" FOR EACH ROW EXECUTE PROCEDURE specimen_gene_trigger_after();
+
+CREATE FUNCTION experiment_probe_trigger_after() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+        row_experiment "Microscopy"."Experiment"%rowtype;
+        probes text[];
+    BEGIN
+		SELECT * INTO row_experiment FROM "Microscopy"."Experiment" WHERE "ID" = NEW."Experiment ID";
+		probes := row_experiment."Probes";
+		IF NOT (probes @> ARRAY[NEW."Probe ID"]) THEN
+			probes := array_append(probes, NEW."Probe ID");
+			UPDATE "Microscopy"."Experiment" SET "Probes" = probes WHERE "ID" = NEW."Experiment ID";
+		END IF;
+        RETURN NEW;
+    END;
+$$;
+
+CREATE TRIGGER experiment_probe_trigger_after AFTER INSERT OR UPDATE ON "experiment_probe" FOR EACH ROW EXECUTE PROCEDURE experiment_probe_trigger_after();
 
 --
 -- Constraints for required fields

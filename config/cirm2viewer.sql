@@ -954,12 +954,7 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 				NEW."ID" := id_prefix || '-' || disambiguator;
 			END IF;
 			NEW."Disambiguator" := disambiguator;
-		ELSE
-			IF NOT (NEW."Genes" @> ARRAY[NEW."Gene"]) THEN
-				NEW."Genes" := array_append(NEW."Genes", NEW."Gene");
-			END IF;
 		END IF;
-		NEW."Gene" := NEW."Genes"[1];
 		IF NEW."Age Value" != '' THEN
 			NEW."Age" := NEW."Age Value" || ' ' || NEW."Age Unit";
 		ELSE
@@ -1009,12 +1004,10 @@ CREATE FUNCTION specimen_trigger_after() RETURNS trigger
     AS $$
     DECLARE
         counter integer;
-        last_position integer;
     BEGIN
-	    last_position := array_length(NEW."Genes", 1);
-		counter := (SELECT count(*) FROM "Microscopy"."specimen_gene" WHERE "Specimen ID" = NEW."ID" AND "Gene ID" = NEW."Genes"[last_position]);
+		counter := (SELECT count(*) FROM "Microscopy"."specimen_gene" WHERE "Specimen ID" = NEW."ID" AND "Gene ID" = NEW."Gene");
 		IF counter = 0 THEN
-			INSERT INTO "Microscopy"."specimen_gene"("Specimen ID", "Gene ID") VALUES (NEW."ID", NEW."Genes"[last_position]);
+			INSERT INTO "Microscopy"."specimen_gene"("Specimen ID", "Gene ID") VALUES (NEW."ID", NEW."Gene");
 		END IF;
         RETURN NEW;
     END;
@@ -1206,6 +1199,25 @@ CREATE FUNCTION scan_trigger_after() RETURNS trigger
 $$;
 
 CREATE TRIGGER scan_trigger_after AFTER INSERT OR UPDATE ON "Scan" FOR EACH ROW EXECUTE PROCEDURE scan_trigger_after();
+
+CREATE FUNCTION specimen_gene_trigger_after() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+        row_specimen "Microscopy"."Specimen"%rowtype;
+        genes text[];
+    BEGIN
+		SELECT * INTO row_specimen FROM "Microscopy"."Specimen" WHERE "ID" = NEW."Specimen ID";
+		genes := row_specimen."Genes";
+		IF NOT (genes @> ARRAY[NEW."Gene ID"]) THEN
+			genes := array_append(genes, NEW."Gene ID");
+			UPDATE "Microscopy"."Specimen" SET "Genes" = genes WHERE "ID" = NEW."Specimen ID";
+		END IF;
+        RETURN NEW;
+    END;
+$$;
+
+CREATE TRIGGER specimen_gene_trigger_after AFTER INSERT OR UPDATE ON "specimen_gene" FOR EACH ROW EXECUTE PROCEDURE specimen_gene_trigger_after();
 
 --
 -- Constraints for required fields

@@ -1556,7 +1556,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"compact": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
-	"detailed": ["Thumbnail", "HTTP URL", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Image Size", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time", "resolution", "Scaling (per pixel)"],
+	"detailed": ["Thumbnail", "HTTP URL", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time"],
 	"entry/edit": ["submitter", "species", "tissue", "gene", "gender", "age"],
 	"entry/create": ["submitter", "species", "tissue", "gene", "gender", "age"]
 }'),
@@ -1615,6 +1615,8 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ;
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri) VALUES
+('Microscopy', 'Specimen', 'Gene', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:generated'),
 ('Microscopy', 'Experiment', 'ID', 'tag:isrd.isi.edu,2016:generated'),
 ('Microscopy', 'Slide', 'ID', 'tag:isrd.isi.edu,2016:generated')
@@ -1726,8 +1728,11 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Specimen ID"}'),
 ('Microscopy', 'Slide', 'ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Slide ID"}'),
 ('Microscopy', 'Experiment', 'ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Experiment ID"}'),
+('Microscopy', 'Scan', 'HTTP URL', 'tag:misd.isi.edu,2015:display', '{"name" : "Download Link"}'),
 ('Microscopy', 'CIRM_Resources', 'Data Type', 'tag:isrd.isi.edu,2016:column-display','{"compact":{"markdown_pattern":"[{{Data Type}}](/chaise/search/#1/{{#encode}}{{{Schema}}}{{/encode}}:{{#encode}}{{{Table}}}{{/encode}})"}}')
 ;
 
+COMMENT ON COLUMN "Scan"."Thumbnail" IS 'Click the thumbnail to open the full resolution image in the online viewer';
+COMMENT ON COLUMN "Scan"."HTTP URL" IS 'Click the link to download the CZI file';
 COMMIT;
 

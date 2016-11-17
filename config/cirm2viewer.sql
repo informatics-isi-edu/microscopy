@@ -598,11 +598,13 @@ CREATE FUNCTION update_metadata() RETURNS void
 			LOOP
 				IF upper(row_experiment."ID") LIKE ('%' || row_probe.code || '%') THEN
 					UPDATE "Experiment" SET "Probe" = row_probe.term WHERE "Experiment"."ID" = row_experiment."ID";
+					INSERT INTO experiment_probe("Experiment ID", "Probe ID") VALUES(row_experiment."ID", row_probe.term);
 					EXIT;
 				END IF;
 			END LOOP;
 			IF (SELECT "Probe" FROM "Experiment" WHERE "Experiment"."ID" = row_experiment."ID") IS NULL THEN
 				UPDATE "Experiment" SET "Probe" = 'Other' WHERE "Experiment"."ID" = row_experiment."ID";
+				INSERT INTO experiment_probe("Experiment ID", "Probe ID") VALUES(row_experiment."ID", 'Other');
 			END IF;
 		END LOOP;
 		
@@ -658,12 +660,14 @@ CREATE FUNCTION update_metadata() RETURNS void
 				IF upper(row_specimen."ID") LIKE ('%' || upper(row_gene.code) || '%') THEN
 					UPDATE "Specimen" SET "Gene" = row_gene.term WHERE "Specimen"."ID" = row_specimen."ID";
 					UPDATE "Specimen" SET "Genes" = regexp_split_to_array(row_gene.term, ';') WHERE "Specimen"."ID" = row_specimen."ID";
+					INSERT INTO specimen_gene("Specimen ID", "Gene ID") VALUES(row_specimen."ID", row_gene.term);
 					EXIT;
 				END IF;
 			END LOOP;
 			IF (SELECT "Gene" FROM "Specimen" WHERE "Specimen"."ID" = row_specimen."ID") IS NULL THEN
 				UPDATE "Specimen" SET "Gene" = 'Wild Type' WHERE "Specimen"."ID" = row_specimen."ID";
 				UPDATE "Specimen" SET "Genes" = regexp_split_to_array('Wild Type', ';') WHERE "Specimen"."ID" = row_specimen."ID";
+				INSERT INTO specimen_gene("Specimen ID", "Gene ID") VALUES(row_specimen."ID", 'Wild Type');
 			END IF;
 		END LOOP;
 		

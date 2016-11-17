@@ -850,6 +850,9 @@ ALTER TABLE "Scan" ADD COLUMN "Experiment ID" text;
 UPDATE "Scan" T1 SET "Experiment ID" = (SELECT "Slide"."Experiment ID" FROM "Slide", "Scan" T2 WHERE T1.id = T2.id AND "Slide"."ID" = T1.slide_id);
 ALTER TABLE "Scan" ADD CONSTRAINT "Scan_Experiment ID_fkey" FOREIGN KEY ("Experiment ID") REFERENCES "Experiment" ("ID");
 ALTER TABLE "Scan" ADD CONSTRAINT "Scan_gene_fkey" FOREIGN KEY ("gene") REFERENCES "gene" ("term");
+ALTER TABLE "Scan" ADD COLUMN "Specimen ID" text;
+UPDATE "Scan" T1 SET "Specimen ID" = (SELECT "Slide"."Specimen ID" FROM "Slide", "Scan" T2 WHERE T1.id = T2.id AND "Slide"."ID" = T1.slide_id);
+ALTER TABLE "Scan" ADD CONSTRAINT "Scan_Specimen ID_fkey" FOREIGN KEY ("Specimen ID") REFERENCES "Specimen" ("ID");
 
 ALTER TABLE "Experiment" ADD COLUMN "Probes" text[];
 UPDATE "Experiment" SET "Probes" = regexp_split_to_array("Experiment"."Probe",';');
@@ -1150,6 +1153,7 @@ CREATE FUNCTION scan_trigger_before() RETURNS trigger
 			RAISE EXCEPTION 'slide_id cannot be NULL';
 		END IF;
 		NEW."Experiment ID" := (SELECT "Experiment ID" FROM "Microscopy"."Slide" WHERE "ID" = NEW.slide_id);
+		NEW."Specimen ID" := (SELECT "Specimen ID" FROM "Microscopy"."Slide" WHERE "ID" = NEW.slide_id);
 		NEW.submitter := (SELECT "Full Name" FROM "Microscopy"."User" "User", "Microscopy"."Slide" "Slide", "Microscopy"."Experiment" "Experiment" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID" AND "Experiment"."Initials" = "User"."Full Name");
 		NEW.submitted := (SELECT "Experiment Date" FROM "Microscopy"."Experiment" "Experiment", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
 		NEW.probe := (SELECT "Probe" FROM "Microscopy"."Experiment" "Experiment", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID");
@@ -1626,6 +1630,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 '{
 	"detailed": [
 		["Microscopy", "specimen_gene_Specimen ID_fkey"],
+		["Microscopy", "Scan_Specimen ID_fkey"],
 		["Microscopy", "Slide_Box ID_fkey"]
 	]
 }'),

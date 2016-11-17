@@ -1588,7 +1588,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"compact": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
-	"detailed": ["Thumbnail", "HTTP URL", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time"],
+	"detailed": ["Thumbnail", "HTTP URL", "slide_id", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time"],
 	"entry/edit": ["submitter", "species", "tissue", "gene", "gender", "age"],
 	"entry/create": ["submitter", "species", "tissue", "gene", "gender", "age"]
 }'),

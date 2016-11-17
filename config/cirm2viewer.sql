@@ -1615,9 +1615,9 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	"entry": [["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment"]
 }'),
 
-('Microscopy', 'specimen_gene', 'tag:isrd.isi.edu,2016:table-display', 
+('Microscopy', 'gene', 'tag:isrd.isi.edu,2016:table-display', 
 '{
-	"compact": {"row_markdown_pattern":"**{{Gene ID}}**{.vocab}","separator_markdown":" "}
+	"compact": {"row_markdown_pattern":"**{{term}}**{.vocab}","separator_markdown":" "}
 }'),
 
 
@@ -1629,9 +1629,9 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	]
 }'),
 
-('Microscopy', 'experiment_probe', 'tag:isrd.isi.edu,2016:table-display', 
+('Microscopy', 'probe', 'tag:isrd.isi.edu,2016:table-display', 
 '{
-	"compact": {"row_markdown_pattern":"**{{Probe ID}}**{.vocab}","separator_markdown":" "}
+	"compact": {"row_markdown_pattern":"**{{term}}**{.vocab}","separator_markdown":" "}
 }'),
 
 

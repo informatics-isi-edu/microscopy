@@ -463,13 +463,13 @@ CREATE TABLE gender (
 ALTER TABLE gender OWNER TO ermrestddl;
 INSERT INTO gender(code, term) VALUES('Unknown', 'Unknown');
 
-CREATE TABLE image_status (
-    term text NOT NULL PRIMARY KEY
+CREATE TABLE image_grade_code (
+    code text NOT NULL PRIMARY KEY
 );
 
 
-ALTER TABLE image_status OWNER TO ermrestddl;
-INSERT INTO image_status(term) VALUES('--');
+ALTER TABLE image_grade_code OWNER TO ermrestddl;
+INSERT INTO image_grade_code(code) VALUES('--');
 
 CREATE TABLE specimen_fixation (
     id serial NOT NULL PRIMARY KEY,
@@ -524,7 +524,7 @@ ALTER TABLE "Scan" ADD COLUMN embedding_medium text REFERENCES embedding_medium(
 ALTER TABLE "Scan" ADD COLUMN staining_protocol text REFERENCES staining_protocol(term);
 ALTER TABLE "Scan" ADD COLUMN resolution text;
 ALTER TABLE "Scan" ADD COLUMN uri text;
-ALTER TABLE "Scan" ADD COLUMN status text REFERENCES image_status(term);
+ALTER TABLE "Scan" ADD COLUMN status text REFERENCES image_grade_code(code);
 ALTER TABLE "Scan" ADD COLUMN last_modified date DEFAULT now() NOT NULL;
 ALTER TABLE "Scan" ADD COLUMN age_rank numeric;
 ALTER TABLE "Specimen" ADD COLUMN age_rank numeric;
@@ -849,6 +849,7 @@ ALTER TABLE "Scan" ADD CONSTRAINT "Scan_submitter_fkey" FOREIGN KEY ("submitter"
 ALTER TABLE "Scan" ADD COLUMN "Experiment ID" text;
 UPDATE "Scan" T1 SET "Experiment ID" = (SELECT "Slide"."Experiment ID" FROM "Slide", "Scan" T2 WHERE T1.id = T2.id AND "Slide"."ID" = T1.slide_id);
 ALTER TABLE "Scan" ADD CONSTRAINT "Scan_Experiment ID_fkey" FOREIGN KEY ("Experiment ID") REFERENCES "Experiment" ("ID");
+ALTER TABLE "Scan" ADD CONSTRAINT "Scan_gene_fkey" FOREIGN KEY ("gene") REFERENCES "gene" ("term");
 
 ALTER TABLE "Experiment" ADD COLUMN "Probes" text[];
 UPDATE "Experiment" SET "Probes" = regexp_split_to_array("Experiment"."Probe",';');
@@ -1557,7 +1558,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'annotation_comment', 'comment', '["exclude"]'),
 ('Microscopy', 'anatomy', 'comment', '["exclude"]'),
 ('Microscopy', 'annotation_type', 'comment', '["exclude"]'),
-('Microscopy', 'image_status', 'comment', '["exclude"]'),
+-- ('Microscopy', 'image_grade_code', 'comment', '["exclude"]'),
 ('Microscopy', 'specimen_gene', 'comment', '["exclude"]'),
 ('Microscopy', 'experiment_probe', 'comment', '["exclude"]'),
 ('Microscopy', 'Scan', 'comment', '["default"]'),

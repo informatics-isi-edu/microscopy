@@ -1471,7 +1471,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 ('Microscopy', 'Specimen', 'Tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
-('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{{Age}}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}"}}'),
+-- ('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{{Age}}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}"}}'),
 ('Microscopy', 'Specimen', 'Gene', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Gene}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
 ('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Probe}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
@@ -1604,7 +1604,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "sortOrder": "desc", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Section Date", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Species", "Tissue", "Age", "Gene", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
+	"detailed": ["Species", "Tissue", "Age", "Gene", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
 	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
 	"entry": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age Value",  ["Microscopy", "Specimen_Age Unit_fkey"], ["Microscopy", "Specimen_Gene_fkey"], ["Microscopy", "Specimen_Initials_fkey"], "Section Date", "Comment"]
 }'),
@@ -1612,14 +1612,14 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "sortOrder": "desc", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
+	"detailed": ["Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
 	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
 	"entry": [["Microscopy", "Experiment_Initials_fkey"], "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], ["Microscopy", "Experiment_Probe_fkey"], "Comment"]
 }'),
 
 ('Microscopy', 'Slide', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["ID", "Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
+	"detailed": ["Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
 	"compact": ["ID", "Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
 	"entry": [["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment"]
 }'),
@@ -1668,6 +1668,10 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'ID', 'description', '{"display": "Specimen ID"}'),
 ('Microscopy', 'Experiment', 'ID', 'description', '{"display": "Experiment ID"}'),
 ('Microscopy', 'Slide', 'ID', 'description', '{"display": "Slide ID"}'),
+('Microscopy', 'Slide', 'Specimen ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Specimen"}'),
+('Microscopy', 'Slide', 'Experiment ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Experiment"}'),
+('Microscopy', 'Scan', 'accession_number', 'tag:misd.isi.edu,2015:display', '{"name" : "Scan ID"}'),
+('Microscopy', 'Scan', 'slide_id', 'tag:misd.isi.edu,2015:display', '{"name" : "Slide"}'),
 ('Microscopy', 'Specimen', 'Initials', 'tag:misd.isi.edu,2015:display', '{"name" : "Submitted By"}'),
 ('Microscopy', 'Experiment', 'Initials', 'tag:misd.isi.edu,2015:display', '{"name" : "Submitted By"}'),
 ('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),

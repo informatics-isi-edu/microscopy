@@ -1652,6 +1652,21 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 		["Microscopy", "Scan_Experiment ID_fkey"],
 		["Microscopy", "Slide_Experiment ID_fkey"]
 	]
+}'),
+
+('Microscopy', 'probe', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "experiment_probe_Probe ID_fkey"]
+	]
+}'),
+
+('Microscopy', 'gene', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "specimen_gene_Gene ID_fkey"],
+		["Microscopy", "Scan_gene_fkey"]
+	]
 }')
 
 ;

@@ -1672,6 +1672,15 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ;
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri) VALUES
+('Microscopy', 'Scan', 'submitter', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'Scan', 'species', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'Scan', 'tissue', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'Scan', 'gene', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'Scan', 'gender', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'Scan', 'age', 'tag:isrd.isi.edu,2016:generated')
+;
+
+INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri) VALUES
 ('Microscopy', 'Specimen', 'Gene', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:generated'),

@@ -257,7 +257,7 @@ ALTER TABLE age OWNER TO ermrestddl;
 INSERT INTO age(code, term) SELECT "Code" code, "ID" term FROM "Age";
 
 CREATE TABLE specimen_gene (
-	"Specimen ID" text REFERENCES "Specimen" ("ID"),
+	"Specimen ID" text REFERENCES "Specimen" ("ID") ON DELETE CASCADE,
 	"Gene ID" text REFERENCES gene (term),
 	PRIMARY KEY ("Specimen ID","Gene ID")
 );
@@ -266,7 +266,7 @@ ALTER TABLE specimen_gene OWNER TO ermrestddl;
 INSERT INTO specimen_gene("Specimen ID", "Gene ID") SELECT "Specimen"."ID" "Specimen ID", regexp_split_to_table("Specimen"."Gene",';') "Gene ID" FROM "Specimen";
 
 CREATE TABLE experiment_probe (
-	"Experiment ID" text REFERENCES "Experiment" ("ID"),
+	"Experiment ID" text REFERENCES "Experiment" ("ID") ON DELETE CASCADE,
 	"Probe ID" text REFERENCES probe (term),
 	PRIMARY KEY ("Experiment ID","Probe ID")
 );

@@ -1099,7 +1099,13 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
 		IF (NEW."Specimen ID" IS NULL) THEN
 			RAISE EXCEPTION 'Specimen ID cannot be NULL';
 		END IF;
+		IF (NEW."Seq." IS NULL) THEN
+			RAISE EXCEPTION 'Seq. cannot be NULL';
+		END IF;
+		seq := to_number('' || NEW."Seq.", '99999.99');
 		IF NEW."ID" IS NULL THEN
+			NEW."ID" := NEW."Specimen ID" || '-' || substring(('0' || seq) FROM '..$') || '-000';
+			/*
 	        seq := (SELECT max("Seq.") FROM "Microscopy"."Slide" WHERE "ID" LIKE (NEW."Specimen ID" || '%'));
 	        IF (seq IS NULL) THEN
 				seq := 1;
@@ -1109,6 +1115,7 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
 				NEW."ID" := NEW."Specimen ID" || '-' || substring(('0' || seq) FROM '..$') || '-000';
 			END IF;
 			NEW."Seq." := seq;
+			*/
 		END IF;
 		IF NEW."Experiment ID" IS NOT NULL THEN
 			SELECT * INTO row_experiment FROM "Microscopy"."Experiment" WHERE "ID" = NEW."Experiment ID";
@@ -1679,7 +1686,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 '{
 	"detailed": ["Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
 	"compact": ["ID", "Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
-	"entry": [["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment"]
+	"entry": [["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Seq.", "Comment"]
 }'),
 
 ('Microscopy', 'gene', 'tag:isrd.isi.edu,2016:table-display', 
@@ -1797,7 +1804,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'gene', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Scan', 'last_modified', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
-('Microscopy', 'Slide', 'Seq.', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
+-- ('Microscopy', 'Slide', 'Seq.', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Number of Slides', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),
 ('Microscopy', 'Specimen', 'Number of Scans', 'tag:isrd.isi.edu,2016:ignore', '["entry"]'),

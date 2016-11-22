@@ -1644,16 +1644,19 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'tissue', 'description', '{"display": "Tissue"}'),
 
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:table-display', '{
-	"row_name" :{"row_markdown_pattern":"{{{ID}}}"}
+	"row_name" :{"row_markdown_pattern":"{{{ID}}}"},
+	"compact": {"row_order": [{"column":"Section Date","descending":true}]}
 }'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:table-display', '{
-	"row_name" :{"row_markdown_pattern":"{{{ID}}}"}
+	"row_name" :{"row_markdown_pattern":"{{{ID}}}"},
+	"compact": {"row_order": [{"column":"Experiment Date","descending":true}]}
 }'),
 ('Microscopy', 'Slide', 'tag:isrd.isi.edu,2016:table-display', '{
 	"row_name" :{"row_markdown_pattern":"{{{ID}}}"}
 }'),
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:table-display', '{
-	"row_name" :{"row_markdown_pattern":"{{{accession_number}}}"}
+	"row_name" :{"row_markdown_pattern":"{{{accession_number}}}"},
+	"compact": {"row_order": [{"column":"Acquisition Date","descending":true}]}
 }'),
 
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:recordlink', '{"mode": "tag:isrd.isi.edu,2016:recordlink/fragmentfilter", "resource": "record/"}'),

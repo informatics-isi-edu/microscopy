@@ -874,6 +874,7 @@ UPDATE "Specimen" SET "Age" = substring("Age" FROM 2) WHERE substring("Age" FROM
 ---
 --- Set the "Label" url
 ALTER TABLE "Specimen" ADD COLUMN "Label" text;
+UPDATE "Specimen" SET "Comment" = '' WHERE "Comment" IS NULL;
 
 UPDATE "Specimen" T1 SET "Label" = (
 SELECT 'ID=' || urlencode(T2."ID") || 

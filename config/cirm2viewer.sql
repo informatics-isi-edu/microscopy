@@ -999,6 +999,7 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 			NEW.age_rank := age_offset;
 		END;
 		initials := (SELECT "Initials" FROM "Microscopy"."User" "User" WHERE "User"."Full Name" = NEW."Initials");
+		sample_name := (SELECT species.code || tissue.code || NEW."Age Value" || age.code || gene.code || NEW."Specimen Identifier" FROM "Microscopy".species species, "Microscopy".tissue tissue, "Microscopy".age age, "Microscopy".gene gene WHERE species.term = NEW."Species" AND tissue.term = NEW."Tissue" AND age.term = NEW."Age Unit" AND gene.term = NEW."Gene"); 
 		NEW."Label" := 'ID=' || "Microscopy".urlencode(NEW."ID") ||
 			'&' || "Microscopy".urlencode('Section Date') || '=' || "Microscopy".urlencode('' || NEW."Section Date") ||
 			'&' || "Microscopy".urlencode('Sample Name') || '=' || "Microscopy".urlencode(sample_name) ||
@@ -1750,9 +1751,22 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri) VALUES
 ('Microscopy', 'Specimen', 'Gene', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Specimen', 'Age Unit', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Specimen', 'Age Value', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Specimen', 'Specimen Identifier', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Specimen', 'Initials', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Specimen', 'Section Date', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Specimen', 'Tissue', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Experiment', 'Experiment Date', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Experiment', 'Initials', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Experiment', 'Experiment Type', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Specimen', 'ID', 'tag:isrd.isi.edu,2016:generated'),
 ('Microscopy', 'Experiment', 'ID', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'Slide', 'Seq.', 'tag:isrd.isi.edu,2016:immutable'),
+('Microscopy', 'Slide', 'Specimen ID', 'tag:isrd.isi.edu,2016:immutable'),
+-- ('Microscopy', 'Slide', 'Experiment ID', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Slide', 'ID', 'tag:isrd.isi.edu,2016:generated')
 ;
 

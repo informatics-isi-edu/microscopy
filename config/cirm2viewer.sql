@@ -932,7 +932,7 @@ CREATE FUNCTION specimen_trigger_before() RETURNS trigger
 			NEW."Age Value" := '';
 		END IF;
 		IF (NEW."Specimen Identifier" IS NULL) THEN
-			NEW."Specimen Identifier" := '';
+			RAISE EXCEPTION 'Specimen Identifier cannot be NULL';
 		END IF;
 		IF (NEW."Species" IS NULL) THEN
 			RAISE EXCEPTION 'Species cannot be NULL';
@@ -1482,7 +1482,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Specimen', 'Genes', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'Age', 'description', '{"rank": "age_rank"}'),
 ('Microscopy', 'Specimen', 'Label', 'comment', '["hidden"]'),
-('Microscopy', 'Specimen', 'Specimen Identifier', 'comment', '["hidden"]'),
+-- ('Microscopy', 'Specimen', 'Specimen Identifier', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'age_rank', 'comment', '["hidden"]'),
 ('Microscopy', 'Specimen', 'Initials', 'description', '{"display": "Submitted By"}'),
 
@@ -1659,12 +1659,12 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	"entry/create": ["submitter", "species", "tissue", "gene", "gender", "age"]
 }'),
 
-('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "sortOrder": "desc", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Section Date", "Number of Slides", "Number of Scans"]}'),
+('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "sortOrder": "desc", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Specimen Identifier", "Section Date", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["Species", "Tissue", "Age", "Gene", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
-	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Comment", "Number of Slides", "Number of Scans", "Label"],
-	"entry": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age Value",  ["Microscopy", "Specimen_Age Unit_fkey"], ["Microscopy", "Specimen_Gene_fkey"], ["Microscopy", "Specimen_Initials_fkey"], "Section Date", "Comment"]
+	"detailed": ["Species", "Tissue", "Age", "Gene", "Initials", "Section Date", "Specimen Identifier", "Comment", "Number of Slides", "Number of Scans", "Label"],
+	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Specimen Identifier", "Comment", "Number of Slides", "Number of Scans", "Label"],
+	"entry": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age Value",  ["Microscopy", "Specimen_Age Unit_fkey"], ["Microscopy", "Specimen_Gene_fkey"], ["Microscopy", "Specimen_Initials_fkey"], "Section Date", "Specimen Identifier", "Comment"]
 }'),
 
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "sortOrder": "desc", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),

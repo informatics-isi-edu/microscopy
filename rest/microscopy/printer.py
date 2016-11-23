@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # 
 # Copyright 2012-2014 University of Southern California
 # 
@@ -19,6 +21,58 @@ import web
 import json
 import cxi
 
+html = '''
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+    <title>Microscopy</title>
+    <link rel="stylesheet" type="text/css" href="/chaise/styles/vendor/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/chaise/styles/ermrest.css">
+    <link rel="stylesheet" type="text/css" href="/chaise/styles/app.css">
+</head>
+<body>
+    <div class="sidebar-overlay"></div>
+    <div id="main-wrapper" class="container">
+        <div id="main-content" class="col-xs-6 col-sm-6 col-md-7 col-lg-8 col-xl-9">
+            <navbar class="ng-isolate-scope">
+                <header class="row" style="z-index: -1; margin-bottom: 70px;">
+                    <nav id="mainnav" class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+                        <div class="container-fluid">
+                            <div class="navbar-header">
+                                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#fb-navbar-main-collapse">
+                                    <span class="sr-only">Toggle navigation</span>
+                                    <span class="md-chevron-down"></span>
+                                    MENU
+                                </button>
+                                <a href="/" class="navbar-brand" ng-href="/">
+                                    <span class="ng-binding" id="brand-text">Microscopy</span>
+                                </a>
+                            </div>
+                        </div>
+                    </nav>
+                </header>
+            </navbar>
+            <div>
+                <h1>%s</h1>
+                <p>
+                <blockquote>%s\n\t\t\t\t</blockquote>
+            </div>
+        </div>
+    </div>
+    <footer class="row footer">
+        <div class="container">
+            <p class="footer-text">© 2014-2016 University of Southern California</p>
+        </div>
+    </footer>
+</body>
+</html>
+'''
+
 class Printer:
     def __init__(self):
         self.uri = 'http://purl.org/usc-microscopy'
@@ -38,6 +92,12 @@ class Printer:
             self.printer_id = printer_id
         if printer_port != None:
             self.printer_port = printer_port
+        
+    def getHTML(self, command, res):
+        message = ''
+        for key in res.keys():
+            message = '%s\n\t\t\t\t\t %s: %s<br/>' % (message, str(key), str(res[key]))
+        return html % (command, message)
         
 class PrintControl (Printer):
     
@@ -60,20 +120,30 @@ class PrintControl (Printer):
            
         self.setPrinter(printerID, (printer_id, printer_port))
         response = []
+        if printerID.lower() == 'specimen':
+            command = 'Specimen'
+        else:
+            command = 'Slide'
         try:
             if param == 'getStatus':
                 res = cxi.utils.checkStatus(self.printer_id, self.printer_port)
+                command = '%s Printer Status' % command
             elif param == 'getConfiguration':
                 res = cxi.utils.checkConfig(self.printer_id, self.printer_port)
+                command = '%s Printer Configuration' % command
             elif param == 'checkConnection':
                 res = cxi.utils.checkConnection(self.printer_id, self.printer_port)
+                command = '%s Printer Connection' % command
         except:
             res = {}
             res[self.CXI_RET] = 0
             res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
                     
         response.append(res)
-        return json.dumps(response)
+        #return json.dumps(response)
+        web.header('Content-Type', 'text/html')
+        return self.getHTML(command, res)
+        
     
     def PUT(self, printerID, param):
         input_data = cStringIO.StringIO(web.ctx.env['wsgi.input'].read())
@@ -121,6 +191,10 @@ class PrintJob (Printer):
         self.setPrinter(entity, (None, None))
         params = web.input()
         response = []
+        if entity.lower() == 'specimen':
+            command = 'Print Specimen Label'
+        else:
+            command = 'Print Slide Label'
         if entity == 'specimen':
             id = params['ID']
             section_date = params['Section Date']
@@ -152,7 +226,9 @@ class PrintJob (Printer):
                 res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
             response.append(res)
                     
-        return json.dumps(response)
+        #return json.dumps(response)
+        web.header('Content-Type', 'text/html')
+        return self.getHTML(command, res)
     
     def POST(self, entity):
         response = []

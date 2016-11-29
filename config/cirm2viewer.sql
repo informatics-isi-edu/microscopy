@@ -47,9 +47,9 @@ $$;
 -- Those 3 updates will be run only on cirm-dev
 -- Comment them if you run the script on cirm-staging or cirm-www
 --
-UPDATE "Scan" SET "HTTP URL" = 'https://cirm.isrd.isi.edu/hatrac/Microscopy/' || urlencode("Slide ID") || '/' || urlencode("Filename");
-UPDATE "Scan" SET "Thumbnail" = 'https://cirm.isrd.isi.edu/thumbnails/' || urlencode("Slide ID") || '/' || "ID" || '.jpg' WHERE "Thumbnail" like '%.jpg';
-UPDATE "Scan" SET "DZI" = 'https://cirm.isrd.isi.edu' || "DZI";
+-- UPDATE "Scan" SET "HTTP URL" = 'https://cirm.isrd.isi.edu/hatrac/Microscopy/' || urlencode("Slide ID") || '/' || urlencode("Filename");
+-- UPDATE "Scan" SET "Thumbnail" = 'https://cirm.isrd.isi.edu/thumbnails/' || urlencode("Slide ID") || '/' || "ID" || '.jpg' WHERE "Thumbnail" like '%.jpg';
+-- UPDATE "Scan" SET "DZI" = 'https://cirm.isrd.isi.edu' || "DZI";
 
 --
 -- Create a table for the submitters names

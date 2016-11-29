@@ -711,6 +711,9 @@ CREATE FUNCTION update_metadata() RETURNS void
 			ELSIF row_specimen."Age Value" = 'P2' THEN
 				val := age_offset;
 			ELSIF row_specimen."Age Value" = '' OR row_specimen."Age Value" IS NULL THEN
+				IF row_specimen."Age Unit" = 'adult' THEN
+					age_offset := age_offset + 200;
+				END IF;
 				val := age_offset;
 			ELSE
 				IF row_specimen."Age Unit" = 'adult' THEN
@@ -744,6 +747,11 @@ $$;
 SELECT update_metadata();
 
 DROP FUNCTION update_metadata();
+
+UPDATE "Scan" T1 SET tissue  = (SELECT "Tissue" FROM "Specimen", "Scan" T2, "Slide" WHERE T1.id = T2.id AND T1."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID") WHERE T1.tissue IS NULL;
+UPDATE "Scan" T1 SET species  = (SELECT "Species" FROM "Specimen", "Scan" T2, "Slide" WHERE T1.id = T2.id AND T1."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID") WHERE T1.species IS NULL;
+UPDATE "Scan" T1 SET gene  = (SELECT "Gene" FROM "Specimen", "Scan" T2, "Slide" WHERE T1.id = T2.id AND T1."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID") WHERE T1.gene IS NULL;
+UPDATE "Scan" T1 SET age  = (SELECT COALESCE("Age Value", '') || ' ' || "Age Unit" FROM "Specimen", "Scan" T2, "Slide" WHERE T1.id = T2.id AND T1."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID") WHERE T1.age IS NULL;
 
 -- UPDATE "Scan" T1 SET age_rank  = (SELECT "Specimen".age_rank FROM "Specimen", "Scan" T2, "Slide" WHERE T1.id = T2.id AND T1."slide_id" = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 
@@ -1189,6 +1197,8 @@ CREATE FUNCTION scan_trigger_before() RETURNS trigger
  		IF (NEW.slide_id IS NULL) THEN
 			RAISE EXCEPTION 'slide_id cannot be NULL';
 		END IF;
+		NEW."gender" := 'Unknown';
+		NEW."resolution" := NEW."Scaling (per pixel)";
 		NEW."Experiment ID" := (SELECT "Experiment ID" FROM "Microscopy"."Slide" WHERE "ID" = NEW.slide_id);
 		NEW."Specimen ID" := (SELECT "Specimen ID" FROM "Microscopy"."Slide" WHERE "ID" = NEW.slide_id);
 		NEW.submitter := (SELECT "Full Name" FROM "Microscopy"."User" "User", "Microscopy"."Slide" "Slide", "Microscopy"."Experiment" "Experiment" WHERE NEW.slide_id = "Slide"."ID" AND "Experiment"."ID" = "Slide"."Experiment ID" AND "Experiment"."Initials" = "User"."Full Name");
@@ -1200,10 +1210,13 @@ CREATE FUNCTION scan_trigger_before() RETURNS trigger
 		NEW.gene := (SELECT "Gene" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		NEW.species := (SELECT "Species" FROM "Microscopy"."Specimen" "Specimen", "Microscopy"."Slide" "Slide" WHERE NEW.slide_id = "Slide"."ID" AND "Specimen"."ID" = "Slide"."Specimen ID");
 		IF (NEW."Disambiguator" IS NULL) THEN
+			IF NEW."File Date" IS NULL THEN
+				NEW."File Date" := now();
+			END IF;
         	disambiguator := (SELECT COALESCE(max(cast(regexp_replace(description, '^.*-', '') as int)+1),1) FROM "Microscopy"."Scan" WHERE slide_id = NEW.slide_id);
 	        NEW."Disambiguator" := disambiguator;
-			New.description := NEW.slide_id || '-' || disambiguator;
-			New.accession_number := NEW.slide_id || '-' || disambiguator;
+			NEW.description := NEW.slide_id || '-' || disambiguator;
+			NEW.accession_number := NEW.slide_id || '-' || disambiguator;
 			NEW.id := nextval('"Microscopy"."Scan_id_seq"'::regclass);
 			IF (NEW."last_modified" IS NULL) THEN
 				NEW."last_modified" := now();

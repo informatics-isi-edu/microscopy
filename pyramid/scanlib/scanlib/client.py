@@ -31,6 +31,7 @@ import shutil
 import smtplib
 import urllib
 import re
+import czifile
 from email.mime.text import MIMEText
 from bioformats import BioformatsClient
 from socket import gaierror, EAI_AGAIN
@@ -271,26 +272,27 @@ class ErmrestClient (object):
                 raise
         
     def processScans(self):
-        url = '%s/entity/Scan/!Filename::null::&DZI::null::&czi2dzi::null::@sort(%s::desc::)?limit=%d' % (self.path,urllib.quote('File Date', safe=''),self.limit)
+        url = '%s/entity/Scan/!bytes::null::&DZI::null::&czi2dzi::null::@sort(%s::desc::)?limit=%d' % (self.path,urllib.quote('File Date', safe=''),self.limit)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         scans = json.loads(resp.read())
         scanids = []
         for scan in scans:
-            if self.hasCziFile(scan['Slide ID'], scan['ID']) == True:
-                scanids.append((scan['Slide ID'], scan['ID']))
+            if self.hasCziFile(scan['slide_id'], scan['id'], scan['Disambiguator']) == True:
+                scanids.append((scan['slide_id'], scan['id'], scan['Disambiguator']))
             else:
-                self.reportFailure(scan['Slide ID'], scan['ID'], 'missing file')
+                self.reportFailure(scan['slide_id'], scan['id'], 'missing file')
                 
-        self.logger.debug('Processing %d scans.' % (len(scanids))) 
-        for slideId,scanId in scanids:
-            f = self.getCziFile(slideId, scanId)
-            self.logger.debug('Converting czi to dzi tiles for slide "%s", scan "%s"' % (slideId, scanId))
+        self.logger.debug('Processing %d scan(s).' % (len(scanids))) 
+        for slideId,scanId,disambiguator in scanids:
+            f = self.getCziFile(slideId, scanId, disambiguator)
+            mdate = self.getAcquisitionDate(f)
+            self.logger.debug('Converting czi to dzi tiles for slide "%s", scan "%d"' % (slideId, scanId))
             
             try:
                 currentDirectory=os.getcwd()
                 os.chdir(self.dzi)
-                args = [self.czi2dzi, f, scanId]
+                args = [self.czi2dzi, f, '%s-%d' % (slideId, disambiguator)]
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()
                 returncode = p.returncode
@@ -304,8 +306,8 @@ class ErmrestClient (object):
                 returncode = 1
             
             if returncode != 0:
-                self.logger.error('Can not convert czi to dzi for file "%s", slide "%s", scan "%s".\nstdoutdata: %s\nstderrdata: %s\n' % (f, slideId, scanId, stdoutdata, stderrdata)) 
-                self.sendMail('FAILURE Tiles', 'Can not convert czi to dzi for file "%s", slide "%s", scan "%s".\nstdoutdata: %s\nstderrdata: %s\n' % (f, slideId, scanId, stdoutdata, stderrdata))
+                self.logger.error('Can not convert czi to dzi for file "%s", slide "%s", scan "%d".\nstdoutdata: %s\nstderrdata: %s\n' % (f, slideId, scanId, stdoutdata, stderrdata)) 
+                self.sendMail('FAILURE Tiles', 'Can not convert czi to dzi for file "%s", slide "%s", scan "%d".\nstdoutdata: %s\nstderrdata: %s\n' % (f, slideId, scanId, stdoutdata, stderrdata))
                 os.remove(f)
                 #os.rename('%s', '%s.err' % (f, f))
                 """
@@ -314,7 +316,7 @@ class ErmrestClient (object):
                 self.reportFailure(slideId, scanId, 'czi2dzi error')
                 continue
             try:
-                thumbnail,urls = self.writeThumbnailFile(slideId, scanId)
+                thumbnail,urls = self.writeThumbnailFile(slideId, '%s-%d' % (slideId, disambiguator))
             except:
                 et, ev, tb = sys.exc_info()
                 self.logger.error('got unexpected exception "%s"' % str(ev))
@@ -327,12 +329,12 @@ class ErmrestClient (object):
                 self.reportFailure(slideId, scanId, 'DZI failure')
                 continue
                 
-            self.logger.debug('Extracting metadata for slide "%s", scan "%s"' % (slideId, scanId)) 
+            self.logger.debug('Extracting metadata for slide "%s", scan "%d"' % (slideId, scanId)) 
             bioformatsClient = BioformatsClient(showinf=self.showinf, \
                                                 czirules=self.czirules, \
-                                                czifile=f, \
+                                                cziFile=f, \
                                                 logger=self.logger)
-            columns = ["Thumbnail","DZI","czi2dzi", "HTTP URL"]
+            columns = ["Thumbnail","DZI","czi2dzi", "HTTP URL", "uri", "Acquisition Date"]
             try:
                 metadata = bioformatsClient.getMetadata()
                 returncode = 0
@@ -351,12 +353,14 @@ class ErmrestClient (object):
             
             os.remove(f)
             columns = ','.join([urllib.quote(col, safe='') for col in columns])
-            url = '%s/attributegroup/Scan/ID;%s' % (self.path, columns)
+            url = '%s/attributegroup/Scan/id;%s' % (self.path, columns)
             body = []
-            obj = {'ID': scanId,
+            obj = {'id': scanId,
                    'Thumbnail': thumbnail,
+                   'Acquisition Date': mdate,
                    'DZI': '/%s?%s' % (self.viewer, urls),
-                   'HTTP URL': '%s/%s/%s/%s.czi' % (self.hatrac, self.namespace, slideId, scanId),
+                   'uri': '/%s?%s' % (self.viewer, urls),
+                   'HTTP URL': '%s/%s/%s/%s-%d.czi' % (self.hatrac, self.namespace, slideId, slideId, disambiguator),
                    "czi2dzi": 'success'
                    }
             for col in self.metadata:
@@ -366,7 +370,7 @@ class ErmrestClient (object):
             headers = {'Content-Type': 'application/json'}
             resp = self.send_request('PUT', url, json.dumps(body), headers, False)
             resp.read()
-            self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%s".' % (slideId, scanId)) 
+            self.logger.debug('SUCCEEDED created the tiles directory for the slide id "%s" and scan id "%d".' % (slideId, scanId)) 
             #self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
         self.logger.debug('Ended Scans Processing.') 
         
@@ -377,9 +381,9 @@ class ErmrestClient (object):
         try:
             columns = ["Thumbnail","czi2dzi"]
             columns = ','.join([urllib.quote(col, safe='') for col in columns])
-            url = '%s/attributegroup/Scan/ID;%s' % (self.path, columns)
+            url = '%s/attributegroup/Scan/id;%s' % (self.path, columns)
             body = []
-            obj = {'ID': scanId,
+            obj = {'id': scanId,
                    'Thumbnail': '/thumbnails/generic/generic_genetic.png',
                    "czi2dzi": '%s' % error_message
                    }
@@ -387,7 +391,7 @@ class ErmrestClient (object):
             headers = {'Content-Type': 'application/json'}
             resp = self.send_request('PUT', url, json.dumps(body), headers, False)
             resp.read()
-            self.logger.debug('SUCCEEDED updated the Scan table for the slide id "%s" and scan id "%s" with the czi2dzi result.' % (slideId, scanId)) 
+            self.logger.debug('SUCCEEDED updated the Scan table for the slide id "%s" and scan id "%d" with the czi2dzi result.' % (slideId, scanId)) 
         except:
             et, ev, tb = sys.exc_info()
             self.logger.error('got unexpected exception "%s"' % str(ev))
@@ -395,34 +399,45 @@ class ErmrestClient (object):
             self.sendMail('FAILURE Tiles: reportFailure ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
             
         
-    def hasCziFile(self, slideId=None, scanId=None):
+    def hasCziFile(self, slideId=None, scanId=None, disambiguator=None):
         """
             Check if the file exists in hatrac
         """
         ret = False
         try:
-            url = '%s/%s/%s/%s.czi' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(scanId, safe=''))
+            url = '%s/%s/%s/%s-%d.czi' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(slideId, safe=''), disambiguator)
             headers = {'Accept': '*'}
             resp = self.send_request('HEAD', url, '', headers, False)
             resp.read()
             ret = True
         except:
             et, ev, tb = sys.exc_info()
-            self.logger.error('HEAD exception "%s" for the slide id "%s" and scan id "%s"' % (str(ev), slideId, scanId))
+            self.logger.error('HEAD exception "%s" for the slide id "%s" and scan id "%d"' % (str(ev), slideId, scanId))
             self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
-            self.sendMail('FAILURE Tiles: Missing file', '%s\n' % 'HEAD exception "%s" for the slide id "%s" and scan id "%s"' % (str(ev), slideId, scanId))
+            self.sendMail('FAILURE Tiles: Missing file', '%s\n' % 'HEAD exception "%s" for the slide id "%s" and scan id "%d"' % (str(ev), slideId, scanId))
             pass
         return ret
                 
-    def getCziFile(self, slideId, scanId):
-        cziFile = '%s/%s/%s.czi' % (self.data_scratch, self.namespace, scanId)
+    def getCziFile(self, slideId, scanId, disambiguator):
+        cziFile = '%s/%s/%s-%d.czi' % (self.data_scratch, self.namespace, slideId, disambiguator)
         outdir = '%s/%s' % (self.data_scratch, self.namespace)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        url = '%s/%s/%s/%s.czi;versions' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(scanId, safe=''))
+        url = '%s/%s/%s/%s-%d.czi;versions' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(slideId, safe=''), disambiguator)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         srcFile = '%s%s'  % (self.czi, json.loads(resp.read())[0])
         shutil.copyfile(srcFile, cziFile)
         return cziFile
 
+    def getAcquisitionDate(self, cziFile):
+        mdate = time.strftime('%Y-%m-%d')
+        try:
+            cf = czifile.CziFile(cziFile)
+            mdate = cf.metadata.findall('Metadata/Information/Image/AcquisitionDateAndTime')[0].text[:10]
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('Can not extract the Acquisition Date from the "%s" file.' % (cziFile))
+            self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+        return mdate
+    

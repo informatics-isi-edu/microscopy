@@ -11,7 +11,7 @@ class BioformatsClient (object):
     def __init__(self, **kwargs):
         self.mappedDict = {}
         self.showinf = kwargs.get("showinf")
-        self.czifile = kwargs.get("czifile")
+        self.cziFile = kwargs.get("cziFile")
         self.czirules = kwargs.get("czirules")
         self.logger = kwargs.get("logger")
         self.rulesRoot = etree.parse(self.czirules).getroot()
@@ -86,7 +86,7 @@ class BioformatsClient (object):
                 self.setMappedElement(child)
     
     def getXmlBioformats(self):
-        args = [self.showinf, self.czifile, '-omexml-only', '-nopix']
+        args = [self.showinf, self.cziFile, '-omexml-only', '-nopix']
         f = open('temp.xml', 'w')
         p = subprocess.Popen(args, stdout=f, stderr=subprocess.PIPE)
         p.wait()

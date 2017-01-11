@@ -1808,7 +1808,7 @@ class TiffFile(object):
                             try:
                                 tif = TiffFile(os.path.join(dirname, fname))
                             except (IOError, FileNotFoundError, ValueError):
-                                tif.close()
+                                #tif.close()
                                 warnings.warn(
                                     "ome-xml: failed to read '%s'" % fname)
                                 break

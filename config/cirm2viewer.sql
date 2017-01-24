@@ -1533,6 +1533,11 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 	"detailed" :{"markdown_pattern":"[**{{filename}}** ({{bytes}} Bytes)]({{HTTP URL}})","separator_markdown":"\n\n"}
 }'),
 
+('Microscopy', 'Scan', 'slide_id', 'tag:isrd.isi.edu,2016:column-display', 
+'{
+	"detailed" :{"markdown_pattern":"[**{{slide_id}}** ](/chaise/record/#1/Microscopy:Slide/ID={{slide_id}})","separator_markdown":"\n\n"}
+}'),
+
 ('Microscopy', 'probe', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 ('Microscopy', 'gene', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 

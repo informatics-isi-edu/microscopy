@@ -1717,6 +1717,12 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 }'),
 
 
+('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+	]
+}'),
+
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
 '{
 	"detailed": [

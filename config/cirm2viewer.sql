@@ -1517,10 +1517,10 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Slide', 'Seq.', 'comment', '["top"]'),
 ('Microscopy', 'Slide', 'Number of Scans', 'comment', '["top"]'),
 
-('Microscopy', 'Scan', 'species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
-('Microscopy', 'Scan', 'tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
-('Microscopy', 'Scan', 'gene', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{gene}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
-('Microscopy', 'Scan', 'gender', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{gender}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'Scan', 'species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'Scan', 'tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'Scan', 'gene', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{gene}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'Scan', 'gender', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{gender}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
 ('Microscopy', 'Scan', 'Thumbnail', 'tag:isrd.isi.edu,2016:column-display', 
 '{
@@ -1538,8 +1538,8 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 	"detailed" :{"markdown_pattern":"[**{{slide_id}}** ](/chaise/record/#1/Microscopy:Slide/ID={{slide_id}})","separator_markdown":"\n\n"}
 }'),
 
-('Microscopy', 'probe', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
-('Microscopy', 'gene', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'probe', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'gene', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
@@ -1553,13 +1553,13 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/slide/job?{{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
 }'),
 
-('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
-('Microscopy', 'Specimen', 'Tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'Specimen', 'Tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 -- ('Microscopy', 'Specimen', 'Age', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{{Age}}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}"}}'),
-('Microscopy', 'Specimen', 'Gene', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Gene}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'Specimen', 'Gene', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Gene}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
-('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Probe}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
-('Microscopy', 'Experiment', 'Experiment Type', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Experiment Type}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Probe}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
+-- ('Microscopy', 'Experiment', 'Experiment Type', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Experiment Type}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
 ('Microscopy', 'Slide', 'Specimen ID', 'tag:isrd.isi.edu,2016:column-display', 
 '{
@@ -1582,54 +1582,67 @@ INSERT INTO _ermrest.model_schema_annotation (schema_name, annotation_uri, annot
 INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation_uri, annotation_value) VALUES
 ('Microscopy', 'age_stage', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'anatomy', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'annotation_type', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'embedding_medium', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'gender', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'specimen_fixation', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'staining_protocol', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'probe', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'species', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'tissue', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'gene', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'age', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 ('Microscopy', 'experiment_type', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"detailed": ["code", "term"],
 	"compact": ["code", "term"]
 }'),
 
@@ -1683,7 +1696,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"compact": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
-	"detailed": ["Thumbnail", "HTTP URL", "slide_id", "Acquisition Date", "submitter", "species", "tissue", "gene", "gender", "age", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time"],
+	"detailed": ["Thumbnail", "HTTP URL", "slide_id", "Acquisition Date", "submitter", ["Microscopy", "Scan_species_fkey"], ["Microscopy", "Scan_tissue_fkey"], ["Microscopy", "Scan_gene_fkey"], ["Microscopy", "Scan_gender_fkey"], "age", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time"],
 	"entry/edit": ["submitter", "species", "tissue", "gene", "gender", "age"],
 	"entry/create": ["submitter", "species", "tissue", "gene", "gender", "age"]
 }'),
@@ -1691,16 +1704,16 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "sortOrder": "desc", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Specimen Identifier", "Section Date", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["Species", "Tissue", "Age", "Gene", "Initials", "Section Date", "Specimen Identifier", "Comment", "Number of Slides", "Number of Scans", "Label"],
-	"compact": ["ID", "Species", "Tissue", "Age", "Genes", "Initials", "Section Date", "Specimen Identifier", "Comment", "Number of Slides", "Number of Scans", "Label"],
+	"detailed": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age", "Initials", "Section Date", "Specimen Identifier", "Comment", "Number of Slides", "Number of Scans", "Label"],
+	"compact": ["ID", "Species", "Tissue", "Age", "Initials", "Section Date", "Specimen Identifier", "Comment", "Number of Slides", "Number of Scans", "Label"],
 	"entry": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age Value",  ["Microscopy", "Specimen_Age Unit_fkey"], ["Microscopy", "Specimen_Gene_fkey"], ["Microscopy", "Specimen_Initials_fkey"], "Section Date", "Specimen Identifier", "Comment"]
 }'),
 
 ('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "sortOrder": "desc", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"],
-	"compact": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Probes", "Comment", "Number of Slides", "Number of Scans"],
+	"detailed": ["Initials", "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], "Comment", "Number of Slides", "Number of Scans"],
+	"compact": ["ID", "Initials", "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], "Probe", "Comment", "Number of Slides", "Number of Scans"],
 	"entry": [["Microscopy", "Experiment_Initials_fkey"], "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], ["Microscopy", "Experiment_Probe_fkey"], "Comment"]
 }'),
 
@@ -1754,6 +1767,86 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	]
 }'),
 
+('Microscopy', 'age_stage', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "Scan_age_stage_fkey"]
+	]
+}'),
+
+('Microscopy', 'anatomy', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "annotation_anatomy_fkey"]
+	]
+}'),
+
+('Microscopy', 'annotation_type', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "annotation_type_fkey"]
+	]
+}'),
+
+('Microscopy', 'embedding_medium', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "Scan_embedding_medium_fkey"]
+	]
+}'),
+
+('Microscopy', 'gender', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "Scan_gender_fkey"]
+	]
+}'),
+
+('Microscopy', 'specimen_fixation', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "Scan_specimen_fixation_fkey"]
+	]
+}'),
+
+('Microscopy', 'experiment_type', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "Experiment_Experiment Type_fkey"]
+	]
+}'),
+
+('Microscopy', 'staining_protocol', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "Scan_staining_protocol_fkey"]
+	]
+}'),
+
+('Microscopy', 'species', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "Scan_species_fkey"],
+		["Microscopy", "Specimen_Species_fkey"]
+	]
+}'),
+
+('Microscopy', 'tissue', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "Scan_tissue_fkey"],
+		["Microscopy", "Specimen_Tissue_fkey"]
+	]
+}'),
+
+('Microscopy', 'age', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
+'{
+	"detailed": [
+		["Microscopy", "Specimen_Age Unit_fkey"],
+		["Microscopy", "age_stage_superclass_id_fkey"]
+	]
+}'),
+
 ('Microscopy', 'gene', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
 '{
 	"detailed": [
@@ -1762,6 +1855,10 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	]
 }')
 
+;
+
+INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation_uri) VALUES
+('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:generated')
 ;
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri) VALUES
@@ -1894,6 +1991,13 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'CIRM_Resources', 'tag:misd.isi.edu,2015:display', '{"name" : "CIRM Resources"}'),
 ('Microscopy', 'CIRM_Resources', 'tag:isrd.isi.edu,2016:recordlink', '{"mode": "tag:isrd.isi.edu,2016:recordlink/fragmentfilter", "resource": "search/"}'),
 ('Microscopy', 'CIRM_Resources', 'tag:isrd.isi.edu,2016:visible-columns', '{"compact" : ["Data Type", "Number Of Entries", "Last Updated"]}')
+;
+
+INSERT INTO _ermrest.model_keyref_annotation (from_column_names, to_column_names, from_table_name, from_schema_name, to_schema_name, to_table_name, annotation_uri, annotation_value) VALUES
+('{"Specimen ID"}', '{"ID"}', 'specimen_gene', 'Microscopy', 'Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:foreign-key', '{"to_name" : "Specimens"}'),
+('{"Gene ID"}', '{"term"}', 'specimen_gene', 'Microscopy', 'Microscopy', 'gene', 'tag:isrd.isi.edu,2016:foreign-key', '{"to_name" : "Genes"}'),
+('{"Experiment ID"}', '{"ID"}', 'experiment_probe', 'Microscopy', 'Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:foreign-key', '{"to_name" : "Experiments"}'),
+('{"Probe ID"}', '{"term"}', 'experiment_probe', 'Microscopy', 'Microscopy', 'probe', 'tag:isrd.isi.edu,2016:foreign-key', '{"to_name" : "Probes"}')
 ;
 
 INSERT INTO _ermrest.model_pseudo_key (schema_name, table_name, column_names) VALUES

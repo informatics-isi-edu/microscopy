@@ -1515,6 +1515,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Slide', 'Label', 'comment', '["hidden"]'),
 ('Microscopy', 'Slide', 'Seq.', 'comment', '["top"]'),
+('Microscopy', 'Slide', 'Comment', 'comment', '["top"]'),
 ('Microscopy', 'Slide', 'Number of Scans', 'comment', '["top"]'),
 
 -- ('Microscopy', 'Scan', 'species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),

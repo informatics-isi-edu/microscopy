@@ -1533,10 +1533,10 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 	"detailed" :{"markdown_pattern":"[**{{filename}}** ({{bytes}} Bytes)]({{HTTP URL}})","separator_markdown":"\n\n"}
 }'),
 
-('Microscopy', 'Scan', 'slide_id', 'tag:isrd.isi.edu,2016:column-display', 
-'{
-	"detailed" :{"markdown_pattern":"[**{{slide_id}}** ](/chaise/record/#1/Microscopy:Slide/ID={{slide_id}})","separator_markdown":"\n\n"}
-}'),
+-- ('Microscopy', 'Scan', 'slide_id', 'tag:isrd.isi.edu,2016:column-display', 
+-- '{
+--	"detailed" :{"markdown_pattern":"[**{{slide_id}}** ](/chaise/record/#1/Microscopy:Slide/ID={{slide_id}})","separator_markdown":"\n\n"}
+-- }'),
 
 -- ('Microscopy', 'probe', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 -- ('Microscopy', 'gene', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
@@ -1551,7 +1551,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 '{
 	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/slide/job?{{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
 	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/slide/job?{{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
-}'),
+}')
 
 -- ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 -- ('Microscopy', 'Specimen', 'Tissue', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Tissue}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
@@ -1561,16 +1561,16 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 -- ('Microscopy', 'Experiment', 'Probe', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Probe}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 -- ('Microscopy', 'Experiment', 'Experiment Type', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Experiment Type}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
-('Microscopy', 'Slide', 'Specimen ID', 'tag:isrd.isi.edu,2016:column-display', 
-'{
-	"detailed": {"markdown_pattern": "[{{Specimen ID}}](/chaise/record/#1/Microscopy:Specimen/ID={{#encode}}{{Specimen ID}}{{/encode}})"},
-	"compact": {"markdown_pattern": "[{{Specimen ID}}](/chaise/record/#1/Microscopy:Specimen/ID={{#encode}}{{Specimen ID}}{{/encode}})"}
-}'),
-('Microscopy', 'Slide', 'Experiment ID', 'tag:isrd.isi.edu,2016:column-display', 
-'{
-	"detailed": {"markdown_pattern": "[{{Experiment ID}}](/chaise/record/#1/Microscopy:Experiment/ID={{#encode}}{{Experiment ID}}{{/encode}})"},
-	"compact": {"markdown_pattern": "[{{Experiment ID}}](/chaise/record/#1/Microscopy:Experiment/ID={{#encode}}{{Experiment ID}}{{/encode}})"}
-}')
+-- ('Microscopy', 'Slide', 'Specimen ID', 'tag:isrd.isi.edu,2016:column-display', 
+-- '{
+--	"detailed": {"markdown_pattern": "[{{Specimen ID}}](/chaise/record/#1/Microscopy:Specimen/ID={{#encode}}{{Specimen ID}}{{/encode}})"},
+--	"compact": {"markdown_pattern": "[{{Specimen ID}}](/chaise/record/#1/Microscopy:Specimen/ID={{#encode}}{{Specimen ID}}{{/encode}})"}
+-- }'),
+-- ('Microscopy', 'Slide', 'Experiment ID', 'tag:isrd.isi.edu,2016:column-display', 
+-- '{
+--	"detailed": {"markdown_pattern": "[{{Experiment ID}}](/chaise/record/#1/Microscopy:Experiment/ID={{#encode}}{{Experiment ID}}{{/encode}})"},
+--	"compact": {"markdown_pattern": "[{{Experiment ID}}](/chaise/record/#1/Microscopy:Experiment/ID={{#encode}}{{Experiment ID}}{{/encode}})"}
+--}')
 ;
 
 INSERT INTO _ermrest.model_schema_annotation (schema_name, annotation_uri, annotation_value) VALUES
@@ -1696,7 +1696,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"compact": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
-	"detailed": ["Thumbnail", "HTTP URL", "slide_id", "Acquisition Date", "submitter", ["Microscopy", "Scan_species_fkey"], ["Microscopy", "Scan_tissue_fkey"], ["Microscopy", "Scan_gene_fkey"], ["Microscopy", "Scan_gender_fkey"], "age", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time"],
+	"detailed": ["Thumbnail", "HTTP URL", ["Microscopy", "Scan_Slide ID_fkey"], "Acquisition Date", "submitter", ["Microscopy", "Scan_species_fkey"], ["Microscopy", "Scan_tissue_fkey"], ["Microscopy", "Scan_gene_fkey"], ["Microscopy", "Scan_gender_fkey"], "age", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time"],
 	"entry/edit": ["submitter", "species", "tissue", "gene", "gender", "age"],
 	"entry/create": ["submitter", "species", "tissue", "gene", "gender", "age"]
 }'),
@@ -1719,8 +1719,8 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 
 ('Microscopy', 'Slide', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
-	"compact": ["ID", "Seq.", "Specimen ID", "Experiment ID", "Comment", "Number of Scans", "Label"],
+	"detailed": ["Seq.", ["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment", "Number of Scans", "Label"],
+	"compact": ["ID", "Seq.", ["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment", "Number of Scans", "Label"],
 	"entry": [["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Seq.", "Comment"]
 }'),
 

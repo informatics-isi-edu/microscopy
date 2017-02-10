@@ -20,6 +20,8 @@ import cStringIO
 import web
 import json
 import cxi
+import sys
+import traceback
 
 html = '''
 <!doctype html>
@@ -205,6 +207,8 @@ class PrintJob (Printer):
             try:
                 res = cxi.utils.makeBoxLabel(self.printer_id, self.printer_port, section_date, sample_name, initials, disambiguator, self.uri, id, comment)
             except:
+                et, ev, tb = sys.exc_info()
+                web.debug('%s' % str(traceback.format_exception(et, ev, tb)))
                 res = {}
                 res[self.CXI_RET] = 0
                 res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
@@ -216,11 +220,13 @@ class PrintJob (Printer):
             sample_name = params['Sample Name']
             experiment_description = params['Experiment Description']
             initials = params['Initials']
-            sequence_num = params['Seq.']
+            sequence_num = int(params['Seq.'])
             revision = 0
             try:
                 res = cxi.utils.makeSliceLabel(self.printer_id, self.printer_port, experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
             except:
+                et, ev, tb = sys.exc_info()
+                web.debug('%s' % str(traceback.format_exception(et, ev, tb)))
                 res = {}
                 res[self.CXI_RET] = 0
                 res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'

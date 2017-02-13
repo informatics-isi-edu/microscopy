@@ -183,13 +183,13 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Scan', 'Thumbnail', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[![]({{Thumbnail}}){width=400 height=400}](/chaise/viewer/#1/Microscopy:Scan/id={{#encode}}{{id}}{{/encode}}){target=_blank}","separator_markdown":"  "},
-	"compact" :{"markdown_pattern":"[![]({{Thumbnail}}){width=100 height=100}](/chaise/record/#1/Microscopy:Scan/id={{#encode}}{{id}}{{/encode}}){target=_blank}","separator_markdown":"  "}
+	"detailed" :{"markdown_pattern":"[![]({{{Thumbnail}}}){width=400 height=400}](/chaise/viewer/#1/Microscopy:Scan/id={{#encode}}{{id}}{{/encode}}){target=_blank}","separator_markdown":"  "},
+	"compact" :{"markdown_pattern":"[![]({{{Thumbnail}}}){width=100 height=100}](/chaise/record/#1/Microscopy:Scan/id={{#encode}}{{id}}{{/encode}}){target=_blank}","separator_markdown":"  "}
 }'),
 
 ('Microscopy', 'Scan', 'HTTP URL', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[**{{filename}}** ({{bytes}} Bytes)]({{HTTP URL}})","separator_markdown":"\n\n"}
+	"detailed" :{"markdown_pattern":"[**{{{filename}}}** ({{bytes}} Bytes)]({{{HTTP URL}}})","separator_markdown":"\n\n"}
 }'),
 
 -- ('Microscopy', 'Scan', 'slide_id', 'tag:isrd.isi.edu,2016:column-display', 
@@ -202,14 +202,14 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/specimen/job?{{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/specimen/job?{{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
+	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/specimen/job?{{{Label}}}){.btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
+	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/specimen/job?{{{Label}}}){.btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
 }'),
 
 ('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/slide/job?{{Label}}){download .btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/slide/job?{{Label}}){download .btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
+	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/slide/job?{{{Label}}}){.btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
+	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/slide/job?{{{Label}}}){.btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
 }')
 
 -- ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
@@ -385,7 +385,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 
 ('Microscopy', 'gene', 'tag:isrd.isi.edu,2016:table-display', 
 '{
-	"compact": {"row_markdown_pattern":"**{{term}}**{.vocab}","separator_markdown":" "}
+	"compact": {"row_markdown_pattern":"**{{{term}}}**{.vocab}","separator_markdown":" "}
 }'),
 
 
@@ -406,7 +406,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 
 ('Microscopy', 'probe', 'tag:isrd.isi.edu,2016:table-display', 
 '{
-	"compact": {"row_markdown_pattern":"**{{term}}**{.vocab}","separator_markdown":" "}
+	"compact": {"row_markdown_pattern":"**{{{term}}}**{.vocab}","separator_markdown":" "}
 }'),
 
 
@@ -635,7 +635,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Slide', 'ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Slide ID"}'),
 ('Microscopy', 'Experiment', 'ID', 'tag:misd.isi.edu,2015:display', '{"name" : "Experiment ID"}'),
 ('Microscopy', 'Scan', 'HTTP URL', 'tag:misd.isi.edu,2015:display', '{"name" : "Download Link"}'),
-('Microscopy', 'CIRM_Resources', 'Data Type', 'tag:isrd.isi.edu,2016:column-display','{"compact":{"markdown_pattern":"[{{Data Type}}](/chaise/search/#1/{{#encode}}{{{Schema}}}{{/encode}}:{{#encode}}{{{Table}}}{{/encode}})"}}')
+('Microscopy', 'CIRM_Resources', 'Data Type', 'tag:isrd.isi.edu,2016:column-display','{"compact":{"markdown_pattern":"[{{{Data Type}}}](/chaise/search/#1/{{#encode}}{{{Schema}}}{{/encode}}:{{#encode}}{{{Table}}}{{/encode}})"}}')
 ;
 
 select _ermrest.model_change_event();

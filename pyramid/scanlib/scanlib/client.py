@@ -217,7 +217,7 @@ class ErmrestClient (object):
         if not os.path.exists(outdir):
             os.makedirs(outdir)
         shutil.copyfile('%s/%s/%s/0/0_0.jpg' % (self.dzi, scan_id, channels[0]), '%s/%s.jpg' % (outdir, scan_id))
-        thumbnail = '/thumbnails/%s/%s.jpg' % (slide_id, scan_id)
+        thumbnail = '/thumbnails/%s/%s.jpg' % (urllib.quote(slide_id, safe=''), urllib.quote(scan_id, safe=''))
         urls = []
         for channel in channels:
             urls.append('url=/data/%s/%s/ImageProperties.xml' % (scan_id, channel))
@@ -360,7 +360,7 @@ class ErmrestClient (object):
                    'Acquisition Date': mdate,
                    'DZI': '/%s?%s' % (self.viewer, urls),
                    'uri': '/%s?%s' % (self.viewer, urls),
-                   'HTTP URL': '%s/%s/%s/%s-%d.czi' % (self.hatrac, self.namespace, slideId, slideId, disambiguator),
+                   'HTTP URL': '%s/%s/%s/%s-%d.czi' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(slideId, safe=''), disambiguator),
                    "czi2dzi": 'success'
                    }
             for col in self.metadata:

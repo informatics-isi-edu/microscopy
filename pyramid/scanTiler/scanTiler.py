@@ -192,6 +192,13 @@ def load(config_filename):
 try:
     if len(sys.argv) < 2:
         raise
+    try:
+        f = open('/home/cirmusc/log/tiles.lock', 'r')
+        # an hourly process is already in progress
+        sys.exit(0)
+    except:
+        f = open('/home/cirmusc/log/tiles.lock', 'w')
+        f.close()
     config_filename = sys.argv[1]
     client = load(config_filename)
     if client:
@@ -199,6 +206,7 @@ try:
             client.start()
         except:
             pass
+    os.remove('/home/cirmusc/log/tiles.lock')
 except:
     sys.stderr.write('\nusage: scan2dzi.py config-file\n\n')
     sys.exit(1)

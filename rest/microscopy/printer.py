@@ -22,6 +22,7 @@ import json
 import cxi
 import sys
 import traceback
+import urllib
 
 html = '''
 <!doctype html>
@@ -75,6 +76,37 @@ html = '''
 </html>
 '''
 
+print_label_html = '''
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+    <title>Microscopy</title>
+    <link rel="stylesheet" type="text/css" href="/chaise/styles/vendor/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/chaise/styles/ermrest.css">
+    <link rel="stylesheet" type="text/css" href="/chaise/styles/app.css">
+</head>
+<body>
+        <table style="position: absolute; width: 100%%; height: 100%%;">
+            <tbody>
+                <tr>
+                    <td height="35" style="text-align: center;">%s</td>
+                </tr>
+                <tr>
+                    <td height="20" style="vertical-align: bottom; padding-top: 2%%; padding-bottom: 0%%;">
+                        <a class="btn btn-primary" style="display: block;" href="/chaise/PrintLabel.html?label=/microscopy/printer/%s/job?%s">OK</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+</body>
+</html>
+'''
+
 class Printer:
     def __init__(self):
         self.uri = 'http://purl.org/usc-microscopy'
@@ -100,6 +132,12 @@ class Printer:
         for key in res.keys():
             message = '%s\n\t\t\t\t\t %s: %s<br/>' % (message, str(key), str(res[key]))
         return html % (command, message)
+        
+    def getPrintLabelHTML(self, res, entity_type, label):
+        message = res[self.CXI_MSG]
+        #for key in res.keys():
+        #    message = '%s%s: %s<br/>' % (message, str(key), str(res[key]))
+        return print_label_html % (message, entity_type, label)
         
 class PrintControl (Printer):
     
@@ -192,11 +230,15 @@ class PrintJob (Printer):
     def GET(self, entity):
         self.setPrinter(entity, (None, None))
         params = web.input()
+        #web.debug(params)
         response = []
+        label = []
         if entity.lower() == 'specimen':
             command = 'Print Specimen Label'
+            entity_type = 'specimen'
         else:
             command = 'Print Slide Label'
+            entity_type = 'slide'
         if entity == 'specimen':
             id = params['ID']
             section_date = params['Section Date']
@@ -204,7 +246,14 @@ class PrintJob (Printer):
             initials = params['Initials']
             disambiguator = params['Disambiguator']
             comment = params['Comment']
+            label.append('%s=%s' % (urllib.quote('ID', safe=''), urllib.quote(id, safe='')))
+            label.append('%s=%s' % (urllib.quote('Section Date', safe=''), urllib.quote(section_date, safe='')))
+            label.append('%s=%s' % (urllib.quote('Sample Name', safe=''), urllib.quote(sample_name, safe='')))
+            label.append('%s=%s' % (urllib.quote('Initials', safe=''), urllib.quote(initials, safe='')))
+            label.append('%s=%s' % (urllib.quote('Disambiguator', safe=''), urllib.quote(disambiguator, safe='')))
+            label.append('%s=%s' % (urllib.quote('Comment', safe=''), urllib.quote(comment, safe='')))
             try:
+                #res = {'Return value': 0, 'Return Message': 'Success (Test)'}
                 res = cxi.utils.makeBoxLabel(self.printer_id, self.printer_port, section_date, sample_name, initials, disambiguator, self.uri, id, comment)
             except:
                 et, ev, tb = sys.exc_info()
@@ -222,7 +271,15 @@ class PrintJob (Printer):
             initials = params['Initials']
             sequence_num = int(params['Seq.'])
             revision = 0
+            label.append('%s=%s' % (urllib.quote('ID', safe=''), urllib.quote(id, safe='')))
+            label.append('%s=%s' % (urllib.quote('Experiment ID', safe=''), urllib.quote(experiment, safe='')))
+            label.append('%s=%d' % (urllib.quote('Seq.', safe=''), sequence_num))
+            label.append('%s=%s' % (urllib.quote('Experiment Date', safe=''), urllib.quote(experiment_date, safe='')))
+            label.append('%s=%s' % (urllib.quote('Sample Name', safe=''), urllib.quote(sample_name, safe='')))
+            label.append('%s=%s' % (urllib.quote('Experiment Description', safe=''), urllib.quote(experiment_description, safe='')))
+            label.append('%s=%s' % (urllib.quote('Initials', safe=''), urllib.quote(initials, safe='')))
             try:
+                #res = {'Return value': 0, 'Return Message': 'Success (Test)'}
                 res = cxi.utils.makeSliceLabel(self.printer_id, self.printer_port, experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
             except:
                 et, ev, tb = sys.exc_info()
@@ -234,7 +291,7 @@ class PrintJob (Printer):
                     
         #return json.dumps(response)
         web.header('Content-Type', 'text/html')
-        return self.getHTML(command, res)
+        return self.getPrintLabelHTML(res, entity_type, '&'.join(label))
     
     def POST(self, entity):
         response = []

@@ -200,16 +200,28 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 -- ('Microscopy', 'probe', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 -- ('Microscopy', 'gene', 'term', 'tag:isrd.isi.edu,2016:column-display', '{"compact" :{"markdown_pattern":"**{{term}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),
 
+-- ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
+-- '{
+-- 	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/specimen/job?{{{Label}}}){.btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
+-- 	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/specimen/job?{{{Label}}}){.btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
+-- }'),
+
+-- ('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
+-- '{
+-- 	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/slide/job?{{{Label}}}){.btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
+-- 	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/slide/job?{{{Label}}}){.btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
+-- }')
+
 ('Microscopy', 'Specimen', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/specimen/job?{{{Label}}}){.btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/specimen/job?{{{Label}}}){.btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
+	"detailed": {"markdown_pattern": ":::iframe [](/chaise/PrintLabel.html?label=/microscopy/printer/specimen/job?{{{Label}}}){height=75 width=150 style=\"border-style: none; border-color: rgb(153, 153, 153);\" .iframe} \n:::"},
+	"compact" : {"markdown_pattern": ":::iframe [](/chaise/PrintLabel.html?label=/microscopy/printer/specimen/job?{{{Label}}}){height=75 width=150 style=\"border-style: none; border-color: rgb(153, 153, 153);\" .iframe} \n:::"}
 }'),
 
 ('Microscopy', 'Slide', 'Label', 'tag:isrd.isi.edu,2016:column-display', 
 '{
-	"detailed" :{"markdown_pattern":"[**Print Label**](/microscopy/printer/slide/job?{{{Label}}}){.btn .btn-primary target=_blank}","separator_markdown":"\n\n"},
-	"compact" :{"markdown_pattern":"{{#Label}}[**Print Label**](/microscopy/printer/slide/job?{{{Label}}}){.btn .btn-primary target=_blank}{{/Label}}","separator_markdown":"\n\n"}
+	"detailed": {"markdown_pattern": ":::iframe [](/chaise/PrintLabel.html?label=/microscopy/printer/slide/job?{{{Label}}}){height=75 width=150 style=\"border-style: none; border-color: rgb(153, 153, 153);\" .iframe} \n:::"},
+	"compact":  {"markdown_pattern": ":::iframe [](/chaise/PrintLabel.html?label=/microscopy/printer/slide/job?{{{Label}}}){height=75 width=150 style=\"border-style: none; border-color: rgb(153, 153, 153);\" .iframe} \n:::"}
 }')
 
 -- ('Microscopy', 'Specimen', 'Species', 'tag:isrd.isi.edu,2016:column-display', '{"detailed" :{"markdown_pattern":"**{{Species}}**{style=color:darkblue;background-color:rgba(220,220,220,0.68);padding:7px;border-radius:10px;}","separator_markdown":" || "}}'),

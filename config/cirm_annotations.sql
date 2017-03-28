@@ -138,6 +138,8 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'age', 'facetOrder', '3'),
 ('Microscopy', 'Scan', 'gene', 'facetOrder', '4'),
 ('Microscopy', 'Scan', 'probe', 'facetOrder', '5'),
+('Microscopy', 'Scan', 'Experiment Type', 'facetOrder', '6'),
+('Microscopy', 'Scan', 'Probes', 'comment', '["text"]'),
 ('Microscopy', 'Scan', 'Microscope', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Camera', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Objective', 'comment', '["hidden"]'),
@@ -367,7 +369,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
 	"compact": ["Thumbnail", "accession_number", "species", "tissue", "gene", "age", "submitter", "Acquisition Date"],
-	"detailed": ["Thumbnail", "HTTP URL", ["Microscopy", "Scan_Slide ID_fkey"], "Acquisition Date", "submitter", ["Microscopy", "Scan_species_fkey"], ["Microscopy", "Scan_tissue_fkey"], ["Microscopy", "Scan_gene_fkey"], ["Microscopy", "Scan_gender_fkey"], "age", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time"],
+	"detailed": ["Thumbnail", "HTTP URL", ["Microscopy", "Scan_Slide ID_fkey"], "Acquisition Date", "submitter", ["Microscopy", "Scan_species_fkey"], ["Microscopy", "Scan_tissue_fkey"], ["Microscopy", "Scan_gene_fkey"], ["Microscopy", "Scan_gender_fkey"], ["Microscopy", "Scan_Experiment Type_fkey"], "Probes", "age", "Objective", "Channels", "Channel Name", "Contrast Method", "Light Source Intensity", "Exposure Time"],
 	"entry/edit": ["submitter", "species", "tissue", "gene", "gender", "age"],
 	"entry/create": ["submitter", "species", "tissue", "gene", "gender", "age"]
 }'),

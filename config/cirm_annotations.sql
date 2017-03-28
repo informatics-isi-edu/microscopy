@@ -139,7 +139,7 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'Scan', 'gene', 'facetOrder', '4'),
 ('Microscopy', 'Scan', 'probe', 'facetOrder', '5'),
 ('Microscopy', 'Scan', 'Experiment Type', 'facetOrder', '6'),
-('Microscopy', 'Scan', 'Probes', 'comment', '["text"]'),
+('Microscopy', 'Scan', 'Probes', 'comment', '["text", "unsortable"]'),
 ('Microscopy', 'Scan', 'Microscope', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Camera', 'comment', '["hidden"]'),
 ('Microscopy', 'Scan', 'Objective', 'comment', '["hidden"]'),

@@ -18,6 +18,26 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ('Microscopy', 'User', 'Initials', 'comment', '["top"]'),
 ('Microscopy', 'User', 'Full Name', 'comment', '["top"]'),
 
+('Microscopy', 'experiment_comments', 'ID', 'comment', '["hidden"]'),
+('Microscopy', 'experiment_comments', 'Experiment ID', 'comment', '["hidden"]'),
+('Microscopy', 'experiment_comments', 'User', 'comment', '["hidden"]'),
+('Microscopy', 'experiment_comments', 'Comment', 'comment', '["text"]'),
+
+('Microscopy', 'scan_comments', 'ID', 'comment', '["hidden"]'),
+('Microscopy', 'scan_comments', 'Scan id', 'comment', '["hidden"]'),
+('Microscopy', 'scan_comments', 'User', 'comment', '["hidden"]'),
+('Microscopy', 'scan_comments', 'Comment', 'comment', '["text"]'),
+
+('Microscopy', 'slide_comments', 'ID', 'comment', '["hidden"]'),
+('Microscopy', 'slide_comments', 'Slide ID', 'comment', '["hidden"]'),
+('Microscopy', 'slide_comments', 'User', 'comment', '["hidden"]'),
+('Microscopy', 'slide_comments', 'Comment', 'comment', '["text"]'),
+
+('Microscopy', 'specimen_comments', 'ID', 'comment', '["hidden"]'),
+('Microscopy', 'specimen_comments', 'Specimen ID', 'comment', '["hidden"]'),
+('Microscopy', 'specimen_comments', 'User', 'comment', '["hidden"]'),
+('Microscopy', 'specimen_comments', 'Comment', 'comment', '["text"]'),
+
 ('Microscopy', 'age_stage', 'code', 'comment', '["hidden"]'),
 ('Microscopy', 'age_stage', 'description', 'comment', '["hidden"]'),
 ('Microscopy', 'age_stage', 'id', 'comment', '["dataset", "hidden"]'),
@@ -194,6 +214,30 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 	"detailed" :{"markdown_pattern":"[**{{{filename}}}** ({{bytes}} Bytes)]({{{HTTP URL}}})","separator_markdown":"\n\n"}
 }'),
 
+('Microscopy', 'experiment_comments', 'User', 'tag:isrd.isi.edu,2016:column-display', 
+'{
+	"compact" :{"markdown_pattern":"{{{_User.full_name}}}"},
+	"detailed" :{"markdown_pattern":"{{{_User.full_name}}}"}
+}'),
+
+('Microscopy', 'scan_comments', 'User', 'tag:isrd.isi.edu,2016:column-display', 
+'{
+	"compact" :{"markdown_pattern":"{{{_User.full_name}}}"},
+	"detailed" :{"markdown_pattern":"{{{_User.full_name}}}"}
+}'),
+
+('Microscopy', 'slide_comments', 'User', 'tag:isrd.isi.edu,2016:column-display', 
+'{
+	"compact" :{"markdown_pattern":"{{{_User.full_name}}}"},
+	"detailed" :{"markdown_pattern":"{{{_User.full_name}}}"}
+}'),
+
+('Microscopy', 'specimen_comments', 'User', 'tag:isrd.isi.edu,2016:column-display', 
+'{
+	"compact" :{"markdown_pattern":"{{{_User.full_name}}}"},
+	"detailed" :{"markdown_pattern":"{{{_User.full_name}}}"}
+}'),
+
 -- ('Microscopy', 'Scan', 'slide_id', 'tag:isrd.isi.edu,2016:column-display', 
 -- '{
 --	"detailed" :{"markdown_pattern":"[**{{slide_id}}** ](/chaise/record/#1/Microscopy:Slide/ID={{slide_id}})","separator_markdown":"\n\n"}
@@ -319,6 +363,11 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 	"compact": ["code", "term"]
 }'),
 
+('Microscopy', 'experiment_comments', 'comment', '["association"]'),
+('Microscopy', 'scan_comments', 'comment', '["association"]'),
+('Microscopy', 'slide_comments', 'comment', '["association"]'),
+('Microscopy', 'specimen_comments', 'comment', '["association"]'),
+
 ('Microscopy', 'image_grade_code', 'comment', '["association"]'),
 ('Microscopy', 'annotation', 'comment', '["association"]'),
 --('Microscopy', 'tissue', 'comment', '["association"]'),
@@ -377,24 +426,52 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Specimen', 'description', '{"sortedBy": "Section Date", "sortOrder": "desc", "top_columns": ["ID", "Species", "Tissue", "Age Value", "Age Unit", "Gene", "Initials", "Specimen Identifier", "Section Date", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Specimen', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age", "Initials", "Section Date", "Specimen Identifier", "Comment", "Number of Slides", "Number of Scans", "Label"],
-	"compact": ["ID", "Species", "Tissue", "Age", "Initials", "Section Date", "Specimen Identifier", "Comment", "Number of Slides", "Number of Scans", "Label"],
-	"entry": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age Value",  ["Microscopy", "Specimen_Age Unit_fkey"], ["Microscopy", "Specimen_Gene_fkey"], ["Microscopy", "Specimen_Initials_fkey"], "Section Date", "Specimen Identifier", "Comment"]
+	"detailed": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age", "Initials", "Section Date", "Specimen Identifier", "Number of Slides", "Number of Scans", "Label"],
+	"compact": ["ID", "Species", "Tissue", "Age", "Initials", "Section Date", "Specimen Identifier", "Number of Slides", "Number of Scans", "Label"],
+	"entry": [["Microscopy", "Specimen_Species_fkey"], ["Microscopy", "Specimen_Tissue_fkey"], "Age Value",  ["Microscopy", "Specimen_Age Unit_fkey"], ["Microscopy", "Specimen_Gene_fkey"], ["Microscopy", "Specimen_Initials_fkey"], "Section Date", "Specimen Identifier"]
 }'),
 
-('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "sortOrder": "desc", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Comment", "Number of Slides", "Number of Scans"]}'),
+('Microscopy', 'Experiment', 'description', '{"sortedBy": "Experiment Date", "sortOrder": "desc", "top_columns": ["ID", "Initials", "Experiment Date", "Experiment Type", "Probe", "Number of Slides", "Number of Scans"]}'),
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["Initials", "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], "Comment", "Number of Slides", "Number of Scans"],
-	"compact": ["ID", "Initials", "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], "Probe", "Comment", "Number of Slides", "Number of Scans"],
-	"entry": [["Microscopy", "Experiment_Initials_fkey"], "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], ["Microscopy", "Experiment_Probe_fkey"], "Comment"]
+	"detailed": ["Initials", "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], "Number of Slides", "Number of Scans"],
+	"compact": ["ID", "Initials", "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], "Probe", "Number of Slides", "Number of Scans"],
+	"entry": [["Microscopy", "Experiment_Initials_fkey"], "Experiment Date", ["Microscopy", "Experiment_Experiment Type_fkey"], ["Microscopy", "Experiment_Probe_fkey"]]
 }'),
 
 ('Microscopy', 'Slide', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
-	"detailed": ["Seq.", ["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment", "Number of Scans", "Label"],
-	"compact": ["ID", "Seq.", ["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Comment", "Number of Scans", "Label"],
-	"entry": [["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Seq.", "Comment"]
+	"detailed": ["Seq.", ["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Number of Scans", "Label"],
+	"compact": ["ID", "Seq.", ["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Number of Scans", "Label"],
+	"entry": [["Microscopy", "Slide_Box ID_fkey"], ["Microscopy", "Slide_Experiment ID_fkey"], "Seq."]
+}'),
+
+('Microscopy', 'experiment_comments', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"detailed": [["Microscopy", "experiment_comments_Experiment ID_fkey"], "User", "Comment"],
+	"compact": [["Microscopy", "experiment_comments_Experiment ID_fkey"], "User", "Comment"],
+	"entry": [["Microscopy", "experiment_comments_Experiment ID_fkey"], "Comment"]
+}'),
+
+('Microscopy', 'scan_comments', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"detailed": [["Microscopy", "scan_comments_Scan id_fkey"], "User", "Comment"],
+	"compact": [["Microscopy", "scan_comments_Scan id_fkey"], "User", "Comment"],
+	"entry": [["Microscopy", "scan_comments_Scan id_fkey"], "Comment"]
+}'),
+
+('Microscopy', 'slide_comments', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"detailed": [["Microscopy", "slide_comments_Slide ID_fkey"], "User", "Comment"],
+	"compact": [["Microscopy", "slide_comments_Slide ID_fkey"], "User", "Comment"],
+	"entry": [["Microscopy", "slide_comments_Slide ID_fkey"], "Comment"]
+}'),
+
+('Microscopy', 'specimen_comments', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"detailed": [["Microscopy", "specimen_comments_Specimen ID_fkey"], "User", "Comment"],
+	"compact": [["Microscopy", "specimen_comments_Specimen ID_fkey"], "User", "Comment"],
+	"entry": [["Microscopy", "specimen_comments_Specimen ID_fkey"], "Comment"]
 }'),
 
 ('Microscopy', 'gene', 'tag:isrd.isi.edu,2016:table-display', 
@@ -406,6 +483,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
 '{
 	"detailed": [
+		["Microscopy", "scan_comments_Scan id_fkey"]
 	]
 }'),
 
@@ -413,6 +491,7 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 '{
 	"detailed": [
 		["Microscopy", "specimen_gene_Specimen ID_fkey"],
+		["Microscopy", "specimen_comments_Specimen ID_fkey"],
 		["Microscopy", "Scan_Specimen ID_fkey"],
 		["Microscopy", "Slide_Box ID_fkey"]
 	]
@@ -424,10 +503,27 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 }'),
 
 
+('Microscopy', 'experiment_comments', 'tag:isrd.isi.edu,2016:table-display', '{
+	"row_name" :{"row_markdown_pattern":"Experiment"}
+}'),
+
+('Microscopy', 'scan_comments', 'tag:isrd.isi.edu,2016:table-display', '{
+	"row_name" :{"row_markdown_pattern":"Scan"}
+}'),
+
+('Microscopy', 'slide_comments', 'tag:isrd.isi.edu,2016:table-display', '{
+	"row_name" :{"row_markdown_pattern":"Slide"}
+}'),
+
+('Microscopy', 'specimen_comments', 'tag:isrd.isi.edu,2016:table-display', '{
+	"row_name" :{"row_markdown_pattern":"Specimen"}
+}'),
+
 ('Microscopy', 'Experiment', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
 '{
 	"detailed": [
 		["Microscopy", "experiment_probe_Experiment ID_fkey"],
+		["Microscopy", "experiment_comments_Experiment ID_fkey"],
 		["Microscopy", "Scan_Experiment ID_fkey"],
 		["Microscopy", "Slide_Experiment ID_fkey"]
 	]
@@ -544,6 +640,20 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ;
 
 INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri) VALUES
+('Microscopy', 'experiment_comments', 'User', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'experiment_comments', 'Experiment ID', 'tag:isrd.isi.edu,2016:immutable'),
+
+('Microscopy', 'scan_comments', 'User', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'scan_comments', 'Scan id', 'tag:isrd.isi.edu,2016:immutable'),
+
+('Microscopy', 'slide_comments', 'User', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'slide_comments', 'Slide ID', 'tag:isrd.isi.edu,2016:immutable'),
+
+('Microscopy', 'specimen_comments', 'User', 'tag:isrd.isi.edu,2016:generated'),
+('Microscopy', 'specimen_comments', 'Specimen ID', 'tag:isrd.isi.edu,2016:immutable')
+;
+
+INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri) VALUES
 ('Microscopy', 'Specimen', 'Gene', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Specimen', 'Age Unit', 'tag:isrd.isi.edu,2016:immutable'),
 ('Microscopy', 'Specimen', 'Age Value', 'tag:isrd.isi.edu,2016:immutable'),
@@ -628,6 +738,10 @@ INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_na
 ;
 
 INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'experiment_comments', 'tag:misd.isi.edu,2015:display', '{"name" : "Comments"}'),
+('Microscopy', 'scan_comments', 'tag:misd.isi.edu,2015:display', '{"name" : "Comments"}'),
+('Microscopy', 'slide_comments', 'tag:misd.isi.edu,2015:display', '{"name" : "Comments"}'),
+('Microscopy', 'specimen_comments', 'tag:misd.isi.edu,2015:display', '{"name" : "Comments"}'),
 ('Microscopy', 'CIRM_Resources', 'tag:misd.isi.edu,2015:display', '{"name" : "CIRM Resources"}'),
 ('Microscopy', 'CIRM_Resources', 'tag:isrd.isi.edu,2016:recordlink', '{"mode": "tag:isrd.isi.edu,2016:recordlink/fragmentfilter", "resource": "search/"}'),
 ('Microscopy', 'CIRM_Resources', 'tag:isrd.isi.edu,2016:visible-columns', '{"compact" : ["Data Type", "Number Of Entries", "Last Updated"]}')

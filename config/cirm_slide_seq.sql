@@ -27,12 +27,12 @@ CREATE FUNCTION slide_trigger_before() RETURNS trigger
 		IF (NEW."Seq." IS NULL) THEN
 			RAISE EXCEPTION 'Seq. cannot be NULL';
 		END IF;
-		IF (char_length('' || NEW."Seq.") > 6) THEN
-			RAISE EXCEPTION 'Seq. cannot have more than 6 digits';
+		IF (char_length('' || NEW."Seq.") > 3) THEN
+			RAISE EXCEPTION 'Seq. cannot have more than 3 digits';
 		END IF;
 		seq := to_number('' || NEW."Seq.", '999999.99');
 		IF NEW."ID" IS NULL THEN
-			NEW."ID" := NEW."Specimen ID" || '-' || substring(('000000' || seq) FROM '......$');
+			NEW."ID" := NEW."Specimen ID" || '-' || substring(('00' || seq) FROM '...$') || '-00';
 		END IF;
 		IF NEW."Experiment ID" IS NOT NULL THEN
 			SELECT * INTO row_experiment FROM "Microscopy"."Experiment" WHERE "ID" = NEW."Experiment ID";

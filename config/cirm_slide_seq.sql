@@ -3,9 +3,9 @@ BEGIN;
 SET search_path = "Microscopy";
 
 --
--- Currently, the last 2 digits from the Seq. are used, and a Revision with the constant value '-000' is appended
--- Allow using 6 digits for the Seq. and exclude the Revision
--- The Seq. will be prepended with '0' such that the length will always be 6
+-- Currently, the last 2 digits from the Seq. are used, and a Revision with the constant value '000' is appended
+-- Allow using 3 digits for the Seq. and the constant value '00' for the Revision
+-- The Seq. will be prepended with '0' such that the length will always be 3
 --
 
 DROP FUNCTION slide_trigger_before() CASCADE;

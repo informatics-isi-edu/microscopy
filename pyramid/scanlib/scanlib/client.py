@@ -426,7 +426,7 @@ class ErmrestClient (object):
         url = '%s/%s/%s/%s-%d.czi;versions' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(slideId, safe=''), disambiguator)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
-        srcFile = '%s%s'  % (self.czi, json.loads(resp.read())[0])
+        srcFile = urllib.unquote('%s%s'  % (self.czi, json.loads(resp.read())[0]))
         shutil.copyfile(srcFile, cziFile)
         return cziFile
 

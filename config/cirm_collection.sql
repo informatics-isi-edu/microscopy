@@ -45,6 +45,11 @@ DO UPDATE SET annotation_value = EXCLUDED.annotation_value;
 
 -- ...add to visible columns
 INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'Collection', 'tag:isrd.isi.edu,2016:visible-columns', 
+'{
+	"entry/edit": ["Creation Timestamp", "Title", "Description"]
+}'),
+
 ('Microscopy', 'Scan', 'tag:isrd.isi.edu,2016:visible-foreign-keys', 
 '{
   "detailed": [

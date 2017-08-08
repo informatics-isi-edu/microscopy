@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS "Collection" (
     "ID" serial PRIMARY KEY,
     "Created By" jsonb DEFAULT _ermrest.current_client_obj(),
     "Creation Timestamp" timestamptz DEFAULT NOW(),
-    "Title" text,
+    "Title" text NOT NULL,
     "Description" public.markdown
 );
 
@@ -58,6 +58,10 @@ INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation
 ]}'
 )
 ON CONFLICT (schema_name, table_name, annotation_uri) DO UPDATE SET annotation_value = EXCLUDED.annotation_value;
+
+INSERT INTO _ermrest.model_column_annotation (schema_name, table_name, column_name, annotation_uri, annotation_value) VALUES
+('Microscopy', 'Collection', 'Created By', 'comment', '["hidden"]')
+ON CONFLICT (schema_name, table_name, column_name, annotation_uri) DO UPDATE SET annotation_value = EXCLUDED.annotation_value;
 
 SELECT _ermrest.model_change_event();
 

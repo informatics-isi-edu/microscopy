@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS "Collection" (
     "ID" serial PRIMARY KEY,
     "Created By" jsonb DEFAULT _ermrest.current_client_obj(),
     "Creation Timestamp" timestamptz DEFAULT NOW(),
-    "Title" text NOT NULL UNIQUE,
+    "Title" text NOT NULL,
     "Description" public.markdown
 );
 
@@ -47,6 +47,7 @@ DO UPDATE SET annotation_value = EXCLUDED.annotation_value;
 INSERT INTO _ermrest.model_table_annotation (schema_name, table_name, annotation_uri, annotation_value) VALUES
 ('Microscopy', 'Collection', 'tag:isrd.isi.edu,2016:visible-columns', 
 '{
+	"compact": ["Title", "Created By", "Creation Timestamp", "Description"],
 	"detailed": ["ID", "Created By", "Creation Timestamp", "Title", "Description"],
 	"entry/edit": ["Title", "Description"]
 }'),

@@ -121,7 +121,10 @@ class LazyCziConverter (object):
         # HACK: try to configure a tile cache for row-major tile grid traversals
         # 1. assume we will output tiles no larger than current tile size
         # 2. assume that up to 3 tile rows might be active due to overlapping source tiles
-        overlap_factor = max([float(e.text) for e in self._fo.metadata.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/SubDimensionSetups/RegionsSetup/SampleHolder/Overlap') ])
+        try:
+            overlap_factor = max([float(e.text) for e in self._fo.metadata.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/SubDimensionSetups/RegionsSetup/SampleHolder/Overlap') ])
+        except:
+            overlap_factor = max([float(e.text) for e in self._fo.metadata.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/TilesSetup/SampleHolder/Overlap') ])
 
         row_tile_count = math.ceil(self._bbox_zeroed[1][1] / (self._tile_size[1] - self._tile_size[1] * overlap_factor))
         self._tile_cache_size = row_tile_count * 3 + 1

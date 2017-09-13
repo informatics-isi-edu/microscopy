@@ -260,12 +260,19 @@ class ErmrestClient (object):
     def start(self):
         self.connect()
         ready = False
+        bftools_only = os.getenv('BFTOOLS_ONLY', 'f').lower() in ['t', 'true']
         while ready == False:
             try:
                 if self.namespace == 'resources/histological_images':
-                    self.processHistologicalImages()
+                    if bftools_only:
+                        self.bftoolsHistologicalImages()
+                    else:
+                        self.processHistologicalImages()
                 else:
-                    self.processScans()
+                    if bftools_only:
+                        self.bftoolsScans()
+                    else:
+                        self.processScans()
                 ready = True
                 #time.sleep(self.timeout)
             except:
@@ -378,6 +385,60 @@ class ErmrestClient (object):
             #self.sendMail('SUCCEEDED Tiles', 'The tiles directory for the slide id "%s" and scan id "%s" was created.\n' % (slideId, scanId))
         self.logger.debug('Ended Scans Processing.') 
         
+    def bftoolsScans(self):
+        url = '%s/entity/Scan/!bytes::null::&Channels::null::&czi2dzi=success' % (self.path)
+        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        resp = self.send_request('GET', url, '', headers, False)
+        scans = json.loads(resp.read())
+        scanids = []
+        for scan in scans:
+            scanids.append((scan['slide_id'], scan['id'], scan['HTTP URL']))
+                
+        self.logger.debug('Extracting metadata for %d scan(s).' % (len(scanids))) 
+        for slideId,scanId,file_url in scanids:
+            f = self.getCziScanFile(slideId, scanId, file_url)
+            self.logger.debug('Extracting metadata for slide "%s", scan "%d"' % (slideId, scanId)) 
+            bioformatsClient = BioformatsClient(showinf=self.showinf, \
+                                                czirules=self.czirules, \
+                                                cziFile=f, \
+                                                logger=self.logger)
+            columns = []
+            try:
+                metadata = bioformatsClient.getMetadata()
+                returncode = 0
+            except XMLSyntaxError:
+                et, ev, tb = sys.exc_info()
+                self.logger.error('got unexpected exception "%s"' % str(ev))
+                self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+                self.sendMail('FAILURE Tiles: XMLSyntaxError', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+                metadata = {}
+                returncode = 1
+                    
+            if returncode == 0:
+                self.logger.debug('Metadata: "%s"' % str(metadata)) 
+                os.remove('temp.xml')
+                columns.extend(self.metadata)
+            
+            os.remove(f)
+            
+            if returncode == 1:
+                continue
+            
+            columns = ','.join([urllib.quote(col, safe='') for col in columns])
+            url = '%s/attributegroup/Scan/id;%s' % (self.path, columns)
+            body = []
+            obj = {'id': scanId
+                   }
+            for col in self.metadata:
+                if col in metadata and metadata[col] != None:
+                    obj[col] = metadata[col]
+            body.append(obj)
+            headers = {'Content-Type': 'application/json'}
+            resp = self.send_request('PUT', url, json.dumps(body), headers, False)
+            resp.read()
+            self.logger.debug('SUCCEEDED extracted metadata for the slide id "%s" and scan id "%d".' % (slideId, scanId)) 
+        self.logger.debug('Ended Extracting Metadata for Scans.') 
+        
     def reportFailure(self, slideId, scanId, error_message):
         """
             Update the Scan table with the czi2dzi failure result.
@@ -429,6 +490,19 @@ class ErmrestClient (object):
             os.makedirs(outdir)
         url = '%s/%s/%s/%s-%d.czi;versions' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(slideId, safe=''), disambiguator)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        resp = self.send_request('GET', url, '', headers, False)
+        srcFile = urllib.unquote('%s%s'  % (self.czi, json.loads(resp.read())[0]))
+        shutil.copyfile(srcFile, cziFile)
+        return cziFile
+
+    def getCziScanFile(self, slideId, scanId, file_url):
+        cziFile = '%s/%s/%s-1.czi' % (self.data_scratch, self.namespace, slideId)
+        outdir = '%s/%s' % (self.data_scratch, self.namespace)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        url = '%s;versions' % (file_url)
+        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        self.logger.debug('getCziScanFile URL: "%s"' % (url))
         resp = self.send_request('GET', url, '', headers, False)
         srcFile = urllib.unquote('%s%s'  % (self.czi, json.loads(resp.read())[0]))
         shutil.copyfile(srcFile, cziFile)
@@ -611,4 +685,60 @@ class ErmrestClient (object):
             resp.read()
             self.logger.debug('SUCCEEDED created the image entry for the file "%s".' % (filename)) 
         self.logger.debug('Ended Slides Processing.') 
+        
+    def bftoolsHistologicalImages(self):
+        url = '%s/entity/Histological_Images:HE_Image/Channels::null::/Histological_Images:HE_Slide/!File_Bytes::null::&!Pyramid_URL::null::&Processing_Status=success' % (self.path)
+        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        resp = self.send_request('GET', url, '', headers, False)
+        slides = json.loads(resp.read())
+        slideids = []
+        for slide in slides:
+            slideids.append((slide['ID'], slide['Filename'], slide['File_URL'], slide['Name']))
+                
+        self.logger.debug('Extracting metadata for %d slides(s).' % (len(slideids))) 
+        for slideId,filename,file_url,name in slideids:
+            f = self.getHistologicalFile(filename, file_url)
+            self.logger.debug('Extracting metadata for filename "%s"' % (filename)) 
+            bioformatsClient = BioformatsClient(showinf=self.showinf, \
+                                                czirules=self.czirules, \
+                                                cziFile=f, \
+                                                logger=self.logger)
+            try:
+                metadata = bioformatsClient.getMetadata()
+                returncode = 0
+            except XMLSyntaxError:
+                et, ev, tb = sys.exc_info()
+                self.logger.error('got unexpected exception "%s"' % str(ev))
+                self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+                self.sendMail('FAILURE Tiles: XMLSyntaxError', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+                metadata = {}
+                returncode = 1
+                    
+            if returncode == 0:
+                self.logger.debug('Metadata: "%s"' % str(metadata)) 
+                os.remove('temp.xml')
+            
+            os.remove(f)
+            
+            if returncode == 1:
+                continue
+            
+            """
+            INSERT/UPDATE the image entry with the metadata
+            """
+            url = '%s/entity/Histological_Images:HE_Image' % self.path
+            body = []
+            obj = {}
+            obj['ID'] = slideId
+            obj['Name'] = name
+            obj['url'] = '/chaise/viewer/#2/Histological_Images:HE_Slide/ID=%d' % slideId
+            for col in self.metadata:
+                if col in metadata and metadata[col] != None:
+                    obj[col] = metadata[col]
+            body.append(obj)
+            headers = {'Content-Type': 'application/json'}
+            resp = self.send_request('PUT', url, json.dumps(body), headers, False)
+            resp.read()
+            self.logger.debug('SUCCEEDED created the image entry for the file "%s".' % (filename)) 
+        self.logger.debug('Ended Metadata Extracting.') 
         

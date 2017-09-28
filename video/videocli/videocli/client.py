@@ -300,21 +300,23 @@ class ErmrestClient (object):
             raise
         
     def processVideo(self):
-        url = '%s/entity/Download:File/!URI::null::&!File_Size::null::&File_Type=movie&Watermark_Status::null::@sort(%s::desc::)' % (self.path,urllib.quote('Last_Modified_Timestamp', safe=''))
+        url = '%s/entity/Immunofluorescence:Slide_Video/!Bytes::null::&Media_Type=video%2Fmp4&Processing_Status::null::@sort(%s::desc::)' % (self.path,urllib.quote('RMT', safe=''))
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         movies = json.loads(resp.read())
         movieids = []
         for movie in movies:
-            movieids.append((movie['Accession_ID'], movie['File_Name'], movie['URI'], movie['MD5']))
+            movieids.append((movie['Accession_ID'], movie['Name'], movie['RCT'], movie['MD5']))
                 
         self.logger.debug('Processing %d video(s).' % (len(movieids))) 
-        for movieId,fileName,uri,md5 in movieids:
+        for movieId,fileName,rct,md5 in movieids:
+            year = parse(rct).strftime("%Y")
+            uri = '/hatrac/resources/immunofluorescence/videos/%s/%s' % (year, md5)
             f = self.getMovieFile(fileName, uri)
             self.logger.debug('Adding watermark to the video "%s"' % (fileName))
             
             try:
-                args = [self.ffmpeg, '-y', '-i', f, '-i', self.watermark, '-filter_complex', 'overlay=10:10', '%s/%s' % (self.data_scratch, fileName)]
+                args = [self.ffmpeg, '-y', '-i', f, '-i', self.watermark, '-filter_complex', '"overlay=x=(main_w-overlay_w):y=0"', '%s/%s' % (self.data_scratch, fileName)]
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()
                 returncode = p.returncode
@@ -331,7 +333,7 @@ class ErmrestClient (object):
                 os.remove(f)
                 os.remove('%s/%s' % (self.data_scratch, fileName))
                 """
-                Update the File table with the failure result.
+                Update the Slide_Video table with the failure result.
                 """
                 self.reportFailure(movieId, 'error')
                 continue
@@ -364,18 +366,17 @@ class ErmrestClient (object):
                     os.remove(f)
                     continue
 
-            columns = ["URI","File_Size","MD5", "SHA256", "Watermark_Status"]
+            columns = ["URI","Bytes","MD5", "SHA256", "Processing_Status"]
             
             os.remove(f)
             columns = ','.join([urllib.quote(col, safe='') for col in columns])
-            url = '%s/attributegroup/Download:File/Accession_ID;%s' % (self.path, columns)
+            url = '%s/attributegroup/Immunofluorescence:Slide_Video/Accession_ID;%s' % (self.path, columns)
             body = []
             obj = {'Accession_ID': movieId,
-                   'URI': new_uri,
-                   'File_Size': file_size,
+                   'Bytes': file_size,
                    'MD5': new_md5,
                    'SHA256': new_sha256,
-                   "Watermark_Status": 'success'
+                   "Processing_Status": 'success'
                    }
             body.append(obj)
             headers = {'Content-Type': 'application/json'}
@@ -590,21 +591,21 @@ class ErmrestClient (object):
                 
     def reportFailure(self, movieId, error_message):
         """
-            Update the File table with the watermark failure result.
+            Update the Slide_Video table with the watermark failure result.
         """
         try:
-            columns = ["Watermark_Status"]
+            columns = ["Processing_Status"]
             columns = ','.join([urllib.quote(col, safe='') for col in columns])
-            url = '%s/attributegroup/Download:File/Accession_ID;%s' % (self.path, columns)
+            url = '%s/attributegroup/Immunofluorescence:Slide_Video/Accession_ID;%s' % (self.path, columns)
             body = []
             obj = {'Accession_ID': movieId,
-                   "Watermark_Status": '%s' % error_message
+                   "Processing_Status": '%s' % error_message
                    }
             body.append(obj)
             headers = {'Content-Type': 'application/json'}
             resp = self.send_request('PUT', url, json.dumps(body), headers, False)
             resp.read()
-            self.logger.debug('SUCCEEDED updated the File table for the movie Accession_ID "%s"  with the Watermark_Status result "%s".' % (movieId, error_message)) 
+            self.logger.debug('SUCCEEDED updated the Slide_Video table for the movie Accession_ID "%s"  with the Processing_Status result "%s".' % (movieId, error_message)) 
         except:
             et, ev, tb = sys.exc_info()
             self.logger.error('got unexpected exception "%s"' % str(ev))

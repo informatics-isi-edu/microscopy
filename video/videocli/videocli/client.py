@@ -300,23 +300,26 @@ class ErmrestClient (object):
             raise
         
     def processVideo(self):
-        url = '%s/entity/Immunofluorescence:Slide_Video/!Bytes::null::&Media_Type=video%2Fmp4&Processing_Status::null::@sort(%s::desc::)' % (self.path,urllib.quote('RMT', safe=''))
+        url = '%s/entity/Immunofluorescence:Slide_Video/!Bytes::null::&Media_Type=video%%2Fmp4&Raw_URI::null::&Processing_Status::null::' % (self.path)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         movies = json.loads(resp.read())
         movieids = []
         for movie in movies:
-            movieids.append((movie['Accession_ID'], movie['Name'], movie['RCT'], movie['MD5']))
+            movieids.append((movie['Accession_ID'], movie['Name'], movie['MD5'], movie['Identifier']))
                 
         self.logger.debug('Processing %d video(s).' % (len(movieids))) 
-        for movieId,fileName,rct,md5 in movieids:
-            year = parse(rct).strftime("%Y")
-            uri = '/hatrac/resources/immunofluorescence/videos/%s/%s' % (year, md5)
+        for movieId,fileName,md5,uri in movieids:
+            #year = parse(rct).strftime("%Y")
             f = self.getMovieFile(fileName, uri)
-            self.logger.debug('Adding watermark to the video "%s"' % (fileName))
+            if f == None:
+                self.reportFailure(movieId, 'error')
+                continue
+                
+            self.logger.debug('Transcoding and adding watermark to the video "%s"' % (fileName))
             
             try:
-                args = [self.ffmpeg, '-y', '-i', f, '-i', self.watermark, '-filter_complex', '"overlay=x=(main_w-overlay_w):y=0"', '%s/%s' % (self.data_scratch, fileName)]
+                args = [self.ffmpeg, '-y', '-i', f, '-i', self.watermark, '-filter_complex', 'overlay=x=(main_w-overlay_w):y=0', '%s/%s' % (self.data_scratch, fileName)]
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()
                 returncode = p.returncode
@@ -328,17 +331,22 @@ class ErmrestClient (object):
                 returncode = 1
             
             if returncode != 0:
-                self.logger.error('Can not add watermark to the "%s" file.\nstdoutdata: %s\nstderrdata: %s\n' % (fileName, stdoutdata, stderrdata)) 
-                self.sendMail('FAILURE Video', 'Can not add watermark to the "%s" file.\nstdoutdata: %s\nstderrdata: %s\n' % (fileName, stdoutdata, stderrdata))
+                self.logger.error('Can not transcode and add watermark to the "%s" file.\nstdoutdata: %s\nstderrdata: %s\n' % (fileName, stdoutdata, stderrdata)) 
+                self.sendMail('FAILURE Video', 'Can not transcode and add watermark to the "%s" file.\nstdoutdata: %s\nstderrdata: %s\n' % (fileName, stdoutdata, stderrdata))
                 os.remove(f)
-                os.remove('%s/%s' % (self.data_scratch, fileName))
+                try:
+                    os.remove('%s/%s' % (self.data_scratch, fileName))
+                except:
+                    et, ev, tb = sys.exc_info()
+                    self.logger.error('Can not remove file "%s/%s"\n%s"' % (self.data_scratch, fileName, str(ev)))
+                    self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
                 """
                 Update the Slide_Video table with the failure result.
                 """
                 self.reportFailure(movieId, 'error')
                 continue
                 
-            self.logger.debug('Uploading in hatrac the movie file "%s" with the watermark ' % (fileName)) 
+            self.logger.debug('Uploading in hatrac the transcoded movie file "%s" with the watermark ' % (fileName)) 
             newFile = '%s/%s' % (self.data_scratch, fileName)
             file_size = os.path.getsize(newFile)
             new_md5sum = self.md5sum(newFile, self.chunk_size)
@@ -366,13 +374,15 @@ class ErmrestClient (object):
                     os.remove(f)
                     continue
 
-            columns = ["URI","Bytes","MD5", "SHA256", "Processing_Status"]
+            columns = ["Identifier", "Raw_URI", "Bytes", "MD5", "SHA256", "Processing_Status"]
             
             os.remove(f)
             columns = ','.join([urllib.quote(col, safe='') for col in columns])
             url = '%s/attributegroup/Immunofluorescence:Slide_Video/Accession_ID;%s' % (self.path, columns)
             body = []
             obj = {'Accession_ID': movieId,
+                   'Identifier': new_uri,
+                   'Raw_URI': uri,
                    'Bytes': file_size,
                    'MD5': new_md5,
                    'SHA256': new_sha256,
@@ -382,8 +392,8 @@ class ErmrestClient (object):
             headers = {'Content-Type': 'application/json'}
             resp = self.send_request('PUT', url, json.dumps(body), headers, False)
             resp.read()
-            self.logger.debug('SUCCEEDED added the watermark to the "%s" file.' % (fileName)) 
-        self.logger.debug('Ended Adding Watermarkers.') 
+            self.logger.debug('SUCCEEDED updated the entry for the "%s" file.' % (fileName)) 
+        self.logger.debug('Ended Transcoding and Adding Watermarkers.') 
         
     """
     Upload a file.
@@ -591,7 +601,7 @@ class ErmrestClient (object):
                 
     def reportFailure(self, movieId, error_message):
         """
-            Update the Slide_Video table with the watermark failure result.
+            Update the Slide_Video table with the transcode/watermark failure result.
         """
         try:
             columns = ["Processing_Status"]
@@ -614,13 +624,20 @@ class ErmrestClient (object):
             
         
     def getMovieFile(self, fileName, uri):
-        movieFile = '%s/original_%s' % (self.data_scratch, fileName)
-        url = '%s;versions' % (uri)
-        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-        resp = self.send_request('GET', url, '', headers, False)
-        srcFile = urllib.unquote('%s%s'  % (self.video_resources, json.loads(resp.read())[0]))
-        shutil.copyfile(srcFile, movieFile)
-        return movieFile
+        try:
+            movieFile = '%s/original_%s' % (self.data_scratch, fileName)
+            url = '%s;versions' % (uri)
+            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            resp = self.send_request('GET', url, '', headers, False)
+            srcFile = urllib.unquote('%s%s'  % (self.video_resources, json.loads(resp.read())[0]))
+            shutil.copyfile(srcFile, movieFile)
+            return movieFile
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('Can not get video file "%s"\n"%s"' % (fileName, str(ev)))
+            self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+            self.sendMail('FAILURE Video: reportFailure ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+            return None
 
     """
     Get the base64 digest string like md5 utility would compute.

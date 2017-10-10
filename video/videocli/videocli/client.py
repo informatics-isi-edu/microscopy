@@ -269,7 +269,7 @@ class ErmrestClient (object):
                     s = smtplib.SMTP(self.mail_server)
                     s.sendmail(self.mail_sender, self.mail_receiver.split(','), msg.as_string())
                     s.quit()
-                    self.logger.debug('Sent email notification')
+                    self.logger.debug('Sent email notification.')
                     ready = True
                 except socket.gaierror as e:
                     if e.errno == socket.EAI_AGAIN:
@@ -300,7 +300,9 @@ class ErmrestClient (object):
             raise
         
     def processVideo(self):
-        url = '%s/entity/Immunofluorescence:Slide_Video/!Bytes::null::&Media_Type=video%%2Fmp4&Raw_URI::null::&Processing_Status::null::' % (self.path)
+        transcode_only = os.getenv('TRANSCODE_ONLY', 'f').lower() in ['t', 'true']
+        self.logger.debug('TRANSCODE_ONLY: %s.' % (transcode_only)) 
+        url = '%s/entity/Immunofluorescence:Slide_Video/!Bytes::null::&Media_Type=video%%2Fmp4&MP4_URI::null::&Processing_Status::null::' % (self.path)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         movies = json.loads(resp.read())
@@ -319,7 +321,11 @@ class ErmrestClient (object):
             self.logger.debug('Transcoding and adding watermark to the video "%s"' % (fileName))
             
             try:
-                args = [self.ffmpeg, '-y', '-i', f, '-i', self.watermark, '-filter_complex', 'overlay=x=(main_w-overlay_w):y=0', '%s/%s' % (self.data_scratch, fileName)]
+                #args = [self.ffmpeg, '-y', '-i', f, '-i', self.watermark, '-filter_complex', 'overlay=x=(main_w-overlay_w):y=0', '%s/%s' % (self.data_scratch, fileName)]
+                if transcode_only == True:
+                    args = [self.ffmpeg, '-y', '-i', f, '-vcodec', 'libx264', '-pix_fmt', 'yuv420p', '%s/%s' % (self.data_scratch, fileName)]
+                else:
+                    args = [self.ffmpeg, '-y', '-i', f, '-i', self.watermark, '-vcodec', 'libx264', '-pix_fmt', 'yuv420p', '-filter_complex', 'pad=width=iw:height=ih+90:color=#71cbf4,overlay=(main_w-overlay_w)/2:main_h-90', '%s/%s' % (self.data_scratch, fileName)]
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdoutdata, stderrdata = p.communicate()
                 returncode = p.returncode
@@ -346,7 +352,10 @@ class ErmrestClient (object):
                 self.reportFailure(movieId, 'error')
                 continue
                 
-            self.logger.debug('Uploading in hatrac the transcoded movie file "%s" with the watermark ' % (fileName)) 
+            if transcode_only == True:
+                self.logger.debug('Uploading in hatrac the transcoded movie file "%s".' % (fileName)) 
+            else:
+                self.logger.debug('Uploading in hatrac the transcoded movie file "%s" with the watermark.' % (fileName)) 
             newFile = '%s/%s' % (self.data_scratch, fileName)
             file_size = os.path.getsize(newFile)
             new_md5sum = self.md5sum(newFile, self.chunk_size)
@@ -374,15 +383,14 @@ class ErmrestClient (object):
                     os.remove(f)
                     continue
 
-            columns = ["Identifier", "Raw_URI", "Bytes", "MD5", "SHA256", "Processing_Status"]
+            columns = ["MP4_URI", "Bytes", "MD5", "SHA256", "Processing_Status"]
             
             os.remove(f)
             columns = ','.join([urllib.quote(col, safe='') for col in columns])
             url = '%s/attributegroup/Immunofluorescence:Slide_Video/Accession_ID;%s' % (self.path, columns)
             body = []
             obj = {'Accession_ID': movieId,
-                   'Identifier': new_uri,
-                   'Raw_URI': uri,
+                   'MP4_URI': new_uri,
                    'Bytes': file_size,
                    'MD5': new_md5,
                    'SHA256': new_sha256,
@@ -625,13 +633,40 @@ class ErmrestClient (object):
         
     def getMovieFile(self, fileName, uri):
         try:
+            self.logger.debug('Processing file: "%s".' % (fileName)) 
             movieFile = '%s/original_%s' % (self.data_scratch, fileName)
-            url = '%s;versions' % (uri)
-            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            url = '%s' % (uri)
+            headers = {'Accept': '*'}
             resp = self.send_request('GET', url, '', headers, False)
-            srcFile = urllib.unquote('%s%s'  % (self.video_resources, json.loads(resp.read())[0]))
-            shutil.copyfile(srcFile, movieFile)
+            self.logger.debug('content-length: %s.' % (resp.getheader('content-length'))) 
+            #self.logger.debug('response headers: %s.' % (resp.getheaders())) 
+            block_sz = 8192
+            f = open(movieFile, 'wb')
+            while True:
+                buffer = resp.read(block_sz)
+                if not buffer:
+                    break
+                f.write(buffer)
+            f.close()
+            self.logger.debug('File "%s", %d bytes.' % (movieFile, os.stat(movieFile).st_size)) 
             return movieFile
+            """
+            url = '%s' % (uri)
+            headers = {'Accept': '*'}
+            resp = self.send_request('HEAD', url, '', headers, False)
+            resp.read()
+            content_location = resp.getheader('content-location', None)
+            if content_location != None:
+                self.logger.debug('content_location: %s.' % (content_location)) 
+                srcFile = urllib.unquote('%s%s'  % (self.video_resources, content_location))
+                shutil.copyfile(srcFile, movieFile)
+                return movieFile
+            else:
+                self.logger.error('Can not get video file "%s"."%s"' % (fileName))
+                self.sendMail('FAILURE Video: reportFailure ERROR', 'Can not get hatrac location for the file "%s".' % fileName)
+                return None
+            """
+                
         except:
             et, ev, tb = sys.exc_info()
             self.logger.error('Can not get video file "%s"\n"%s"' % (fileName, str(ev)))

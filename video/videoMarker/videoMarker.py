@@ -75,10 +75,13 @@ def load(config_filename):
         return None
     
     # Ermrest settings
-    url = cfg.get('url', None)
-    if not url:
-        logger.error('Ermrest URL must be given.')
+    url = os.getenv('URL', None)
+    if url == None:
+        logger.error('URL must be supplied through the "URL" environment variable.')
+        logger.error('Launch the script "env URL=https://foo.org/ermrest/catalog/N [TRANSCODE_ONLY=true] videoMarker.py config-file".')
         return None
+        
+    logger.info('URL: %s' % url)
     
     watermark = cfg.get('watermark', None)
     if not watermark or not os.path.isfile(watermark):
@@ -162,6 +165,6 @@ except:
     et, ev, tb = sys.exc_info()
     sys.stderr.write('got exception "%s"' % str(ev))
     sys.stderr.write('%s' % str(traceback.format_exception(et, ev, tb)))
-    sys.stderr.write('\nusage: videoMarker.py config-file\n\n')
+    sys.stderr.write('\nusage: env URL=https://foo.org/ermrest/catalog/N [TRANSCODE_ONLY=true] videoMarker.py config-file\n\n')
     sys.exit(1)
 

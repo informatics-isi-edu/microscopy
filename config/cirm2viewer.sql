@@ -25,7 +25,7 @@ ALTER TABLE "Scan" DROP COLUMN "Tags";
 --
 UPDATE "Scan" SET "Thumbnail" = replace("Thumbnail", 'generic_genetic.png', 'generic_mixed.png');
 
-CREATE FUNCTION urlencode(text) RETURNS text
+CREATE OR REPLACE FUNCTION urlencode(text) RETURNS text
     LANGUAGE plpgsql
     AS $$
     DECLARE
@@ -33,7 +33,7 @@ CREATE FUNCTION urlencode(text) RETURNS text
     BEGIN
 		ret := (SELECT string_agg(
 			CASE
-				WHEN ch ~ '[:/?#\[\]@!$&\(\)*+,;= ]+' OR ch = E'\'' -- comment to close the ' 
+				WHEN ch ~ '[:/?#\[\]@!$&\(\)*+,;= ]+' OR octet_length(ch) > 1 OR ch = E'\'' -- comment to close the ' 
 				THEN regexp_replace(upper(substring(ch::bytea::text, 3)), '(..)', E'%\\1', 'g')
 				ELSE ch
 			END, '')

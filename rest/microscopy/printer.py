@@ -240,12 +240,12 @@ class PrintJob (Printer):
             command = 'Print Slide Label'
             entity_type = 'slide'
         if entity == 'specimen':
-            id = params['ID']
-            section_date = params['Section Date']
-            sample_name = params['Sample Name']
-            initials = params['Initials']
-            disambiguator = params['Disambiguator']
-            comment = params['Comment']
+            id = params['ID'].encode('utf8')
+            section_date = params['Section Date'].encode('utf8')
+            sample_name = params['Sample Name'].encode('utf8')
+            initials = params['Initials'].encode('utf8')
+            disambiguator = params['Disambiguator'].encode('utf8')
+            comment = params['Comment'].encode('utf8')
             label.append('%s=%s' % (urllib.quote('ID', safe=''), urllib.quote(id, safe='')))
             label.append('%s=%s' % (urllib.quote('Section Date', safe=''), urllib.quote(section_date, safe='')))
             label.append('%s=%s' % (urllib.quote('Sample Name', safe=''), urllib.quote(sample_name, safe='')))
@@ -263,12 +263,12 @@ class PrintJob (Printer):
                 res[self.CXI_MSG] = 'Internal Server Error. The request execution encountered a runtime error.'
             response.append(res)
         elif entity == 'slide':
-            id = params['ID']
-            experiment = params['Experiment ID']
-            experiment_date = params['Experiment Date']
-            sample_name = params['Sample Name']
-            experiment_description = params['Experiment Description']
-            initials = params['Initials']
+            id = params['ID'].encode('utf8')
+            experiment = params['Experiment ID'].encode('utf8')
+            experiment_date = params['Experiment Date'].encode('utf8')
+            sample_name = params['Sample Name'].encode('utf8')
+            experiment_description = params['Experiment Description'].encode('utf8')
+            initials = params['Initials'].encode('utf8')
             sequence_num = int(params['Seq.'])
             revision = 0
             label.append('%s=%s' % (urllib.quote('ID', safe=''), urllib.quote(id, safe='')))

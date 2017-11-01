@@ -573,13 +573,13 @@ class ErmrestClient (object):
             
         
     def processHistologicalImages(self):
-        url = '%s/entity/Histological_Images:HE_Slide/!File_Bytes::null::&Pyramid_URL::null::&Processing_Status::null::@sort(%s::desc::)?limit=%d' % (self.path,urllib.quote('Creation_Timestamp', safe=''),self.limit)
+        url = '%s/entity/Histological_Images:HE_Slide/!File_Bytes::null::&Pyramid_URL::null::&Processing_Status::null::@sort(%s::desc::)?limit=%d' % (self.path,urllib.quote('RCT', safe=''),self.limit)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         slides = json.loads(resp.read())
         slideids = []
         for slide in slides:
-            slideids.append((slide['ID'], slide['Filename'], slide['File_URL'], slide['Creation_Timestamp'], slide['File_MD5'], slide['Name']))
+            slideids.append((slide['ID'], slide['Filename'], slide['File_URL'], slide['RCT'], slide['File_MD5'], slide['Name']))
                 
         self.logger.debug('Processing %d slides(s).' % (len(slideids))) 
         for slideId,filename,file_url,creation_time,md5,name in slideids:

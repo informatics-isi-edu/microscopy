@@ -159,6 +159,8 @@ class ErmrestClient (object):
         self.client_secrets_file = kwargs.get("client_secrets_file")
         self.client_oauth2_file = kwargs.get("client_oauth2_file")
         self.data_scratch = kwargs.get("data_scratch")
+        self.ffmpeg = kwargs.get("ffmpeg")
+        self.ffprobe = kwargs.get("ffprobe")
         self.category = kwargs.get("category")
         self.keywords = kwargs.get("keywords")
         self.privacyStatus = kwargs.get("privacyStatus")
@@ -553,6 +555,16 @@ class ErmrestClient (object):
             self.logger.debug('Uploading the video "%s" to YouTube' % (fileName))
             
             """
+            Get the video properties
+            """
+            cfg = self.getVideoProperties(f)
+            if cfg != None:
+                width,height = self.getVideoResolution(cfg)
+                self.logger.debug('Video resolution: (%d x %d).' % (width, height)) 
+            else:
+                self.logger.debug('Could not get the video resolution.') 
+                
+            """
             Initialize YouTube video parameters
             """
             self.args.file = f
@@ -683,4 +695,39 @@ class ErmrestClient (object):
                 pass
         return ret
 
+    """
+    Get the properties of the video file
+    """
+    def getVideoProperties(self, filename):
+        """
+        """
+        ret = None
+        try:
+            args = [self.ffprobe, '-v', 'quiet', '-print_format', 'json', '-show_streams', '-i', '%s' % filename]
+            p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdoutdata, stderrdata = p.communicate()
+            returncode = p.returncode
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('got unexpected exception "%s"' % str(ev))
+            self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+            self.sendMail('FAILURE YouTube: ffprobe ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+            returncode = 1
+            
+        if returncode != 0:
+            self.logger.error('Can not get the video properties of the "%s" file.\nstdoutdata: %s\nstderrdata: %s\n' % (filename, stdoutdata, stderrdata)) 
+            self.sendMail('FAILURE YouTube', 'Can not get the video properties of the "%s" file.\nstdoutdata: %s\nstderrdata: %s\n' % (filename, stdoutdata, stderrdata))
+        else:
+            ret = json.loads(stdoutdata)
+
+        return ret
+
         
+    """
+    Get the properties of the video file
+    """
+    def getVideoResolution(self, video):
+        """
+        """
+        return (video.get('streams',None)[0].get('width',0), video.get('streams',None)[0].get('height',0))
+

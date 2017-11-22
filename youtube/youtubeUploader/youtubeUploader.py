@@ -102,6 +102,16 @@ def load(config_filename):
         logger.error('data_scratch directory must be provided.')
         return None
 
+    ffmpeg = cfg.get('ffmpeg', None)
+    if not ffmpeg or not os.path.isfile(ffmpeg):
+        logger.error('The Fast Forward MPEG must be given and exist.')
+        return None
+
+    ffprobe = cfg.get('ffprobe', None)
+    if not ffprobe or not os.path.isfile(ffprobe):
+        logger.error('The multimedia streams analyzer must be given and exist.')
+        return None
+
     category = cfg.get('category', "28")
     keywords = cfg.get('keywords', "rbk,gudmap")
     privacyStatus = cfg.get('privacyStatus', "public")
@@ -120,6 +130,8 @@ def load(config_filename):
                                client_secrets_file=client_secrets_file, \
                                client_oauth2_file=client_oauth2_file, \
                                data_scratch=data_scratch, \
+                               ffmpeg=ffmpeg, \
+                               ffprobe=ffprobe, \
                                category=category, \
                                keywords=keywords, \
                                privacyStatus=privacyStatus, \

@@ -512,13 +512,18 @@ class ErmrestClient (object):
         videos = json.loads(resp.read())
         videoids = []
         for video in videos:
-            videoids.append((video['Accession_ID'], video['Name'], video['Title'], video['Description'], video['Identifier'], video['MD5'], video['YouTube_MD5'], video['YouTube_URI'], video['RID']))
+            videoids.append((video['Accession_ID'], video['Name'], video['Title'], video['Description'], video['Identifier'], video['MD5'], video['YouTube_MD5'], video['YouTube_URI'], video['RID'], video['Consortium']))
                 
         self.logger.debug('Processing %d video(s).' % (len(videoids))) 
-        for movieId,fileName,title,description,uri,md5,youtube_md5,youtube_uri,rid in videoids:
+        for movieId,fileName,title,description,uri,md5,youtube_md5,youtube_uri,rid,consortium in videoids:
             if description == None:
                 description = ''
-            f = self.getVideoFile(fileName, uri)
+            consortium_url = ''
+            if consortium == 'GUD':
+                consortium_url = 'gudmap.org'
+            elif consortium == 'RBK':
+                consortium_url = 'rebuildingakidney.org'
+            f = self.getVideoFile(fileName, uri, consortium_url)
             if f == None:
                 self.reportFailure(movieId, 'error')
                 continue
@@ -568,7 +573,7 @@ class ErmrestClient (object):
             Initialize YouTube video parameters
             """
             self.args.file = f
-            self.args.title = ('gudmap.org:\n%s' % title)[:64]
+            self.args.title = ('%s:\n%s' % (consortium_url, title))[:64]
             self.args.description = description
             
             """
@@ -650,7 +655,7 @@ class ErmrestClient (object):
     """
     Get the video file from hatrac
     """
-    def getVideoFile(self, fileName, uri):
+    def getVideoFile(self, fileName, uri, consortium_url):
         try:
             self.logger.debug('Processing file: "%s".' % (fileName)) 
             movieFile = '%s/%s' % (self.data_scratch, fileName)
@@ -668,6 +673,13 @@ class ErmrestClient (object):
                 f.write(buffer)
             f.close()
             self.logger.debug('File "%s", %d bytes.' % (movieFile, os.stat(movieFile).st_size)) 
+            """
+            drawFile = self.drawVideoText(movieFile, consortium_url, 'upper left')
+            if drawFile != None:
+                self.logger.debug('File with text "%s", %d bytes.' % (drawFile, os.stat(drawFile).st_size)) 
+                os.remove(movieFile)
+                return drawFile
+            """
             return movieFile
         except:
             et, ev, tb = sys.exc_info()
@@ -731,3 +743,82 @@ class ErmrestClient (object):
         """
         return (video.get('streams',None)[0].get('width',0), video.get('streams',None)[0].get('height',0))
 
+    """
+    Get the offset of the video text
+    """
+    def getTextOffset(self, position):
+        """
+        """
+        if position == 'upper left':
+            x = '5'
+            y = '0'
+        elif position == 'lower left':
+            x = '5'
+            y = '(h-text_h-5)'
+        elif position == 'upper right':
+            x = '(w-text_w-5)'
+            y = '0'
+        elif position == 'lower right':
+            x = '(w-text_w-5)'
+            y = '(h-text_h-5)'
+        else:
+            x = None
+            y = None
+            
+        return (x, y)
+
+    """
+    Get the fontsize of the video text
+    """
+    def getTextFontSize(self, width, height):
+        """
+        """
+        if height >= 1080:
+            fontsize = 44
+        elif height >= 720:
+            fontsize = 36
+        else:
+            fontsize = None
+            
+        return fontsize
+
+    """
+    Draw the video text
+    """
+    def drawVideoText(self, filename, videoText, position):
+        """
+        """
+        ret = None
+        videoProperties = self.getVideoProperties(filename)
+        if videoProperties != None:
+            width,height = self.getVideoResolution(videoProperties)
+            if height != None:
+                x,y = self.getTextOffset(position)
+                if x != None and y != None:
+                    fontsize = self.getTextFontSize(width, height)
+                    if fontsize != None:
+                        file_name, file_extension = os.path.splitext(filename)
+                        outputFile = '%s_%d%s' % (file_name, height, file_extension)
+                        try:
+                            #args = [self.ffmpeg, '-y', '-v', 'quiet', '-i', '%s' % filename, '-vf', 'drawtext=\'text=\'\'%s\'\': fontcolor=blue: fontsize=%d: box=1: boxcolor=white@0.5: boxborderw=5: x=%s: y=%s\'' % (videoText, fontsize, x, y), '-codec:a', 'copy', '%s' %  outputFile]
+                            args = [self.ffmpeg, '-y', '-i', '%s' % filename, '-vf', 'drawtext=\'text=\'\'%s\'\': fontcolor=blue: fontsize=%d: box=1: boxcolor=white@0.5: boxborderw=5: x=%s: y=%s\'' % (videoText, fontsize, x, y), '-codec:a', 'copy', '%s' %  outputFile]
+                            p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            stdoutdata, stderrdata = p.communicate()
+                            returncode = p.returncode
+                        except:
+                            et, ev, tb = sys.exc_info()
+                            self.logger.error('got unexpected exception "%s"' % str(ev))
+                            self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+                            self.sendMail('FAILURE YouTube: ffmpeg ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
+                            returncode = 1
+                            
+                        if returncode != 0:
+                            print 'returncode=%d' % returncode
+                            self.logger.error('Can not draw text to the video "%s" file.\nstdoutdata: %s\nstderrdata: %s\n' % (filename, stdoutdata, stderrdata)) 
+                            self.sendMail('FAILURE YouTube', 'Can not draw text to the video "%s" file.\nstdoutdata: %s\nstderrdata: %s\n' % (filename, stdoutdata, stderrdata))
+                        else:
+                            ret = outputFile
+
+        return ret
+
+        

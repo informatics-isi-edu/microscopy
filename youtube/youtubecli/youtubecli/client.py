@@ -512,10 +512,10 @@ class ErmrestClient (object):
         videos = json.loads(resp.read())
         videoids = []
         for video in videos:
-            videoids.append((video['Accession_ID'], video['Name'], video['Title'], video['Description'], video['Identifier'], video['MD5'], video['YouTube_MD5'], video['YouTube_URI'], video['RID'], video['Consortium']))
+            videoids.append((video['Accession_ID'], video['Name'], video['Title'], video['Description'], video['Identifier'], video['MD5'], video['YouTube_MD5'], video['YouTube_URI'], video['RID'], video['Consortium'], video['MP4_URI'], video['RCT'], video['RMT']))
                 
         self.logger.debug('Processing %d video(s).' % (len(videoids))) 
-        for movieId,fileName,title,description,uri,md5,youtube_md5,youtube_uri,rid,consortium in videoids:
+        for movieId,fileName,title,description,uri,md5,youtube_md5,youtube_uri,rid,consortium,mp4_uri,rct,rmt in videoids:
             if description == None:
                 description = ''
             consortium_url = ''
@@ -523,12 +523,12 @@ class ErmrestClient (object):
                 consortium_url = 'gudmap.org'
             elif consortium == 'RBK':
                 consortium_url = 'rebuildingakidney.org'
-            f = self.getVideoFile(fileName, uri, consortium_url)
-            if f == None:
-                self.reportFailure(movieId, 'error')
+            f, MP4_URI= self.getVideoFile(fileName, uri, consortium_url, md5)
+            if f == None or MP4_URI == None:
+                self.reportFailure(movieId, 'error_no_video_file')
                 continue
                 
-            if youtube_uri != None:
+            if youtube_uri != None and youtube_md5 != md5:
                 """
                 We have an update.
                 Delete the video from YouTube
@@ -556,6 +556,29 @@ class ErmrestClient (object):
                 resp = self.send_request('PUT', url, json.dumps(body), headers, False)
                 resp.read()
                 self.logger.debug('SUCCEEDED updated the entry for the "%s" file in the Common:Delete_Youtube table.' % (fileName)) 
+                
+                if mp4_uri != None:
+                    """
+                    We have an update.
+                    Insert the old video into the Delete_Hatrac table
+                    """
+                    self.logger.debug('Inserting the old MP4 video "%s" file into the Delete_Hatrac table.' % (fileName))
+                    url = '%s/entity/Common:Delete_Hatrac' % (self.path)
+                    body = []
+                    obj = {'Hatrac_MD5': mp4_uri.split('/')[-1],
+                           'Hatrac_URI': mp4_uri,
+                           'Hatrac_Deleted': False,
+                           'Record_Type': 'Immunofluorescence:Slide_Video',
+                           'Record_RID': rid,
+                           'Record_RCT': rct,
+                           'Record_RMT': rmt,
+                           'Record_Deleted': False
+                           }
+                    body.append(obj)
+                    headers = {'Content-Type': 'application/json'}
+                    resp = self.send_request('PUT', url, json.dumps(body), headers, False)
+                    resp.read()
+                    self.logger.debug('SUCCEEDED updated the entry for the "%s" file in the Common:Delete_Youtube table.' % (fileName)) 
             
             self.logger.debug('Uploading the video "%s" to YouTube' % (fileName))
             
@@ -600,13 +623,13 @@ class ErmrestClient (object):
                 """
                 Update the Slide_Video table with the failure result.
                 """
-                self.reportFailure(movieId, 'error')
+                self.reportFailure(movieId, 'error_youtube_upload')
                 continue
                 
             """
             Upload the Slide_Video table with the SUCCESS status
             """
-            columns = ["YouTube_MD5", "YouTube_URI", "Processing_Status"]
+            columns = ["MP4_URI", "YouTube_MD5", "YouTube_URI", "Processing_Status"]
             #youtube_uri = "https://www.youtube.com/embed/%s?showinfo=0&rel=0" % id
             youtube_uri = "https://www.youtube.com/embed/%s?rel=0" % id
             os.remove(f)
@@ -614,9 +637,10 @@ class ErmrestClient (object):
             url = '%s/attributegroup/Immunofluorescence:Slide_Video/Accession_ID;%s' % (self.path, columns)
             body = []
             obj = {'Accession_ID': movieId,
+                   'MP4_URI': MP4_URI,
                    'YouTube_URI': youtube_uri,
                    'YouTube_MD5': md5,
-                   "Processing_Status": 'success'
+                   'Processing_Status': 'success'
                    }
             body.append(obj)
             headers = {'Content-Type': 'application/json'}
@@ -655,8 +679,9 @@ class ErmrestClient (object):
     """
     Get the video file from hatrac
     """
-    def getVideoFile(self, fileName, uri, consortium_url):
+    def getVideoFile(self, fileName, uri, consortium_url, md5):
         try:
+            MP4_URI = None
             self.logger.debug('Processing file: "%s".' % (fileName)) 
             movieFile = '%s/%s' % (self.data_scratch, fileName)
             url = '%s' % (uri)
@@ -673,20 +698,39 @@ class ErmrestClient (object):
                 f.write(buffer)
             f.close()
             self.logger.debug('File "%s", %d bytes.' % (movieFile, os.stat(movieFile).st_size)) 
-            """
+            #"""
             drawFile = self.drawVideoText(movieFile, consortium_url, 'upper left')
             if drawFile != None:
                 self.logger.debug('File with text "%s", %d bytes.' % (drawFile, os.stat(drawFile).st_size)) 
                 os.remove(movieFile)
-                return drawFile
-            """
-            return movieFile
+                newFile = drawFile
+                file_size = os.path.getsize(newFile)
+                new_md5sum = self.md5sum(newFile, self.chunk_size)
+                new_md5 = self.md5hex(newFile)
+                new_sha256 = self.sha256sum(newFile)
+                new_uri = '%s%s' % (uri[0:-len(md5)], new_md5)
+                metadata = {"content_disposition": "filename*=UTF-8''%s" % fileName}
+                if self.get_md5sum(new_uri) == new_md5sum:
+                    self.logger.info('Skipping the upload of the file "%s" as it already exists hatrac.' % fileName)
+                    MP4_URI = new_uri
+                else:
+                    try:
+                        self.uploadFile(new_uri, newFile, self.chunk_size, metadata)
+                        MP4_URI = new_uri
+                    except:
+                        et, ev, tb = sys.exc_info()
+                        self.logger.error('Can not transfer file "%s" in namespace "%s". Error: "%s"' % (fileName, new_uri, str(ev)))
+                        self.sendMail('Failure YouTube: HATRAC Error', 'Can not upload file "%s" in namespace "%s". Error: "%s"' % (fileName, new_uri, str(ev)))
+                        self.reportFailure(movieId, 'error_hatrac_upload')
+                return (drawFile, MP4_URI)
+            #"""
+            return (movieFile,MP4_URI)
         except:
             et, ev, tb = sys.exc_info()
             self.logger.error('Can not get from hatrac the video file "%s"\n"%s"' % (fileName, str(ev)))
             self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
             self.sendMail('FAILURE YouTube: getVideoFile ERROR', '%s\n' % str(traceback.format_exception(et, ev, tb)))
-            return None
+            return (None, None)
 
     """
     Append the cid=video string to the url query
@@ -820,5 +864,228 @@ class ErmrestClient (object):
                             ret = outputFile
 
         return ret
+
+    """
+    Upload a file.
+    """
+    def uploadFile(self, object_url, filePath, chunk_size, metadata):
+        try:
+            job_id = self.createUploadJob(object_url, filePath, chunk_size, metadata)
+            self.chunksUpload(object_url, filePath, job_id, chunk_size)
+            self.chunksUploadFinalization(object_url, job_id)
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('Can not upload file "%s" in namespace "%s://%s%s". Error: "%s"' % (filePath, self.scheme, self.host, object_url, str(ev)))
+            raise
+
+    """
+    Create a job for uploading a file.
+    """
+    def createUploadJob(self, object_url, filePath, chunk_size, metadata):
+        try:
+            md5,sha256 = self.content_checksum(filePath, chunk_size)
+            content_checksum = {"content-md5": md5,
+                              "content-sha256": sha256}
+            content_disposition = metadata.get('content_disposition', None)
+            file_size = os.path.getsize(filePath)
+            url = '%s;upload' % object_url
+            headers = {'Content-Type': 'application/json'}
+            if mimetypes.inited == False:
+                mimetypes.init()
+            content_type,encoding = mimetypes.guess_type(filePath)
+            if content_type == None:
+                content_type = 'application/octet-stream'
+            obj = {"chunk-length": chunk_size,
+                   "content-length": file_size,
+                   "content-type": content_type}
+            obj.update(content_checksum)
+            if content_disposition != None:
+                obj['content-disposition'] = self.encode_disposition(content_disposition)
+            self.logger.debug('hatrac metadata: "%s"\n' % (json.dumps(obj)))
+            resp = self.send_request('POST', url, body=json.dumps(obj), headers=headers)
+            res = resp.read()
+            job_id = res.split('/')[-1][:-1]
+            self.logger.debug('Created job_id "%s" for url "%s://%s%s".' % (job_id, self.scheme, self.host, url))
+            return job_id
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('Can not create job for uploading file "%s" in object "%s://%s%s". Error: "%s"' % (filePath, self.scheme, self.host, object_url, str(ev)))
+            raise
+
+    """
+    Upload a file through chunks.
+    """
+    def chunksUpload(self, object_url, filePath, job_id, chunk_size):
+        try:
+            file_size = os.path.getsize(filePath)
+            chunk_no = file_size / chunk_size
+            last_chunk_size = file_size % chunk_size
+            f = open(filePath, "rb")
+            for index in range(chunk_no):
+                position = index
+                body = f.read(chunk_size)
+                url = '%s;upload/%s/%d' % (object_url, job_id, position)
+                headers = {'Content-Type': 'application/octet-stream', 'Content-Length': '%d' % chunk_size}
+                resp = self.send_request('PUT', url, body=body, headers=headers, sendData=True)
+                res = resp.read()
+            if last_chunk_size > 0:
+                position = chunk_no
+                body = f.read(chunk_size)
+                url = '%s;upload/%s/%d' % (object_url, job_id, position)
+                headers = {'Content-Type': 'application/octet-stream', 'Content-Length': '%d' % last_chunk_size}
+                resp = self.send_request('PUT', url, body=body, headers=headers, sendData=True)
+                res = resp.read()
+            f.close()
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('Can not upload chunk for file "%s" in namespace "%s://%s%s" and job_id "%s". Error: "%s"' % (filePath, self.scheme, self.host, url, job_id, str(ev)))
+            try:
+                f.close()
+                self.cancelJob(object_url, job_id)
+            except:
+                pass
+            raise
+            
+    """
+    Finalize the chunks upload.
+    """
+    def chunksUploadFinalization(self, object_url, job_id):
+        try:
+            url = '%s;upload/%s' % (object_url, job_id)
+            headers = {}
+            resp = self.send_request('POST', url, headers=headers)
+            res = resp.read()
+            return res
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('Can not finalize job "%s" for object "%s://%s%s". Error: "%s"' % (job_id, self.scheme, self.host, url, str(ev)))
+            raise
+            
+    """
+    Get the base64 digest strings like the sha256 and the md5 utilities would compute.
+    """
+    def content_checksum(self, fpath, chunk_size):
+        hmd5 = hashlib.md5()
+        hsha256 = hashlib.sha256()
+        try:
+            f = open(fpath, 'rb')
+            try:
+                b = f.read(chunk_size)
+                while b:
+                    hmd5.update(b)
+                    hsha256.update(b)
+                    b = f.read(chunk_size)
+                return (base64.b64encode(hmd5.digest()), base64.b64encode(hsha256.digest()))
+            finally:
+                f.close()
+        except:
+            return (None, None)
+
+    """
+    Encode the content-disposition.
+    """
+    def encode_disposition(self, orig):
+        m = re.match("^filename[*]=UTF-8''(?P<name>[-_.~A-Za-z0-9%]+)$", orig)
+        if m:
+            return orig
+        elif not orig.startswith("filename*=UTF-8''"):
+            raise ValueError('Cannot accept content-disposition "%s"; it must start with "filename*=UTF-8\'\'".' % orig)
+        else:
+            ret = ["filename*=UTF-8''"]
+            for c in orig[len("filename*=UTF-8''"):]:
+                m = m = re.match("(?P<name>[-_.~A-Za-z0-9%]+)$", c)
+                if m:
+                    ret.append(c)
+                else:
+                    #In case we want an URL encoding
+                    #ret.append('%%%s' % c.encode('hex').upper())
+                    ret.append('_')
+            return ''.join(ret)
+
+    """
+    Cancel a job.
+    """
+    def cancelJob(self, object_url, job_id):
+        try:
+            url = '%s;upload/%s' % (object_url, job_id)
+            headers = {}
+            resp = self.send_request('DELETE', url, headers=headers)
+            res = resp.read()
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('Can not cancel job "%s" for object "%s://%s%s". Error: "%s"' % (job_id, self.scheme, self.host, url, str(ev)))
+            raise
+            
+    """
+    Get the md5sum file from hatrac.
+    """
+    def get_md5sum(self, url):
+        """
+            Retrieve the md5sum of a file
+        """
+        ret = None
+        if url != None:
+            headers = {'Accept': '*'}
+            try:
+                resp = self.send_request('HEAD', url, '', headers=headers, ignoreErrorCodes=[NOT_FOUND])
+                resp.read()
+                ret = resp.getheader('content-md5', None)
+            except:
+                pass
+        return ret
+                
+    """
+    Get the hexa md5 checksum of the file.
+    """
+    def md5hex(self, fpath):
+        h = hashlib.md5()
+        try:
+            f = open(fpath, 'rb')
+            try:
+                b = f.read(4096)
+                while b:
+                    h.update(b)
+                    b = f.read(4096)
+                return h.hexdigest()
+            finally:
+                f.close()
+        except:
+            return None
+
+    """
+    Get the checksum of the file.
+    """
+    def sha256sum(self, fpath):
+        h = hashlib.sha256()
+        try:
+            f = open(fpath, 'rb')
+            try:
+                b = f.read(4096)
+                while b:
+                    h.update(b)
+                    b = f.read(4096)
+                return h.hexdigest()
+            finally:
+                f.close()
+        except:
+            return None
+
+    """
+    Get the base64 digest string like md5 utility would compute.
+    """
+    def md5sum(self, fpath, chunk_size):
+        h = hashlib.md5()
+        try:
+            f = open(fpath, 'rb')
+            try:
+                b = f.read(chunk_size)
+                while b:
+                    h.update(b)
+                    b = f.read(chunk_size)
+                return base64.b64encode(h.digest())
+            finally:
+                f.close()
+        except:
+            return None
 
         

@@ -524,10 +524,7 @@ class ErmrestClient (object):
         outdir = '%s/%s' % (self.data_scratch, self.namespace)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        url = '%s;versions' % file_url
-        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-        resp = self.send_request('GET', url, '', headers, False)
-        srcFile = urllib.unquote('%s%s'  % (self.czi, json.loads(resp.read())[0]))
+        srcFile = urllib.unquote('%s%s'  % (self.czi, self.getHatracLocation(file_url))) 
         shutil.copyfile(srcFile, cziFile)
         return cziFile
 
@@ -742,3 +739,18 @@ class ErmrestClient (object):
             self.logger.debug('SUCCEEDED created the image entry for the file "%s".' % (filename)) 
         self.logger.debug('Ended Metadata Extracting.') 
         
+    def getHatracLocation(self, object_url):
+        """
+        Retrieve the object hatrac location.
+        """
+        ret = None
+        url = '%s' % (object_url)
+        if url != None:
+            headers = {'Accept': '*'}
+            try:
+                resp = self.send_request('HEAD', url, headers=headers)
+                resp.read()
+                ret = resp.getheader('content-location', None)
+            except:
+                pass
+        return ret

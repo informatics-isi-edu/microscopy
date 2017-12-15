@@ -1,0 +1,128 @@
+#!/usr/bin/python
+
+import os
+import json
+from deriva.core import PollingErmrestCatalog
+import subprocess
+import logging
+import sys
+import traceback
+from logging.handlers import RotatingFileHandler    
+
+class WorkerRuntimeError (RuntimeError):
+    pass
+
+
+FORMAT = '%(asctime)s: %(levelname)s <%(module)s>: %(message)s'
+logger = logging.getLogger(__name__)
+
+# Exit return codes
+__EXIT_SUCCESS = 0
+__EXIT_FAILURE = 1
+
+# Loglevel dictionary
+__LOGLEVEL = {'error': logging.ERROR,
+              'warning': logging.WARNING,
+              'info': logging.INFO,
+              'debug': logging.DEBUG}
+
+loglevel = 'debug'
+logfile = '/home/rbkcc/log/delete_youtube_worker.log'
+
+rotatingFileHandler = RotatingFileHandler(logfile, maxBytes=1000000, backupCount=7)
+rotatingFileHandler.setFormatter(logging.Formatter(FORMAT))
+logger.addHandler(rotatingFileHandler)
+logger.setLevel(__LOGLEVEL.get(loglevel))
+
+# server to talk to... defaults to our rbk-dev
+servername = os.getenv('RBK_SERVER', 'dev.rebuildingakidney.org')
+
+# secret session cookie
+credfile = os.getenv('RBK_CREDENTIALS', '/home/secrets/rbkcc/credentials.json')
+credentials = json.load(open(credfile))
+
+# rbk_delete_youtube configuration file 
+config_file = os.getenv('RBK_CONFIG', '/home/rbkcc/config/delete_youtube.conf')
+
+catalog = PollingErmrestCatalog(
+    'https', 
+    servername,
+    '2',
+    credentials
+)
+
+logger.debug("Initialized service")
+
+def run_row_job(row):
+    """
+    Run the delete youtube script.
+    """
+    
+    try:
+        logger.debug('Running job for deleting YouTube_URI "%s".' % (row['YouTube_URI'])) 
+        args = ['env', 'URL=https://%s/ermrest/catalog/2' % servername, '/usr/bin/rbk_delete_youtube.py', '--config', '%s' % config_file]
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdoutdata, stderrdata = p.communicate()
+        sys.stdout.write(stdoutdata)
+        sys.stderr.write(stderrdata)
+        returncode = p.returncode
+    except:
+        et, ev, tb = sys.exc_info()
+        logger.error('got unexpected exception "%s"' % str(ev))
+        logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+        returncode = 1
+        
+    if returncode != 0:
+        logger.error('Could not execute the rbk_delete_youtube script.\nstdoutdata: %s\nstderrdata: %s\n' % (stdoutdata, stderrdata)) 
+        raise WorkerRuntimeError('Could not execute the rbk_delete_youtube script.\nstdoutdata: %s\nstderrdata: %s\n' % (stdoutdata, stderrdata))
+    else:
+        logger.debug('Finished job for deleting YouTube_URI "%s".' % (row['YouTube_URI'])) 
+        
+
+
+# for state-tracking across look_for_work() iterations
+idle_etag = None
+
+def look_for_work():
+    """Find, claim, and process experiment one record.
+
+       1. Find row with actionable state (partial data and Status=None
+       2. Claim by setting Status="in progress"
+
+       Do find/claim with HTTP opportunistic concurrency control and
+       caching for efficient polling and quiescencs.
+
+       On error, set Status="failed: reason"
+
+       Result:
+         true: there might be more work to claim
+         false: we failed to find any work
+
+    """
+    global idle_etag
+
+    claimable_work_url = '/entity/Common:Delete_Youtube/Processing_Status::null::&Youtube_Deleted=False?limit=1'
+    status_update_url = '/attributegroup/Common:Delete_Youtube/YouTube_URI;Processing_Status'
+    
+    # this handled concurrent update for us to safely and efficiently claim a record
+    idle_etag, batch = catalog.state_change_once(
+        claimable_work_url,
+        status_update_url,
+        lambda row: {'YouTube_URI': row['YouTube_URI'], 'Processing_Status': "in progress"},
+        idle_etag
+    )
+
+    # we used a batch size of 1 due to ?limit=1 above...
+    for row, claim in batch:
+        try:
+            run_row_job(row)
+        except Exception as e:
+            # TODO: eat some exceptions and return True to continue?
+            catalog.put(status_update_url, json=[{'YouTube_URI': row['YouTube_URI'], 'Processing_Status': "failed: %s" % e }])
+            raise
+
+        return True
+    else:
+        return False
+        
+catalog.blocking_poll(look_for_work)

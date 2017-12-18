@@ -115,6 +115,16 @@ def load(config_filename):
     category = cfg.get('category', "28")
     keywords = cfg.get('keywords', "rbk,gudmap")
     privacyStatus = cfg.get('privacyStatus', "public")
+    
+    """
+    Valid values for text_position:
+        - "upper left"
+        - "lower left"
+        - "upper right"
+        - "lower right"
+    If not specified, then don't add text to the video
+    """
+    text_position = cfg.get('text_position', None)
 
     mail_server = cfg.get('mail_server', None)
     mail_sender = cfg.get('mail_sender', None)
@@ -132,6 +142,7 @@ def load(config_filename):
                                category=category, \
                                keywords=keywords, \
                                privacyStatus=privacyStatus, \
+                               text_position=text_position, \
                                mail_server=mail_server, \
                                mail_sender=mail_sender, \
                                mail_receiver=mail_receiver,

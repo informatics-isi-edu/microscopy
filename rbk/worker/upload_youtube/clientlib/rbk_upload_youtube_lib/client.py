@@ -93,6 +93,7 @@ class YouTubeClient (object):
         self.category = kwargs.get("category")
         self.keywords = kwargs.get("keywords")
         self.privacyStatus = kwargs.get("privacyStatus")
+        self.text_position = kwargs.get("text_position")
         self.store = HatracStore(
             self.scheme, 
             self.host,
@@ -430,7 +431,10 @@ class YouTubeClient (object):
             self.store.get_obj(uri, destfilename=videoFile)
             self.logger.debug('File "%s", %d bytes.' % (videoFile, os.stat(videoFile).st_size)) 
             #"""
-            drawFile = self.drawVideoText(videoFile, consortium_url, 'upper left')
+            if self.text_position != None:
+                drawFile = self.drawVideoText(videoFile, consortium_url, self.text_position)
+            else:
+                drawFile = None
             if drawFile != None:
                 self.logger.debug('File with text "%s", %d bytes.' % (drawFile, os.stat(drawFile).st_size)) 
                 os.remove(videoFile)

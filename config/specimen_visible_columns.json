@@ -1,0 +1,158 @@
+{
+  "filter": {
+    "and": [
+      {
+        "ux_mode": "choices", 
+        "source": "Initials", 
+        "open": true, 
+        "markdown_name": "**Submitted By**"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "Species"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "Age"
+      }, 
+      {
+        "source": [
+          {
+            "inbound": [
+              "Microscopy", 
+              "specimen_gene_Specimen ID_fkey"
+            ]
+          }, 
+          {
+            "outbound": [
+              "Microscopy", 
+              "specimen_gene_Gene ID_fkey"
+            ]
+          }, 
+          "term"
+        ], 
+        "markdown_name": "**Genes**"
+      },
+      {
+        "ux_mode": "choices", 
+        "source": "Tissue"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "ID", 
+        "markdown_name": "**Specimen ID**"
+      }, 
+      {
+        "source": "Section Date"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "Disambiguator"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "Specimen Identifier"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "Age Unit"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "Age Value"
+      }, 
+      {
+        "ranges": [
+          {
+            "min": 0
+          }, 
+          {
+            "max": 1
+          }
+        ], 
+        "source": "Number of Slides", 
+        "open": false, 
+        "markdown_name": "**Number of Slides**"
+      }, 
+      {
+        "ranges": [
+          {
+            "min": 0
+          }, 
+          {
+            "max": 1
+          }
+        ], 
+        "source": "Number of Scans", 
+        "open": false, 
+        "markdown_name": "**Number of Scans**"
+      }, 
+      {
+        "source": [
+          {
+            "inbound": [
+              "Microscopy", 
+              "specimen_comments_Specimen ID_fkey"
+            ]
+          }, 
+          "Comment"
+        ], 
+        "markdown_name": "**Comment**"
+      }
+    ]
+  }, 
+  "entry": [
+    [
+      "Microscopy", 
+      "Specimen_Species_fkey"
+    ], 
+    [
+      "Microscopy", 
+      "Specimen_Tissue_fkey"
+    ], 
+    "Age Value", 
+    [
+      "Microscopy", 
+      "Specimen_Age Unit_fkey"
+    ], 
+    [
+      "Microscopy", 
+      "Specimen_Gene_fkey"
+    ], 
+    [
+      "Microscopy", 
+      "Specimen_Initials_fkey"
+    ], 
+    "Section Date", 
+    "Specimen Identifier"
+  ], 
+  "detailed": [
+    [
+      "Microscopy", 
+      "Specimen_Species_fkey"
+    ], 
+    [
+      "Microscopy", 
+      "Specimen_Tissue_fkey"
+    ], 
+    "Age", 
+    "Initials", 
+    "Section Date", 
+    "Specimen Identifier", 
+    "Number of Slides", 
+    "Number of Scans", 
+    "Label"
+  ], 
+  "compact": [
+    "ID", 
+    "Species", 
+    "Tissue", 
+    "Age", 
+    "Initials", 
+    "Section Date", 
+    "Specimen Identifier", 
+    "Number of Slides", 
+    "Number of Scans", 
+    "Label"
+  ]
+}

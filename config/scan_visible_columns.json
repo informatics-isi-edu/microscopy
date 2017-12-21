@@ -1,0 +1,167 @@
+{
+  "filter": {
+    "and": [
+      {
+        "ux_mode": "choices", 
+        "source": "submitter", 
+        "markdown_name": "**Submitted By**"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "species"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "age"
+      }, 
+      {
+        "source": [
+          {
+            "outbound": [
+              "Microscopy", 
+              "Scan_Specimen ID_fkey"
+            ]
+          }, 
+          {
+            "inbound": [
+              "Microscopy", 
+              "specimen_gene_Specimen ID_fkey"
+            ]
+          }, 
+          {
+            "outbound": [
+              "Microscopy", 
+              "specimen_gene_Gene ID_fkey"
+            ]
+          }, 
+          "term"
+        ], 
+        "markdown_name": "**Genes**"
+      },
+      {
+        "source": [
+          {
+            "outbound": [
+              "Microscopy", 
+              "Scan_Experiment ID_fkey"
+            ]
+          }, 
+          {
+            "inbound": [
+              "Microscopy", 
+              "experiment_probe_Experiment ID_fkey"
+            ]
+          }, 
+          {
+            "outbound": [
+              "Microscopy", 
+              "experiment_probe_Probe ID_fkey"
+            ]
+          }, 
+          "term"
+        ], 
+        "markdown_name": "**Probes**"
+      },
+      {
+        "ux_mode": "choices", 
+        "source": "Experiment Type"
+      }, 
+      {
+        "source": "Acquisition Date"
+      }, 
+      {
+        "source": "submitted"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "tissue"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "Experiment ID", 
+        "markdown_name": "**Experiment ID**"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "Specimen ID", 
+        "markdown_name": "**Specimen ID**"
+      }, 
+      {
+        "source": [
+          {
+            "inbound": [
+              "Microscopy", 
+              "scan_comments_Scan id_fkey"
+            ]
+          }, 
+          "Comment"
+        ], 
+        "markdown_name": "**Comment**"
+      }
+    ]
+  }, 
+  "compact": [
+    "Thumbnail", 
+    "accession_number", 
+    "species", 
+    "tissue", 
+    "gene", 
+    "age", 
+    "submitter", 
+    "Acquisition Date"
+  ], 
+  "detailed": [
+    "Thumbnail", 
+    "HTTP URL", 
+    [
+      "Microscopy", 
+      "Scan_Slide ID_fkey"
+    ], 
+    "Acquisition Date", 
+    "submitter", 
+    [
+      "Microscopy", 
+      "Scan_species_fkey"
+    ], 
+    [
+      "Microscopy", 
+      "Scan_tissue_fkey"
+    ], 
+    [
+      "Microscopy", 
+      "Scan_gene_fkey"
+    ], 
+    [
+      "Microscopy", 
+      "Scan_gender_fkey"
+    ], 
+    [
+      "Microscopy", 
+      "Scan_Experiment Type_fkey"
+    ], 
+    "Probes", 
+    "age", 
+    "Objective", 
+    "Channels", 
+    "Channel Name", 
+    "Contrast Method", 
+    "Light Source Intensity", 
+    "Exposure Time"
+  ], 
+  "entry/edit": [
+    "submitter", 
+    "species", 
+    "tissue", 
+    "gene", 
+    "gender", 
+    "age"
+  ], 
+  "entry/create": [
+    "submitter", 
+    "species", 
+    "tissue", 
+    "gene", 
+    "gender", 
+    "age"
+  ]
+}

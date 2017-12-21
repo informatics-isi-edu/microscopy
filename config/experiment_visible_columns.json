@@ -1,0 +1,121 @@
+{
+  "filter": {
+    "and": [
+      {
+        "ux_mode": "choices", 
+        "source": "Initials", 
+        "open": true, 
+        "markdown_name": "**Submitted By**"
+      }, 
+      {
+        "source": [
+          {
+            "inbound": [
+              "Microscopy", 
+              "experiment_probe_Experiment ID_fkey"
+            ]
+          }, 
+          {
+            "outbound": [
+              "Microscopy", 
+              "experiment_probe_Probe ID_fkey"
+            ]
+          }, 
+          "term"
+        ], 
+        "markdown_name": "**Probes**"
+      },
+      {
+        "ux_mode": "choices", 
+        "source": "Experiment Type"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "ID", 
+        "markdown_name": "**Experiment ID**"
+      }, 
+      {
+        "source": "Experiment Date"
+      }, 
+      {
+        "ux_mode": "choices", 
+        "source": "Disambiguator"
+      }, 
+      {
+        "ranges": [
+          {
+            "min": 0
+          }, 
+          {
+            "max": 1
+          }
+        ], 
+        "source": "Number of Slides", 
+        "open": false, 
+        "markdown_name": "**Number of Slides**"
+      }, 
+      {
+        "ranges": [
+          {
+            "min": 0
+          }, 
+          {
+            "max": 1
+          }
+        ], 
+        "source": "Number of Scans", 
+        "open": false, 
+        "markdown_name": "**Number of Scans**"
+      }, 
+      {
+        "source": [
+          {
+            "inbound": [
+              "Microscopy", 
+              "experiment_comments_Experiment ID_fkey"
+            ]
+          }, 
+          "Comment"
+        ], 
+        "markdown_name": "**Comment**"
+      }
+    ]
+  }, 
+  "entry": [
+    [
+      "Microscopy", 
+      "Experiment_Initials_fkey"
+    ], 
+    "Experiment Date", 
+    [
+      "Microscopy", 
+      "Experiment_Experiment Type_fkey"
+    ], 
+    [
+      "Microscopy", 
+      "Experiment_Probe_fkey"
+    ]
+  ], 
+  "detailed": [
+    "Initials", 
+    "Experiment Date", 
+    [
+      "Microscopy", 
+      "Experiment_Experiment Type_fkey"
+    ], 
+    "Number of Slides", 
+    "Number of Scans"
+  ], 
+  "compact": [
+    "ID", 
+    "Initials", 
+    "Experiment Date", 
+    [
+      "Microscopy", 
+      "Experiment_Experiment Type_fkey"
+    ], 
+    "Probe", 
+    "Number of Slides", 
+    "Number of Scans"
+  ]
+}

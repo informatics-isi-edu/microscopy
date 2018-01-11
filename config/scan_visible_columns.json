@@ -107,6 +107,11 @@
     "tissue", 
     "gene", 
     "age", 
+    "Probes", 
+    [
+      "Microscopy", 
+      "Scan_Experiment Type_fkey"
+    ], 
     "submitter", 
     "Acquisition Date"
   ], 

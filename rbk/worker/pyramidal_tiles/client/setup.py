@@ -1,25 +1,19 @@
 
 #
-# Copyright 2015 University of Southern California
+# Copyright 2017 University of Southern California
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 #
 
 from distutils.core import setup
 
 setup(
-    name="RBK Workers",
-    description="RBK/GUDMAP video",
+    name="rbk_pyramidal_tiles",
+    description="Script for generating pyramidal tiles",
     version="0.1-prerelease",
     scripts=[
-        "bin/rbk_upload_youtube_worker",
-        "bin/rbk_delete_hatrac_worker",
-        "bin/rbk_delete_youtube_worker",
-        "bin/rbk_pyramidal_tiles_worker"
+        "rbk_pyramidal_tiles.py",
     ],
-    requires=['os',
-        'sys',
-        'logging',
-        'deriva'],
+    requires=["rbk_pyramidal_tiles_lib"],
     maintainer_email="support@misd.isi.edu",
     license='(new) BSD',
     classifiers=[

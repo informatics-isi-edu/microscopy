@@ -1,0 +1,158 @@
+#!/usr/bin/python
+
+import os
+import json
+from deriva.core import PollingErmrestCatalog, init_logging
+import subprocess
+import logging
+import sys
+import traceback
+
+# Loglevel dictionary
+__LOGLEVEL = {'error': logging.ERROR,
+              'warning': logging.WARNING,
+              'info': logging.INFO,
+              'debug': logging.DEBUG}
+
+FORMAT = '%(asctime)s: %(levelname)s <%(module)s>: %(message)s'
+
+logger = logging.getLogger(__name__)
+loglevel = os.getenv('LOGLEVEL', 'info')
+loglevel =__LOGLEVEL.get(loglevel)
+init_logging(level=loglevel, log_format=FORMAT, file_path='/home/isrddev/histology/log/tiles.log')
+
+class WorkerRuntimeError (RuntimeError):
+    pass
+
+class WorkerBadDataError (RuntimeError):
+    pass
+
+class WorkUnit (object):
+    def __init__(
+            self,
+            get_claimable_url,
+            put_claim_url,
+            put_update_baseurl,
+            run_row_job,
+            claim_input_data=lambda row: {'ID': row['ID'], 'Processing_Status': "in progress"},
+            failure_input_data=lambda row, e: {'ID': row['ID'], 'Processing_Status': "%s" % e}
+    ):
+        self.get_claimable_url = get_claimable_url
+        self.put_claim_url = put_claim_url
+        self.put_update_baseurl = put_update_baseurl
+        self.run_row_job = run_row_job
+        self.claim_input_data = claim_input_data
+        self.failure_input_data = failure_input_data
+        self.idle_etag = None
+
+_work_units = []
+
+def pyramidal_tiles_row_job(handler):
+    """
+    Run the script for generating pyramidal tiles.
+    """
+    
+    try:
+        row = handler.row
+        logger.debug('Running job for generating pyramidal tiles "%s".' % (row['Filename'])) 
+        args = ['env', 'CZI_RENORMALIZE=true', 'URL=https://%s/ermrest/catalog/2' % Worker.servername, '/usr/bin/rbk_pyramidal_tiles.py', '--config', '%s' % Worker.config_file]
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdoutdata, stderrdata = p.communicate()
+        returncode = p.returncode
+    except:
+        et, ev, tb = sys.exc_info()
+        logger.error('got unexpected exception "%s"' % str(ev))
+        logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+        returncode = 1
+        
+    if returncode != 0:
+        logger.error('Could not execute the script for generating pyramidal tiles.\nstdoutdata: %s\nstderrdata: %s\n' % (stdoutdata, stderrdata)) 
+        raise WorkerRuntimeError('Could not execute the script for generating pyramidal tiles.\nstdoutdata: %s\nstderrdata: %s\n' % (stdoutdata, stderrdata))
+    else:
+        logger.debug('Finished job for generating pyramidal tiles for file "%s".' % (row['Filename'])) 
+        
+
+_work_units.append(
+    WorkUnit(
+        '/entity/Histological_Images:HE_Slide/!File_Bytes::null::&Pyramid_URL::null::&Processing_Status::null::?limit=1',
+        '/attributegroup/Histological_Images:HE_Slide/ID;Processing_Status',
+        '/attributegroup/Histological_Images:HE_Slide/ID',
+        pyramidal_tiles_row_job
+    )
+)
+
+class Worker (object):
+    # server to talk to... defaults to our own FQDN
+    servername = os.getenv('RBK_SERVER', 'dev.rebuildingakidney.org')
+
+    # secret session cookie
+    credfile = os.getenv('RBK_CREDENTIALS', '/home/secrets/rbkcc/credentials.json')
+    credentials = json.load(open(credfile))
+
+    poll_seconds = int(os.getenv('RBK_POLL_SECONDS', '300'))
+    config_file = os.getenv('RBK_CONFIG', '/home/rbkcc/config/pyramidal_tiles.conf')
+
+    # these are peristent/logical connections so we create once and reuse
+    # they can retain state and manage an actual HTTP connection-pool
+    catalog = PollingErmrestCatalog(
+        'https', 
+        servername,
+        '2',
+        credentials
+    )
+
+    # for state-tracking across look_for_work() iterations
+    idle_etag = None
+
+    def __init__(self, row, unit):
+        logger.info('Claimed job %s.\n' % row.get('ID', row.get('RID')))
+
+        self.row = row
+        self.unit = unit
+
+    work_units = _work_units # these are defined above w/ their funcs and URLs...
+
+    @classmethod
+    def look_for_work(cls):
+        """Find, claim, and process work for each work unit.
+
+        Do find/claim with HTTP opportunistic concurrency control and
+        caching for efficient polling and quiescencs.
+
+        On error, set Processing_Status="failed: reason"
+
+        Result:
+         true: there might be more work to claim
+         false: we failed to find any work
+        """
+        found_work = False
+
+        for unit in cls.work_units:
+            # this handled concurrent update for us to safely and efficiently claim a record
+            print unit.idle_etag
+            unit.idle_etag, batch = cls.catalog.state_change_once(
+                unit.get_claimable_url,
+                unit.put_claim_url,
+                unit.claim_input_data,
+                unit.idle_etag
+            )
+            # batch may be empty if no work was found...
+            for row, claim in batch:
+                found_work = True
+                try:
+                    handler = cls(row, unit)
+                    unit.run_row_job(handler)
+                except WorkerBadDataError as e:
+                    logger.error("Aborting task %s on data error: %s\n" % (row["ID"], e))
+                    # continue with next task...?
+                except Exception as e:
+                    raise
+
+        return found_work
+
+    @classmethod
+    def blocking_poll(cls):
+        return cls.catalog.blocking_poll(cls.look_for_work, polling_seconds=cls.poll_seconds)
+
+Worker.blocking_poll()
+

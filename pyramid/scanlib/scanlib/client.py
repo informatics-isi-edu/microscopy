@@ -147,7 +147,14 @@ class ErmrestClient (object):
     def send_request(self, method, url, body='', headers={}, reconnect=False):
         if self.header:
             headers.update(self.header)
-        self.webconn.request(method, url, body, headers)
+        try:
+            self.webconn.request(method, url, body, headers)
+        except:
+            self.logger.debug('Could not sent the request. Reconnecting...') 
+            self.close()
+            self.connect(True)
+            self.webconn.request(method, url, body, headers)
+            
         try:
             resp = self.webconn.getresponse()
         except BadStatusLine:

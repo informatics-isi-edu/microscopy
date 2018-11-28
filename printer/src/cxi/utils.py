@@ -112,10 +112,9 @@ class cxiAccess():
            self.cxi.connect((self.addr_ip,self.port))
        except socket.error, msg:
            print "Fail to connect to %s(%s), power cycle the printer" % (self.addr,msg)
-           ## force fail on assert
-           assert(0)
-       else:
-           self.isOpen=1
+           self.cxi.settimeout(save_t)
+           raise
+       self.isOpen=1
        self.cxi.settimeout(save_t)
        return 1
 

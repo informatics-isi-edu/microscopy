@@ -402,7 +402,7 @@ def metadata_to_xml(meta, channelno, channeldir):
     maxValue="%(V1)s"
     data="%(P)s"
 />""" % dict(
-    P=channeldir,
+    P=channeldir.replace('&','&amp;').replace('<','&lt;'),
     CN=meta['channel'][channelno]['cname_long'],
     W=meta['canvas_size'][0],
     H=meta['canvas_size'][1],

@@ -228,7 +228,7 @@ class ErmrestClient (object):
         thumbnail = '/thumbnails/%s/%s.jpg' % (urllib.quote(slide_id, safe=''), urllib.quote(scan_id, safe=''))
         urls = []
         for channel in channels:
-            urls.append('url=/data/%s/%s/ImageProperties.xml' % (scan_id, channel))
+            urls.append('url=/data/%s/%s/ImageProperties.xml' % (urllib.quote(scan_id, safe=''), channel))
         return (thumbnail, '&'.join(urls))
             
         

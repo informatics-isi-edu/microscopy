@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # 
 # Copyright 2014 University of Southern California
 # 
@@ -22,18 +22,18 @@ import os
 import subprocess
 import json
 import base64
-import urlparse
-from httplib import HTTPConnection, HTTPSConnection, HTTPException, OK, CREATED, ACCEPTED, NO_CONTENT, CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE, BadStatusLine, GATEWAY_TIMEOUT, METHOD_NOT_ALLOWED
+from http.client import HTTPConnection, HTTPSConnection, HTTPException, OK, CREATED, ACCEPTED, NO_CONTENT, CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE, BadStatusLine, GATEWAY_TIMEOUT, METHOD_NOT_ALLOWED
 import sys
 import traceback
 import time
 import shutil
 import smtplib
 import urllib
+from urllib.parse import urlparse
 import re
 import czifile
 from email.mime.text import MIMEText
-from bioformats import BioformatsClient
+from .bioformats import BioformatsClient
 from socket import gaierror, EAI_AGAIN
 from lxml.etree import XMLSyntaxError
 from dateutil.parser import parse
@@ -113,7 +113,7 @@ class ErmrestClient (object):
     def __init__(self, **kwargs):
         self.metadata = kwargs.get("metadata")
         self.baseuri = kwargs.get("baseuri")
-        o = urlparse.urlparse(self.baseuri)
+        o = urlparse(self.baseuri)
         self.scheme = o[0]
         host_port = o[1].split(":")
         self.host = host_port[0]

@@ -1,2 +1,2 @@
-from client import *
-from bioformats import *
+from .client import *
+from .bioformats import *

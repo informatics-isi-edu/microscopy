@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -361,8 +361,8 @@ def array_to_jpeg(array, Y, X, jpegroot=None, quality=75):
     try:
         img = toimage(array)
         img.save(jpegname, quality=quality)
-    except Exception, te:
-        print te, array.shape, Y, X, jpegroot, quality
+    except Exception as te:
+        print (te, array.shape, Y, X, jpegroot, quality)
         raise te
 
 def metadata_to_xml(meta, channelno, channeldir):
@@ -534,7 +534,7 @@ if __name__ == "__main__":
         f = open(sys.argv[1])
         try:
             fo = czifile.CziFile(sys.argv[1])
-        except Exception, e:
+        except Exception as e:
             raise ValueError(usage('%s. First argument must be a DZI file.' % e))
     except:
         raise ValueError(usage('First argument must be a readable file.'))

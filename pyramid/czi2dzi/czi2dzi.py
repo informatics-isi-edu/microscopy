@@ -53,11 +53,11 @@ class LazyCziConverter (object):
             
             # HACK: discard all but middle plane if there is a Z stack
             if self._Z is not None:
-                if entry.start[self._Z] != (entry.shape[self._Z]/2):
+                if entry.start[self._Z] != (entry.shape[self._Z]//2):
                     continue
         
             # infer zoom from canvas size to tile size ratio
-            zoom = map(lambda c, t: c/t, entry.shape[self._slc], entry.stored_shape[self._slc])
+            zoom = map(lambda c, t: c//t, entry.shape[self._slc], entry.stored_shape[self._slc])
             assert zoom[0] == zoom[1]
             zoom = zoom[0]
         
@@ -211,7 +211,7 @@ class LazyCziConverter (object):
             assert slc.start >= 0
             assert (slc.start * zoom) < L
             assert slc.stop > slc.start
-            bounds = [slc.start * zoom, min(L/zoom, slc.stop) * zoom]
+            bounds = [slc.start * zoom, min(L//zoom, slc.stop) * zoom]
             return slice(*bounds)
 
         # do a little sanity checking and convert back to 1:1 pixel units with cropping to canvas
@@ -227,7 +227,7 @@ class LazyCziConverter (object):
         bbox_native = bbox + native_offset
 
         # composite output buffer
-        output = np.zeros(((bbox[2]-bbox[0])/zoom, (bbox[3]-bbox[1])/zoom) + (self._fo.shape[-1],), dtype=dtype)
+        output = np.zeros(((bbox[2]-bbox[0])//zoom, (bbox[3]-bbox[1])//zoom) + (self._fo.shape[-1],), dtype=dtype)
 
         if fill is not None:
             output[:,:,:] = fill
@@ -237,19 +237,19 @@ class LazyCziConverter (object):
 
             # find overlapping sub-rectangle in reduced resolution native canvas space
             overlap_native = np.array(
-                tuple(map(max, bbox_native[0:2]/zoom, ebbox_native[0:2]/zoom))
-                + tuple(map(min, bbox_native[2:4]/zoom, ebbox_native[2:4]/zoom)),
+                tuple(map(max, bbox_native[0:2]//zoom, ebbox_native[0:2]//zoom))
+                + tuple(map(min, bbox_native[2:4]//zoom, ebbox_native[2:4]//zoom)),
                 dtype=np.int32
             )
 
             # find reduced resolution grid coordinates of overlap in entry tile and in output tile
             src_overlap = overlap_native.copy()
-            src_overlap[0:2] -= np.array(entry.start[self._slc][0:2], dtype=np.int32) / zoom
-            src_overlap[2:4] -= np.array(entry.start[self._slc][0:2], dtype=np.int32) / zoom
+            src_overlap[0:2] -= np.array(entry.start[self._slc][0:2], dtype=np.int32) // zoom
+            src_overlap[2:4] -= np.array(entry.start[self._slc][0:2], dtype=np.int32) // zoom
 
             dst_overlap = overlap_native.copy()
-            dst_overlap[0:2] -= bbox_native[0:2] / zoom
-            dst_overlap[2:4] -= bbox_native[0:2] / zoom
+            dst_overlap[0:2] -= bbox_native[0:2] // zoom
+            dst_overlap[2:4] -= bbox_native[0:2] // zoom
 
             assert src_overlap[0] >= 0
             assert src_overlap[1] >= 0
@@ -472,8 +472,8 @@ def main(czifilename, dzidirname=None):
         pixel_range = [None, None]
         
         for zoom in converter._zoom_levels:
-            H, W = map(lambda x: x/zoom, converter.canvas_size())
-            K, J = map(lambda c, t: c/t + (c%t and 1 or 0), (H, W), tilesize)
+            H, W = map(lambda x: x//zoom, converter.canvas_size())
+            K, J = map(lambda c, t: c//t + (c%t and 1 or 0), (H, W), tilesize)
 
             dzizoomdirname = "%s/%d" % (dzichanneldirname, zoom_numbers[zoom])
             

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # Copyright 2013-2014 University of Southern California
 # 
@@ -14,7 +15,7 @@
 # limitations under the License.
 #
 
-import printer
+from .printer import *
 import webauthn2
 
 __all__ = [

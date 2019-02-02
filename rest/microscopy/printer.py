@@ -20,7 +20,7 @@
 from io import StringIO
 import web
 import json
-from ...printer.src import cxi
+import cxi
 import sys
 import traceback
 import urllib

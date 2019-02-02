@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ##
 ##  /svn-src/printer/src/cxi/utils.py
@@ -7,7 +7,7 @@
 import sys
 import socket
 import re
-from cxifont import *
+from .cxifont import *
 
 DEBUG = 0
 XSTART = 10

@@ -225,10 +225,10 @@ class ErmrestClient (object):
         if not os.path.exists(outdir):
             os.makedirs(outdir)
         shutil.copyfile('%s/%s/%s/0/0_0.jpg' % (self.dzi, scan_id, channels[0]), '%s/%s.jpg' % (outdir, scan_id))
-        thumbnail = '/thumbnails/%s/%s.jpg' % (urllib.quote(slide_id, safe=''), urllib.quote(scan_id, safe=''))
+        thumbnail = '/thumbnails/%s/%s.jpg' % (urllib.parse.quote(slide_id, safe=''), urllib.parse.quote(scan_id, safe=''))
         urls = []
         for channel in channels:
-            urls.append('url=/data/%s/%s/ImageProperties.xml' % (urllib.quote(scan_id, safe=''), channel))
+            urls.append('url=/data/%s/%s/ImageProperties.xml' % (urllib.parse.quote(scan_id, safe=''), channel))
         return (thumbnail, '&'.join(urls))
             
         
@@ -290,7 +290,7 @@ class ErmrestClient (object):
                 raise
         
     def processScans(self):
-        url = '%s/entity/Scan/!bytes::null::&DZI::null::&czi2dzi::null::@sort(%s::desc::)?limit=%d' % (self.path,urllib.quote('File Date', safe=''),self.limit)
+        url = '%s/entity/Scan/!bytes::null::&DZI::null::&czi2dzi::null::@sort(%s::desc::)?limit=%d' % (self.path,urllib.parse.quote('File Date', safe=''),self.limit)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         scans = json.loads(resp.read())
@@ -370,7 +370,7 @@ class ErmrestClient (object):
                 columns.extend(self.metadata)
             
             os.remove(f)
-            columns = ','.join([urllib.quote(col, safe='') for col in columns])
+            columns = ','.join([urllib.parse.quote(col, safe='') for col in columns])
             url = '%s/attributegroup/Scan/id;%s' % (self.path, columns)
             body = []
             obj = {'id': scanId,
@@ -378,7 +378,7 @@ class ErmrestClient (object):
                    'Acquisition Date': mdate,
                    'DZI': '/%s?%s' % (self.viewer, urls),
                    'uri': '/%s?%s' % (self.viewer, urls),
-                   'HTTP URL': '%s/%s/%s/%s-%d.czi' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(slideId, safe=''), disambiguator),
+                   'HTTP URL': '%s/%s/%s/%s-%d.czi' % (self.hatrac, self.namespace, urllib.parse.quote(slideId, safe=''), urllib.parse.quote(slideId, safe=''), disambiguator),
                    "czi2dzi": 'success'
                    }
             for col in self.metadata:
@@ -431,7 +431,7 @@ class ErmrestClient (object):
             if returncode == 1:
                 continue
             
-            columns = ','.join([urllib.quote(col, safe='') for col in columns])
+            columns = ','.join([urllib.parse.quote(col, safe='') for col in columns])
             url = '%s/attributegroup/Scan/id;%s' % (self.path, columns)
             body = []
             obj = {'id': scanId
@@ -452,7 +452,7 @@ class ErmrestClient (object):
         """
         try:
             columns = ["Thumbnail","czi2dzi"]
-            columns = ','.join([urllib.quote(col, safe='') for col in columns])
+            columns = ','.join([urllib.parse.quote(col, safe='') for col in columns])
             url = '%s/attributegroup/Scan/id;%s' % (self.path, columns)
             body = []
             obj = {'id': scanId,
@@ -477,7 +477,7 @@ class ErmrestClient (object):
         """
         ret = False
         try:
-            url = '%s/%s/%s/%s-%d.czi' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(slideId, safe=''), disambiguator)
+            url = '%s/%s/%s/%s-%d.czi' % (self.hatrac, self.namespace, urllib.parse.quote(slideId, safe=''), urllib.parse.quote(slideId, safe=''), disambiguator)
             headers = {'Accept': '*'}
             resp = self.send_request('HEAD', url, '', headers, False)
             resp.read()
@@ -495,7 +495,7 @@ class ErmrestClient (object):
         outdir = '%s/%s' % (self.data_scratch, self.namespace)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        url = '%s/%s/%s/%s-%d.czi;versions' % (self.hatrac, self.namespace, urllib.quote(slideId, safe=''), urllib.quote(slideId, safe=''), disambiguator)
+        url = '%s/%s/%s/%s-%d.czi;versions' % (self.hatrac, self.namespace, urllib.parse.quote(slideId, safe=''), urllib.parse.quote(slideId, safe=''), disambiguator)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         srcFile = urllib.unquote('%s%s'  % (self.czi, json.loads(resp.read())[0]))
@@ -545,7 +545,7 @@ class ErmrestClient (object):
         if not os.path.exists(outdir):
             os.makedirs(outdir)
         shutil.copyfile('%s/%s/%s/%s/0/0_0.jpg' % (self.dzi, year, md5, channels[0]), '%s/%s.jpg' % (outdir, md5))
-        thumbnail = '/thumbnails/%s/%s.jpg' % (urllib.quote(year, safe=''), urllib.quote(md5, safe=''))
+        thumbnail = '/thumbnails/%s/%s.jpg' % (urllib.parse.quote(year, safe=''), urllib.parse.quote(md5, safe=''))
         urls = []
         for channel in channels:
             urls.append('url=/data/%s/%s/%s/ImageProperties.xml' % (year, md5, channel))
@@ -557,7 +557,7 @@ class ErmrestClient (object):
         """
         try:
             columns = ["Thumbnail","Processing_Status"]
-            columns = ','.join([urllib.quote(col, safe='') for col in columns])
+            columns = ','.join([urllib.parse.quote(col, safe='') for col in columns])
             url = '%s/attributegroup/Histological_Images:HE_Slide/ID;%s' % (self.path, columns)
             body = []
             obj = {'ID': slideId,
@@ -577,7 +577,7 @@ class ErmrestClient (object):
             
         
     def processHistologicalImages(self):
-        url = '%s/entity/Histological_Images:HE_Slide/!File_Bytes::null::&Pyramid_URL::null::&Processing_Status::null::@sort(%s::desc::)?limit=%d' % (self.path,urllib.quote('RCT', safe=''),self.limit)
+        url = '%s/entity/Histological_Images:HE_Slide/!File_Bytes::null::&Pyramid_URL::null::&Processing_Status::null::@sort(%s::desc::)?limit=%d' % (self.path,urllib.parse.quote('RCT', safe=''),self.limit)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
         slides = json.loads(resp.read())
@@ -656,7 +656,7 @@ class ErmrestClient (object):
             
             os.remove(f)
             columns = ["Thumbnail","Pyramid_URL","Processing_Status","uri"]
-            columns = ','.join([urllib.quote(col, safe='') for col in columns])
+            columns = ','.join([urllib.parse.quote(col, safe='') for col in columns])
             url = '%s/attributegroup/Histological_Images:HE_Slide/ID;%s' % (self.path, columns)
             body = []
             obj = {'ID': slideId,

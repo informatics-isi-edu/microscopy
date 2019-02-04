@@ -32,13 +32,13 @@ class cxiFont():
                fptr=open(self.file,"r")
            except:
                if DEBUG:
-                   print "Can not open %s to read!!" % self.file 
+                   print ("Can not open %s to read!!" % self.file) 
                raise
 
            rawlist=fptr.readlines()
            if DEBUG:
-               print "What is read.."
-               print rawlist
+               print ("What is read..")
+               print (rawlist)
    
            for i in rawlist:
                a=i.split("=")
@@ -48,17 +48,17 @@ class cxiFont():
                   self.bit_list[str(key)]=int(val)
                else:
                   if DEBUG:
-                    print "Could not fill in for %s" % key
+                    print ("Could not fill in for %s" % key)
            fptr.close()
        else:
            self.bit_list=default_bit_list
        if DEBUG:
-           print "Final bit list"
-           print self.bit_list
+           print ("Final bit list")
+           print (self.bit_list)
 
     def __del__(self):
        if DEBUG:
-           print "wrapping up cxiFont"
+           print ("wrapping up cxiFont")
 
     def getBits(self,key):
        if self.bit_list.has_key(key):
@@ -131,11 +131,11 @@ def makeFontSampleLabel(infile):
        fptr=open(infile,"r")
     except:
        if DEBUG:
-           print "Can not open %s to read!!" % self.file
+           print ("Can not open %s to read!!" % self.file)
     lines=fptr.readlines()
     if DEBUG:
-       print "What is read.."
-       print aline
+       print ("What is read..")
+       print (aline)
 
     for aline in lines:
         if aline[0] == "x" :
@@ -156,7 +156,7 @@ def makeFontSampleLabel(infile):
 #####################################################################
 ## local testing main
 def main():
-    print "font file name?"
+    print ("font file name?")
     tmp = sys.stdin.readline()
     try :
         cptr=cxiFont(tmp.rstrip())
@@ -164,26 +164,26 @@ def main():
         return 1
 
     if cptr:
-        print "for box?(y/n)"
+        print ("for box?(y/n)")
         tmp = sys.stdin.readline()
         if (tmp[0]=='y') :
             box=1
         else:
             box=0
-        print "give me a string?"
+        print ("give me a string?")
         input = sys.stdin.readline()
     
         if box:
-            print "==>chopping it for box label"
+            print ("==>chopping it for box label")
             limit=560
         else:
-            print "==>chopping it for slice label"
+            print ("==>chopping it for slice label")
             limit=280
     
         while 1:
             chopline,leftover=cptr.chopBits(input,limit)
             if(chopline):
-               print chopline
+               print (chopline)
                input=leftover
             else:
                break

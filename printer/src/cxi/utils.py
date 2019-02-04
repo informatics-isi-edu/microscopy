@@ -110,7 +110,7 @@ class cxiAccess():
           print ("addr is ", self.addr)
        try:
            self.cxi.connect((self.addr_ip,self.port))
-       except socket.error, msg:
+       except socket.error as msg:
            print ("Fail to connect to %s(%s), power cycle the printer" % (self.addr,msg))
            self.cxi.settimeout(save_t)
            raise
@@ -148,7 +148,7 @@ class cxiAccess():
                tmp = self.cxi.recv(1024)
 #               if DEBUG :
 #                   print "config_recv got ->",tmp
-           except socket.error, socket.timeout:
+           except (socket.error, socket.timeout):
                print ("ERROR:socket got disconnected/timeout")
                break
            if tmp == 0:
@@ -174,7 +174,7 @@ class cxiAccess():
        while 1 :
            try:
                tmp = self.cxi.recv(1024)
-           except socket.error, socket.timeout:
+           except (socket.error, socket.timeout):
                print ("ERROR:socket got disconnected")
                break
            if DEBUG:
@@ -206,7 +206,7 @@ class cxiAccess():
     def status_recv(self):
        try:
            tmp = self.cxi.recv(1024)
-       except socket.error, socket.timeout:
+       except (socket.error, socket.timeout):
            print ("ERROR:socket got disconnected")
            return -1, "socket timeout/disconnected" 
 

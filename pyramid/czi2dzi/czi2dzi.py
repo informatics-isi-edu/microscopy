@@ -57,7 +57,7 @@ class LazyCziConverter (object):
                     continue
         
             # infer zoom from canvas size to tile size ratio
-            zoom = map(lambda c, t: c//t, entry.shape[self._slc], entry.stored_shape[self._slc])
+            zoom = [c//t for c,t in zip(entry.shape[self._slc], entry.stored_shape[self._slc])]
             assert zoom[0] == zoom[1]
             zoom = zoom[0]
         
@@ -74,8 +74,8 @@ class LazyCziConverter (object):
                 v0 = bbox[0]
                 v1 = bbox[1]
             else:
-                v0 = map(lambda v, b: min(v, b), v0, bbox[0])
-                v1 = map(lambda v, b: max(v, b), v1, bbox[1])
+                v0 = [min(v, b) for v,b in zip(v0, bbox[0])]
+                v1 = [max(v, b) for v,b in zip(v1, bbox[1])]
             tile_size = tuple(map(lambda a, b: max(a, b), tile_size, entry.stored_shape[self._slc]))
 
         # build up tile bbox maps for each zoom tier for efficient intersection tests
@@ -215,7 +215,7 @@ class LazyCziConverter (object):
             return slice(*bounds)
 
         # do a little sanity checking and convert back to 1:1 pixel units with cropping to canvas
-        slc = map(slc_check, slc, self._bbox_zeroed[1])
+        slc = [slc_check(slc,L) for slc,L in zip(slc, self._bbox_zeroed[1])]
         
         # this should now be in same format as one row of self._channel_tier_maps[0]
         bbox = np.array([slc[0].start, slc[1].start, slc[0].stop, slc[1].stop], dtype=np.int32)
@@ -472,9 +472,9 @@ def main(czifilename, dzidirname=None):
         pixel_range = [None, None]
         
         for zoom in converter._zoom_levels:
-            H, W = map(lambda x: x//zoom, converter.canvas_size())
-            K, J = map(lambda c, t: c//t + (c%t and 1 or 0), (H, W), tilesize)
-
+            H, W = [x//zoom for x in converter.canvas_size()]
+            K, J = [c//t + (c%t and 1 or 0) for c,t in zip((H, W), tilesize)]
+            
             dzizoomdirname = "%s/%d" % (dzichanneldirname, zoom_numbers[zoom])
             
             sys.stderr.write('Channel %d zoom %d: Canvas %dx%d using %dx%d output grid of %dx%d q=%d tiles\n' % (

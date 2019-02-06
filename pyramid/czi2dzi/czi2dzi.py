@@ -102,7 +102,7 @@ class LazyCziConverter (object):
         self._bbox_zeroed = ((0, 0), (v1[0]-v0[0], v1[1]-v0[1]))
         self._tile_size = tile_size
         self._zoom_levels = self._channel_tiers[0].keys()
-        self._zoom_levels = sorted(_zoom_levels)
+        self._zoom_levels = sorted(self._zoom_levels)
         
         sys.stderr.write('CZI %s tile-size %s %s\n  channels: %s\n  bounding-box: %s native or shape %s\n  zoom levels: %s\n' % (
             ' '.join(map(lambda d, s: '%s=%d' % (d, s), self._fo.axes, self._fo.shape)),

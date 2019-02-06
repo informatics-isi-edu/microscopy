@@ -9,6 +9,7 @@ import numpy as np
 from scipy.misc import toimage
 import json
 import re
+from lxml import etree
 
 class LazyCziConverter (object):
 
@@ -90,7 +91,8 @@ class LazyCziConverter (object):
                 boxmap = np.array( range(len(bbox_entries)), dtype=np.int32 )
                 self._channel_tier_maps[channel][zoom] = (bboxes, boxmap)
 
-        channels = self._fo.metadata.findall('Metadata/DisplaySetting/Channels/Channel')
+        cm = etree.fromstring(self._fo.metadata.encode('utf-8'))
+        channels = cm.findall('Metadata/DisplaySetting/Channels/Channel')
         assert channels, 'found no Metadata/DisplaySetting/Channels/Channel elements in CZI metadata'
         self._channel_names_long = [ c.get('Name') for c in channels ]
         self._channel_names = [ c.find('ShortName').text for c in channels ]
@@ -122,9 +124,9 @@ class LazyCziConverter (object):
         # 1. assume we will output tiles no larger than current tile size
         # 2. assume that up to 3 tile rows might be active due to overlapping source tiles
         try:
-            overlap_factor = max([float(e.text) for e in self._fo.metadata.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/SubDimensionSetups/RegionsSetup/SampleHolder/Overlap') ])
+            overlap_factor = max([float(e.text) for e in cm.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/SubDimensionSetups/RegionsSetup/SampleHolder/Overlap') ])
         except:
-            overlap_factor = max([float(e.text) for e in self._fo.metadata.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/TilesSetup/SampleHolder/Overlap') ])
+            overlap_factor = max([float(e.text) for e in cm.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/TilesSetup/SampleHolder/Overlap') ])
 
         row_tile_count = math.ceil(self._bbox_zeroed[1][1] / (self._tile_size[1] - self._tile_size[1] * overlap_factor))
         self._tile_cache_size = row_tile_count * 3 + 1
@@ -137,7 +139,7 @@ class LazyCziConverter (object):
         # get per-dimension distances and turn meter value into micrometer
         self.mpps = dict([
             (dx.get('Id'), float(dx.find('Value').text) * 1E6)
-            for dx in self._fo.metadata.findall('Metadata/Scaling/Items/Distance')
+            for dx in cm.findall('Metadata/Scaling/Items/Distance')
         ])
         sys.stderr.write('Image reported microns per pixel: %s\n' % self.mpps)
 

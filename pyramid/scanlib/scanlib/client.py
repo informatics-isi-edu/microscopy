@@ -498,7 +498,7 @@ class ErmrestClient (object):
         url = '%s/%s/%s/%s-%d.czi;versions' % (self.hatrac, self.namespace, urllib.parse.quote(slideId, safe=''), urllib.parse.quote(slideId, safe=''), disambiguator)
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         resp = self.send_request('GET', url, '', headers, False)
-        srcFile = urllib.unquote('%s%s'  % (self.czi, json.loads(resp.read())[0]))
+        srcFile = urllib.parse.unquote('%s%s'  % (self.czi, json.loads(resp.read())[0]))
         shutil.copyfile(srcFile, cziFile)
         return cziFile
 
@@ -511,7 +511,7 @@ class ErmrestClient (object):
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         self.logger.debug('getCziScanFile URL: "%s"' % (url))
         resp = self.send_request('GET', url, '', headers, False)
-        srcFile = urllib.unquote('%s%s'  % (self.czi, json.loads(resp.read())[0]))
+        srcFile = urllib.parse.unquote('%s%s'  % (self.czi, json.loads(resp.read())[0]))
         shutil.copyfile(srcFile, cziFile)
         return cziFile
 
@@ -531,7 +531,7 @@ class ErmrestClient (object):
         outdir = '%s/%s' % (self.data_scratch, self.namespace)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        srcFile = urllib.unquote('%s%s'  % (self.czi, self.getHatracLocation(file_url))) 
+        srcFile = urllib.parse.unquote('%s%s'  % (self.czi, self.getHatracLocation(file_url))) 
         shutil.copyfile(srcFile, cziFile)
         return cziFile
 

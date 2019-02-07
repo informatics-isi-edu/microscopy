@@ -301,7 +301,7 @@ class LazyCziConverter (object):
             items = self._tile_cache.items()
             if len(items) >= self._tile_cache_size:
                 # evict oldest item
-                items.sort(key=lambda item: item[1][1])
+                items = sorted(items, key=lambda item: item[1][1])
                 victim_key = items[0][0]
                 items = None
                 del self._tile_cache[victim_key]
@@ -454,7 +454,7 @@ def main(czifilename, dzidirname=None):
 
     # map zoom levels to DZI zoom tier numbers
     zooms = list(converter._zoom_levels)
-    zooms.sort(reverse=True)
+    zooms = sorted(zooms, reverse=True)
     zoom_numbers = dict([ (zooms[i], i) for i in range(len(zooms)) ])
     
     for channel in range(converter.num_channels()):

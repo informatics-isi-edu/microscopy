@@ -63,6 +63,7 @@ parser = OptionParser()
 parser.header = {}
 parser.add_option('-s', '--server', action='store', dest='server', type='string', help='Host name')
 parser.add_option('-c', '--credentials', action='store', dest='credentials', type='string', help='Credentials file')
+parser.add_option('-t', '--RMT', action='store', dest='RMT', type='string', help='Modification Timestamp')
 
 (options, args) = parser.parse_args()
 
@@ -73,6 +74,11 @@ if not options.server:
 if not options.credentials:
     print ('ERROR: Missing credentials file')
     sys.exit()
+
+if not options.RMT:
+    RMT = ''
+else:
+    RMT = '&RMT::geq::%s' % (urlquote(options.RMT))
 
 """
 Get the non NULL "Thumbnail" values from the "Scan" table.
@@ -89,7 +95,7 @@ output = '%s_add_border.sh' % servername.split('.')[0]
 credentials = json.load(open(credentialsfilename))
 catalog = ErmrestCatalog('https', servername, catalog, credentials)
 
-url = '/attribute/%s:%s/!%s::null::/%s' % (urlquote(schema), urlquote(table), urlquote(column), urlquote(column))
+url = '/attribute/%s:%s/!%s::null::%s/%s' % (urlquote(schema), urlquote(table), urlquote(column), RMT, urlquote(column))
 print ('Query URL: "https://%s/ermrest/catalog/1%s"' % (servername, url))
 
 resp = catalog.get(url)

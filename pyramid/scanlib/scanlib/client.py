@@ -134,6 +134,7 @@ class ErmrestClient (object):
         self.czi = kwargs.get("czi")
         self.czirules = kwargs.get("czirules")
         self.showinf = kwargs.get("showinf")
+        self.convert = kwargs.get("convert")
         self.data_scratch = kwargs.get("data_scratch")
         self.timeout = kwargs.get("timeout") * 60
         self.limit = kwargs.get("limit")
@@ -225,7 +226,21 @@ class ErmrestClient (object):
         outdir = '%s/%s' % (self.thumbnails, slide_id)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        shutil.copyfile('%s/%s/%s/0/0_0.jpg' % (self.dzi, scan_id, channels[0]), '%s/%s.jpg' % (outdir, scan_id))
+        try:
+            args = [self.convert, '-border', '2', '-bordercolor', 'grey', '%s/%s/%s/0/0_0.jpg' % (self.dzi, scan_id, channels[0]), '%s/%s.jpg' % (outdir, scan_id)]
+            p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdoutdata, stderrdata = p.communicate()
+            returncode = p.returncode
+        except:
+            et, ev, tb = sys.exc_info()
+            self.logger.error('got convert exception "%s"' % str(ev))
+            self.logger.error('%s' % str(traceback.format_exception(et, ev, tb)))
+            returncode = 1
+        
+        if returncode != 0:
+            self.logger.error('Can not add border for thumbnail "%s/%s/%s/0/0_0.jpg".\nstdoutdata: %s\nstderrdata: %s\n' % (self.dzi, scan_id, channels[0], stdoutdata, stderrdata)) 
+            shutil.copyfile('%s/%s/%s/0/0_0.jpg' % (self.dzi, scan_id, channels[0]), '%s/%s.jpg' % (outdir, scan_id))
+        
         thumbnail = '/thumbnails/%s/%s.jpg' % (urllib.parse.quote(slide_id, safe=''), urllib.parse.quote(scan_id, safe=''))
         urls = []
         for channel in channels:

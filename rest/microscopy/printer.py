@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 # 
@@ -16,7 +17,7 @@
 # limitations under the License.
 #
 
-import cStringIO
+from io import StringIO
 import web
 import json
 import cxi
@@ -186,7 +187,7 @@ class PrintControl (Printer):
         
     
     def PUT(self, printerID, param):
-        input_data = cStringIO.StringIO(web.ctx.env['wsgi.input'].read())
+        input_data = StringIO(web.ctx.env['wsgi.input'].read())
         json_data = json.load(input_data)
         printer = json_data[0]
         self.setPrinter(printerID, (printer['printer_id'], int(printer['printer_port'])))
@@ -246,12 +247,12 @@ class PrintJob (Printer):
             initials = params['Initials'].encode('utf8')
             disambiguator = params['Disambiguator'].encode('utf8')
             comment = params['Comment'].encode('utf8')
-            label.append('%s=%s' % (urllib.quote('ID', safe=''), urllib.quote(id, safe='')))
-            label.append('%s=%s' % (urllib.quote('Section Date', safe=''), urllib.quote(section_date, safe='')))
-            label.append('%s=%s' % (urllib.quote('Sample Name', safe=''), urllib.quote(sample_name, safe='')))
-            label.append('%s=%s' % (urllib.quote('Initials', safe=''), urllib.quote(initials, safe='')))
-            label.append('%s=%s' % (urllib.quote('Disambiguator', safe=''), urllib.quote(disambiguator, safe='')))
-            label.append('%s=%s' % (urllib.quote('Comment', safe=''), urllib.quote(comment, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('ID', safe=''), urllib.parse.quote(id, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('Section Date', safe=''), urllib.parse.quote(section_date, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('Sample Name', safe=''), urllib.parse.quote(sample_name, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('Initials', safe=''), urllib.parse.quote(initials, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('Disambiguator', safe=''), urllib.parse.quote(disambiguator, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('Comment', safe=''), urllib.parse.quote(comment, safe='')))
             try:
                 #res = {'Return value': 0, 'Return Message': 'Success (Test)'}
                 res = cxi.utils.makeBoxLabel(self.printer_id, self.printer_port, section_date, sample_name, initials, disambiguator, self.uri, id, comment)
@@ -271,13 +272,13 @@ class PrintJob (Printer):
             initials = params['Initials'].encode('utf8')
             sequence_num = int(params['Seq.'])
             revision = 0
-            label.append('%s=%s' % (urllib.quote('ID', safe=''), urllib.quote(id, safe='')))
-            label.append('%s=%s' % (urllib.quote('Experiment ID', safe=''), urllib.quote(experiment, safe='')))
-            label.append('%s=%d' % (urllib.quote('Seq.', safe=''), sequence_num))
-            label.append('%s=%s' % (urllib.quote('Experiment Date', safe=''), urllib.quote(experiment_date, safe='')))
-            label.append('%s=%s' % (urllib.quote('Sample Name', safe=''), urllib.quote(sample_name, safe='')))
-            label.append('%s=%s' % (urllib.quote('Experiment Description', safe=''), urllib.quote(experiment_description, safe='')))
-            label.append('%s=%s' % (urllib.quote('Initials', safe=''), urllib.quote(initials, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('ID', safe=''), urllib.parse.quote(id, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('Experiment ID', safe=''), urllib.parse.quote(experiment, safe='')))
+            label.append('%s=%d' % (urllib.parse.quote('Seq.', safe=''), sequence_num))
+            label.append('%s=%s' % (urllib.parse.quote('Experiment Date', safe=''), urllib.parse.quote(experiment_date, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('Sample Name', safe=''), urllib.parse.quote(sample_name, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('Experiment Description', safe=''), urllib.parse.quote(experiment_description, safe='')))
+            label.append('%s=%s' % (urllib.parse.quote('Initials', safe=''), urllib.parse.quote(initials, safe='')))
             try:
                 #res = {'Return value': 0, 'Return Message': 'Success (Test)'}
                 res = cxi.utils.makeSliceLabel(self.printer_id, self.printer_port, experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
@@ -295,7 +296,7 @@ class PrintJob (Printer):
     
     def POST(self, entity):
         response = []
-        input_data = cStringIO.StringIO(web.ctx.env['wsgi.input'].read())
+        input_data = StringIO(web.ctx.env['wsgi.input'].read())
         json_data = json.load(input_data)
         if len(json_data) > 0:
             self.setPrinter(entity, (json_data[0]['printer_id'], json_data[0]['printer_port']))

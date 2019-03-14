@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -9,6 +9,7 @@ import numpy as np
 from scipy.misc import toimage
 import json
 import re
+from lxml import etree
 
 class LazyCziConverter (object):
 
@@ -53,11 +54,11 @@ class LazyCziConverter (object):
             
             # HACK: discard all but middle plane if there is a Z stack
             if self._Z is not None:
-                if entry.start[self._Z] != (entry.shape[self._Z]/2):
+                if entry.start[self._Z] != (entry.shape[self._Z]//2):
                     continue
         
             # infer zoom from canvas size to tile size ratio
-            zoom = map(lambda c, t: c/t, entry.shape[self._slc], entry.stored_shape[self._slc])
+            zoom = [c//t for c,t in zip(entry.shape[self._slc], entry.stored_shape[self._slc])]
             assert zoom[0] == zoom[1]
             zoom = zoom[0]
         
@@ -74,8 +75,8 @@ class LazyCziConverter (object):
                 v0 = bbox[0]
                 v1 = bbox[1]
             else:
-                v0 = map(lambda v, b: min(v, b), v0, bbox[0])
-                v1 = map(lambda v, b: max(v, b), v1, bbox[1])
+                v0 = [min(v, b) for v,b in zip(v0, bbox[0])]
+                v1 = [max(v, b) for v,b in zip(v1, bbox[1])]
             tile_size = tuple(map(lambda a, b: max(a, b), tile_size, entry.stored_shape[self._slc]))
 
         # build up tile bbox maps for each zoom tier for efficient intersection tests
@@ -90,7 +91,8 @@ class LazyCziConverter (object):
                 boxmap = np.array( range(len(bbox_entries)), dtype=np.int32 )
                 self._channel_tier_maps[channel][zoom] = (bboxes, boxmap)
 
-        channels = self._fo.metadata.findall('Metadata/DisplaySetting/Channels/Channel')
+        cm = etree.fromstring(self._fo.metadata.encode('utf-8'))
+        channels = cm.findall('Metadata/DisplaySetting/Channels/Channel')
         assert channels, 'found no Metadata/DisplaySetting/Channels/Channel elements in CZI metadata'
         self._channel_names_long = [ c.get('Name') for c in channels ]
         self._channel_names = [ c.find('ShortName').text for c in channels ]
@@ -100,7 +102,7 @@ class LazyCziConverter (object):
         self._bbox_zeroed = ((0, 0), (v1[0]-v0[0], v1[1]-v0[1]))
         self._tile_size = tile_size
         self._zoom_levels = self._channel_tiers[0].keys()
-        self._zoom_levels.sort()
+        self._zoom_levels = sorted(self._zoom_levels)
         
         sys.stderr.write('CZI %s tile-size %s %s\n  channels: %s\n  bounding-box: %s native or shape %s\n  zoom levels: %s\n' % (
             ' '.join(map(lambda d, s: '%s=%d' % (d, s), self._fo.axes, self._fo.shape)),
@@ -122,9 +124,9 @@ class LazyCziConverter (object):
         # 1. assume we will output tiles no larger than current tile size
         # 2. assume that up to 3 tile rows might be active due to overlapping source tiles
         try:
-            overlap_factor = max([float(e.text) for e in self._fo.metadata.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/SubDimensionSetups/RegionsSetup/SampleHolder/Overlap') ])
+            overlap_factor = max([float(e.text) for e in cm.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/SubDimensionSetups/RegionsSetup/SampleHolder/Overlap') ])
         except:
-            overlap_factor = max([float(e.text) for e in self._fo.metadata.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/TilesSetup/SampleHolder/Overlap') ])
+            overlap_factor = max([float(e.text) for e in cm.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/TilesSetup/SampleHolder/Overlap') ])
 
         row_tile_count = math.ceil(self._bbox_zeroed[1][1] / (self._tile_size[1] - self._tile_size[1] * overlap_factor))
         self._tile_cache_size = row_tile_count * 3 + 1
@@ -137,7 +139,7 @@ class LazyCziConverter (object):
         # get per-dimension distances and turn meter value into micrometer
         self.mpps = dict([
             (dx.get('Id'), float(dx.find('Value').text) * 1E6)
-            for dx in self._fo.metadata.findall('Metadata/Scaling/Items/Distance')
+            for dx in cm.findall('Metadata/Scaling/Items/Distance')
         ])
         sys.stderr.write('Image reported microns per pixel: %s\n' % self.mpps)
 
@@ -150,7 +152,7 @@ class LazyCziConverter (object):
     def _value_range(self, channelno):
         v0, v1 = None, None
         zooms = self._channel_tiers[channelno].keys()
-        zooms.sort()
+        zooms = sorted(zooms)
         for bbox, entry in self._channel_tiers[channelno][1]:
             data = self._entry_asarray(entry)
             if v0 is None:
@@ -211,11 +213,11 @@ class LazyCziConverter (object):
             assert slc.start >= 0
             assert (slc.start * zoom) < L
             assert slc.stop > slc.start
-            bounds = [slc.start * zoom, min(L/zoom, slc.stop) * zoom]
+            bounds = [slc.start * zoom, min(L//zoom, slc.stop) * zoom]
             return slice(*bounds)
 
         # do a little sanity checking and convert back to 1:1 pixel units with cropping to canvas
-        slc = map(slc_check, slc, self._bbox_zeroed[1])
+        slc = [slc_check(slc,L) for slc,L in zip(slc, self._bbox_zeroed[1])]
         
         # this should now be in same format as one row of self._channel_tier_maps[0]
         bbox = np.array([slc[0].start, slc[1].start, slc[0].stop, slc[1].stop], dtype=np.int32)
@@ -227,7 +229,7 @@ class LazyCziConverter (object):
         bbox_native = bbox + native_offset
 
         # composite output buffer
-        output = np.zeros(((bbox[2]-bbox[0])/zoom, (bbox[3]-bbox[1])/zoom) + (self._fo.shape[-1],), dtype=dtype)
+        output = np.zeros(((bbox[2]-bbox[0])//zoom, (bbox[3]-bbox[1])//zoom) + (self._fo.shape[-1],), dtype=dtype)
 
         if fill is not None:
             output[:,:,:] = fill
@@ -237,19 +239,19 @@ class LazyCziConverter (object):
 
             # find overlapping sub-rectangle in reduced resolution native canvas space
             overlap_native = np.array(
-                tuple(map(max, bbox_native[0:2]/zoom, ebbox_native[0:2]/zoom))
-                + tuple(map(min, bbox_native[2:4]/zoom, ebbox_native[2:4]/zoom)),
+                tuple(map(max, bbox_native[0:2]//zoom, ebbox_native[0:2]//zoom))
+                + tuple(map(min, bbox_native[2:4]//zoom, ebbox_native[2:4]//zoom)),
                 dtype=np.int32
             )
 
             # find reduced resolution grid coordinates of overlap in entry tile and in output tile
             src_overlap = overlap_native.copy()
-            src_overlap[0:2] -= np.array(entry.start[self._slc][0:2], dtype=np.int32) / zoom
-            src_overlap[2:4] -= np.array(entry.start[self._slc][0:2], dtype=np.int32) / zoom
+            src_overlap[0:2] -= np.array(entry.start[self._slc][0:2], dtype=np.int32) // zoom
+            src_overlap[2:4] -= np.array(entry.start[self._slc][0:2], dtype=np.int32) // zoom
 
             dst_overlap = overlap_native.copy()
-            dst_overlap[0:2] -= bbox_native[0:2] / zoom
-            dst_overlap[2:4] -= bbox_native[0:2] / zoom
+            dst_overlap[0:2] -= bbox_native[0:2] // zoom
+            dst_overlap[2:4] -= bbox_native[0:2] // zoom
 
             assert src_overlap[0] >= 0
             assert src_overlap[1] >= 0
@@ -299,7 +301,7 @@ class LazyCziConverter (object):
             items = self._tile_cache.items()
             if len(items) >= self._tile_cache_size:
                 # evict oldest item
-                items.sort(key=lambda item: item[1][1])
+                items = sorted(items, key=lambda item: item[1][1])
                 victim_key = items[0][0]
                 items = None
                 del self._tile_cache[victim_key]
@@ -361,8 +363,8 @@ def array_to_jpeg(array, Y, X, jpegroot=None, quality=75):
     try:
         img = toimage(array)
         img.save(jpegname, quality=quality)
-    except Exception, te:
-        print te, array.shape, Y, X, jpegroot, quality
+    except Exception as te:
+        print (te, array.shape, Y, X, jpegroot, quality)
         raise te
 
 def metadata_to_xml(meta, channelno, channeldir):
@@ -452,7 +454,7 @@ def main(czifilename, dzidirname=None):
 
     # map zoom levels to DZI zoom tier numbers
     zooms = list(converter._zoom_levels)
-    zooms.sort(reverse=True)
+    zooms = sorted(zooms, reverse=True)
     zoom_numbers = dict([ (zooms[i], i) for i in range(len(zooms)) ])
     
     for channel in range(converter.num_channels()):
@@ -472,9 +474,9 @@ def main(czifilename, dzidirname=None):
         pixel_range = [None, None]
         
         for zoom in converter._zoom_levels:
-            H, W = map(lambda x: x/zoom, converter.canvas_size())
-            K, J = map(lambda c, t: c/t + (c%t and 1 or 0), (H, W), tilesize)
-
+            H, W = [x//zoom for x in converter.canvas_size()]
+            K, J = [c//t + (c%t and 1 or 0) for c,t in zip((H, W), tilesize)]
+            
             dzizoomdirname = "%s/%d" % (dzichanneldirname, zoom_numbers[zoom])
             
             sys.stderr.write('Channel %d zoom %d: Canvas %dx%d using %dx%d output grid of %dx%d q=%d tiles\n' % (
@@ -534,7 +536,7 @@ if __name__ == "__main__":
         f = open(sys.argv[1])
         try:
             fo = czifile.CziFile(sys.argv[1])
-        except Exception, e:
+        except Exception as e:
             raise ValueError(usage('%s. First argument must be a DZI file.' % e))
     except:
         raise ValueError(usage('First argument must be a readable file.'))

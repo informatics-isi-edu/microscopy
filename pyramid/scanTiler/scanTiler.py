@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # 
 # Copyright 2014 University of Southern California
@@ -119,6 +119,11 @@ def load(config_filename):
         logger.error('Extract metadata application must be given.')
         return None
 
+    convert = cfg.get('convert', None)
+    if not convert:
+        logger.error('Convert application to add a border to the thumbnail must be given.')
+        return None
+
     hatrac = cfg.get('hatrac', None)
     if not hatrac:
         logger.error('hatrac URL must be given.')
@@ -162,6 +167,7 @@ def load(config_filename):
                                viewer=viewer, \
                                czirules=czirules, \
                                showinf=showinf, \
+                               convert=convert, \
                                timeout=timeout, \
                                limit=limit, \
                                mail_server=mail_server, \

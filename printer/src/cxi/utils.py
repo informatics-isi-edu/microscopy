@@ -128,7 +128,7 @@ class cxiAccess():
        sz=len(data)
        sent=0
        try:
-          sent = self.cxi.send(data)
+          sent = self.cxi.send(data.encode())
        except socket.error:
           print ("BAD, socket error on send")
           return 0
@@ -145,7 +145,7 @@ class cxiAccess():
        pattern = "= .+\r\n"
        while 1 :
            try:
-               tmp = self.cxi.recv(1024)
+               tmp = str(self.cxi.recv(1024), 'utf-8')
 #               if DEBUG :
 #                   print "config_recv got ->",tmp
            except (socket.error, socket.timeout):
@@ -173,7 +173,7 @@ class cxiAccess():
        data = ""
        while 1 :
            try:
-               tmp = self.cxi.recv(1024)
+               tmp = str(self.cxi.recv(1024), 'utf-8')
            except (socket.error, socket.timeout):
                print ("ERROR:socket got disconnected")
                break
@@ -205,7 +205,7 @@ class cxiAccess():
 
     def status_recv(self):
        try:
-           tmp = self.cxi.recv(1024)
+           tmp = str(self.cxi.recv(1024), 'utf-8')
        except (socket.error, socket.timeout):
            print ("ERROR:socket got disconnected")
            return -1, "socket timeout/disconnected" 

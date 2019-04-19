@@ -101,9 +101,6 @@ class Worker (object):
         credentials
     )
 
-    # for state-tracking across look_for_work() iterations
-    idle_etag = None
-
     def __init__(self, row, unit):
         logger.info('Claimed job %s.\n' % row.get('ID', row.get('RID')))
 
@@ -129,7 +126,6 @@ class Worker (object):
 
         for unit in cls.work_units:
             # this handled concurrent update for us to safely and efficiently claim a record
-            print unit.idle_etag
             unit.idle_etag, batch = cls.catalog.state_change_once(
                 unit.get_claimable_url,
                 unit.put_claim_url,

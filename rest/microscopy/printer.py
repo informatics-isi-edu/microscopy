@@ -255,7 +255,7 @@ class PrintJob (Printer):
             label.append('%s=%s' % (urllib.parse.quote('Comment', safe=''), urllib.parse.quote(comment, safe='')))
             try:
                 #res = {'Return value': 0, 'Return Message': 'Success (Test)'}
-                res = cxi.utils.makeBoxLabel(self.printer_id, self.printer_port, section_date, sample_name, initials, disambiguator, self.uri, id, comment)
+                res = cxi.utils.makeBoxLabel(self.printer_id, self.printer_port, params['Section Date'], params['Sample Name'], params['Initials'], params['Disambiguator'], self.uri, params['ID'], params['Comment'])
             except:
                 et, ev, tb = sys.exc_info()
                 web.debug('%s' % str(traceback.format_exception(et, ev, tb)))
@@ -281,7 +281,7 @@ class PrintJob (Printer):
             label.append('%s=%s' % (urllib.parse.quote('Initials', safe=''), urllib.parse.quote(initials, safe='')))
             try:
                 #res = {'Return value': 0, 'Return Message': 'Success (Test)'}
-                res = cxi.utils.makeSliceLabel(self.printer_id, self.printer_port, experiment_date, sample_name, experiment_description, experiment, initials, sequence_num, revision, self.uri, id)
+                res = cxi.utils.makeSliceLabel(self.printer_id, self.printer_port, params['Experiment Date'], params['Sample Name'], params['Experiment Description'], params['Experiment ID'], params['Initials'], sequence_num, revision, self.uri, params['ID'])
             except:
                 et, ev, tb = sys.exc_info()
                 web.debug('%s' % str(traceback.format_exception(et, ev, tb)))

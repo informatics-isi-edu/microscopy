@@ -61,7 +61,7 @@ class cxiFont():
            print ("wrapping up cxiFont")
 
     def getBits(self,key):
-       if self.bit_list.has_key(key):
+       if key in self.bit_list:
           return self.bit_list[str(key)]
        return DEFAULT_BIT_SIZE
 

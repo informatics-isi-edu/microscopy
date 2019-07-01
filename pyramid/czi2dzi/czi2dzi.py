@@ -91,7 +91,7 @@ class LazyCziConverter (object):
                 boxmap = np.array( range(len(bbox_entries)), dtype=np.int32 )
                 self._channel_tier_maps[channel][zoom] = (bboxes, boxmap)
 
-        cm = etree.fromstring(self._fo.metadata.encode('utf-8'))
+        cm = etree.fromstring(self._fo.metadata().encode('utf-8'))
         channels = cm.findall('Metadata/DisplaySetting/Channels/Channel')
         assert channels, 'found no Metadata/DisplaySetting/Channels/Channel elements in CZI metadata'
         self._channel_names_long = [ c.get('Name') for c in channels ]

@@ -95,7 +95,12 @@ class LazyCziConverter (object):
         channels = cm.findall('Metadata/DisplaySetting/Channels/Channel')
         assert channels, 'found no Metadata/DisplaySetting/Channels/Channel elements in CZI metadata'
         self._channel_names_long = [ c.get('Name') for c in channels ]
-        self._channel_names = [ c.find('ShortName').text for c in channels ]
+        
+        try:
+            self._channel_names = [ c.find('ShortName').text for c in channels ]
+        except:
+            self._channel_names = self._channel_names_long
+            
         self._channel_colors = [ c.find('Color').text if c.find('Color') is not None else None for c in channels ]
         
         self._bbox_native = (tuple(v0), tuple(v1))
@@ -126,7 +131,10 @@ class LazyCziConverter (object):
         try:
             overlap_factor = max([float(e.text) for e in cm.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/SubDimensionSetups/RegionsSetup/SampleHolder/Overlap') ])
         except:
-            overlap_factor = max([float(e.text) for e in cm.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/TilesSetup/SampleHolder/Overlap') ])
+            try:
+                overlap_factor = max([float(e.text) for e in cm.findall('Metadata/Experiment/ExperimentBlocks/AcquisitionBlock/TilesSetup/SampleHolder/Overlap') ])
+            except:
+                overlap_factor = 0.3
 
         row_tile_count = math.ceil(self._bbox_zeroed[1][1] / (self._tile_size[1] - self._tile_size[1] * overlap_factor))
         self._tile_cache_size = row_tile_count * 3 + 1

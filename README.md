@@ -1,4 +1,12 @@
-# Microscopy Image Manager
+# Microscopy Image Manager 🚫
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
+## Deprecated
+
+This repository is no longer supported. Please consider using our active project 
+for scientific data management, [DERIVA]([https://](https://derivacloud.org).
+
+## Introduction
 
 The Microscopy Image Manger is a proof of concept solution for microscopy
 image management based on the EMRrest service and IObox tools.

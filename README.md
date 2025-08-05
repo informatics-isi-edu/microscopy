@@ -1,7 +1,5 @@
-# Microscopy Image Manager 🚫
+# Microscopy Image Manager (🚫 Deprecated)
 [![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
-
-## Deprecated
 
 This repository is no longer supported. Please consider using [DERIVA](https://derivacloud.org) 
 for scientific data management.

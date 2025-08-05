@@ -3,8 +3,8 @@
 
 ## Deprecated
 
-This repository is no longer supported. Please consider using our active project 
-for scientific data management, [DERIVA]([https://](https://derivacloud.org).
+This repository is no longer supported. Please consider using [DERIVA](https://derivacloud.org) 
+for scientific data management.
 
 ## Introduction
 
